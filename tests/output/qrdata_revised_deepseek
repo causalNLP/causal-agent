@@ -1,0 +1,48 @@
+
+{"query_number": 1, "natural_language_query": "Does home visit from specilaist doctors lead to an improvement in cognitive scores?", "dataset_path": "benchmark/all_data_1/ihdp_0.csv", "answer": "4.02"}
+
+{"query_number": 2, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_1.csv", "answer": "4.05"}
+
+{"query_number": 3, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_2.csv", "answer": "4.1"}
+
+{"query_number": 1, "natural_language_query": "Does home visit from specilaist doctors lead to an improvement in cognitive scores?", "dataset_path": "benchmark/all_data_1/ihdp_0.csv", "answer": "4.02"}
+
+{"query_number": 2, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_1.csv", "answer": "4.05"}
+
+{"query_number": 3, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_2.csv", "answer": "4.1"}
+
+{"query_number": 4, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_3.csv", "answer": "4.27"}
+
+{"query_number": 5, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_4.csv", "answer": "4.16"}
+
+{"query_number": 9, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_8.csv", "answer": "10.47"}
+
+{"query_number": 10, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_9.csv", "answer": "4.59"}
+
+{"query_number": 11, "natural_language_query": "Is there any advantage to taking classes online in comparison to face-to-face or blended format in terms of exam performance?", "dataset_path": "benchmark/all_data_1/online_classroom.csv", "answer": "-4.91"}
+
+{"query_number": 12, "natural_language_query": "Do more years of education lead to higher log hourly wages?", "dataset_path": "benchmark/all_data_1/wage.csv", "answer": "0.0529"}
+
+{"query_number": 13, "natural_language_query": "Does an increase in years of education help increase log hourly wages when considering other variables of interest?", "dataset_path": "benchmark/all_data_1/wage.csv", "answer": "0.0411"}
+
+{"query_number": 14, "natural_language_query": "What's the effect of graduating 12th grade on hourly wage?", "dataset_path": "benchmark/all_data_1/wage.csv", "answer": "4.9"}
+
+{"query_number": 15, "natural_language_query": "Does sending reminder emails have an impact on the repayment of debts while including suitable controls?", "dataset_path": "benchmark/all_data_1/collections_email.csv", "answer": "4.43"}
+
+{"query_number": 16, "natural_language_query": "Is the new drug effective in reducing hospital stay if we control for severity?", "dataset_path": "benchmark/all_data_1/hospital_treatment.csv", "answer": "-7.59"}
+
+{"query_number": 17, "natural_language_query": "How much more does a person earn for each extra year of education?", "dataset_path": "benchmark/all_data_1/ak91.csv", "answer": "0.0853"}
+
+{"query_number": 18, "natural_language_query": "Did the marketing push help increase in-app purchases?", "dataset_path": "benchmark/all_data_1/app_engagement_push.csv", "answer": "3.29"}
+
+{"query_number": 19, "natural_language_query": "What is the effect of the medication on the recovery time?", "dataset_path": "benchmark/all_data_1/medicine_impact_recovery.csv", "answer": "-7.7"}
+
+{"query_number": 1, "natural_language_query": "Does home visit from specilaist doctors lead to an improvement in cognitive scores?", "dataset_path": "benchmark/all_data_1/ihdp_0.csv", "answer": "4.02"}
+
+{"type": "analysis_result", "data": {"confidence_interval": [3.741021247077994, 4.301220777783705], "causal_effect": 4.021121012430849, "query": "Does home visit from specilaist doctors lead to an improvement in cognitive scores?", "method_used": "Diff In Means", "standard_error": 0.14267849621216544}}
+
+{"query_number": 2, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_1.csv", "answer": "4.05"}
+
+{"type": "analysis_result", "data": {"confidence_interval": [3.831339062301772, 4.33150359940241], "causal_effect": 4.081421330852091, "query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "method_used": "Diff In Means", "standard_error": 0.1273880467594713}}
+
+{"query_number": 3, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_2.csv", "answer": "4.1"}

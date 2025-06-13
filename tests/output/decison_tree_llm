@@ -1,0 +1,102 @@
+
+{"query_number": 1, "natural_language_query": "Does home visit from specilaist doctors lead to an improvement in cognitive scores?", "dataset_path": "benchmark/all_data_1/ihdp_0.csv", "answer": "4.02"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 4.021121012430849, "confidence_interval": [3.741021247077994, 4.301220777783705], "standard_error": 0.14267849621216544, "query": "Does home visit from specilaist doctors lead to an improvement in cognitive scores?"}}
+
+{"query_number": 2, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_1.csv", "answer": "4.05"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 4.081421330852091, "confidence_interval": [3.831339062301772, 4.33150359940241], "standard_error": 0.1273880467594713, "query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?"}}
+
+{"query_number": 3, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_2.csv", "answer": "4.1"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 4.194156800295276, "confidence_interval": [3.8993184761845994, 4.488995124405952], "standard_error": 0.15018609050540396, "query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?"}}
+
+{"query_number": 4, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_3.csv", "answer": "4.27"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 4.271500871396527, "confidence_interval": [3.857955297589145, 4.685046445203909], "standard_error": 0.2106537308651583, "query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?"}}
+
+{"query_number": 5, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_4.csv", "answer": "4.16"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 4.22922531879596, "confidence_interval": [3.701859396469618, 4.756591241122302], "standard_error": 0.268632059210317, "query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?"}}
+
+{"query_number": 6, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_5.csv", "answer": "4"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 4.1313904710308, "confidence_interval": [3.851919811642421, 4.410861130419179], "standard_error": 0.14235803934617525, "query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?"}}
+
+{"query_number": 7, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_6.csv", "answer": "3.99"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 3.8397325455417874, "confidence_interval": [3.623993129304391, 4.055471961779184], "standard_error": 0.10989432798583519, "query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?"}}
+
+{"query_number": 8, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_7.csv", "answer": "3.85"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 3.6569485547093987, "confidence_interval": [3.255143505622879, 4.058753603795918], "standard_error": 0.20467328882585775, "query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?"}}
+
+{"query_number": 9, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_8.csv", "answer": "10.47"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 12.09923626368995, "confidence_interval": [7.5329815918781735, 16.665490935501726], "standard_error": 2.3259796347031747, "query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?"}}
+
+{"query_number": 10, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_9.csv", "answer": "4.59"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 4.897040528540091, "confidence_interval": [3.3344533443069446, 6.459627712773238], "standard_error": 0.7959577879900377, "query": "My question is: What is the effect of home visits on the cognitive test scores of children who actually received the intervention?"}}
+
+{"query_number": 11, "natural_language_query": "Is there any advantage to taking classes online in comparison to face-to-face or blended format in terms of exam performance?", "dataset_path": "benchmark/all_data_1/online_classroom.csv", "answer": "-4.91"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": -4.220260364675286, "confidence_interval": [-6.997506960475875, -1.443013768874697], "standard_error": 1.4116460399645423, "query": "My question is: Is there any advantage to taking classes online in comparison to face-to-face or blended format in terms of exam performance?"}}
+
+{"query_number": 12, "natural_language_query": "Do more years of education lead to higher log hourly wages?", "dataset_path": "benchmark/all_data_1/wage.csv", "answer": "0.0529"}
+
+{"query_number": 13, "natural_language_query": "Does an increase in years of education help increase log hourly wages when considering other variables of interest?", "dataset_path": "benchmark/all_data_1/wage.csv", "answer": "0.0411"}
+
+{"type": "analysis_result", "data": {"method_used": "Instrumental Variable Analysis", "causal_effect": null, "confidence_interval": [null, null], "standard_error": null, "query": "My question is: Does an increase in years of education help increase log hourly wages when considering other variables of interest?"}}
+
+{"query_number": 14, "natural_language_query": "What's the effect of graduating 12th grade on hourly wage?", "dataset_path": "benchmark/all_data_1/wage.csv", "answer": "4.9"}
+
+{"query_number": 15, "natural_language_query": "Does sending reminder emails have an impact on the repayment of debts while including suitable controls?", "dataset_path": "benchmark/all_data_1/collections_email.csv", "answer": "4.43"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": -0.6202804021330657, "confidence_interval": [-6.386904264519461, 5.14634346025333], "standard_error": 2.9414965843408853, "query": "My question is: Does sending reminder emails have an impact on the repayment of debts while including suitable controls?"}}
+
+{"query_number": 16, "natural_language_query": "Is the new drug effective in reducing hospital stay if we control for severity?", "dataset_path": "benchmark/all_data_1/hospital_treatment.csv", "answer": "-7.59"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 14.153333333333329, "confidence_interval": [7.450527459323126, 20.85613920734353], "standard_error": 3.366811031854404, "query": "My question is: Is the new drug effective in reducing hospital stay if we control for severity? The dataset is located at: benchmark/all_data_1/hospital_treatment.csv Dataset Description: The dataset hospital_treatment.csv includes data from a randomized trials on a new drug to treat a certain illness. The outcome of interest is days hospitalized. If the treatment is effective, it will lower the amount of days the patient stays in the hospital. The CSV file contains columns for `hospital` indicating the hospital a patient belongs to, `treatment` signifying if the patient received the new drug or placebo, `severity` reflecting the severity of the illness, and `days` representing the number of days the patient was hospitalized."}}
+
+{"query_number": 17, "natural_language_query": "How much more does a person earn for each extra year of education?", "dataset_path": "benchmark/all_data_1/ak91.csv", "answer": "0.0853"}
+
+{"type": "analysis_result", "data": {"method_used": "Instrumental Variable Analysis", "causal_effect": 0.09921716423235154, "confidence_interval": [0.05882150870031794, 0.13944309798194932], "standard_error": null, "query": "My question is: How much more does a person earn for each extra year of education?"}}
+
+{"query_number": 18, "natural_language_query": "Did the marketing push help increase in-app purchases?", "dataset_path": "benchmark/all_data_1/app_engagement_push.csv", "answer": "3.29"}
+
+{"type": "analysis_result", "data": {"method_used": "Instrumental Variable Analysis", "causal_effect": 3.293840129487463, "confidence_interval": [1.6179112364886592, 4.559043438291507], "standard_error": null, "query": "Did the marketing push help increase in-app purchases?"}}
+
+{"query_number": 19, "natural_language_query": "What is the effect of the medication on the recovery time?", "dataset_path": "benchmark/all_data_1/medicine_impact_recovery.csv", "answer": "-7.7"}
+
+{"query_number": 20, "natural_language_query": "Does participating in seminars meant for boosting growth mindset lead to better academic achievement?", "dataset_path": "benchmark/all_data_1/learning_mindset.csv", "answer": "0.389"}
+
+{"type": "analysis_result", "data": {"method_used": "Difference-in-Differences", "causal_effect": -3463483212.919239, "confidence_interval": [-309033449699.265, 302106483273.4265], "standard_error": 155905908933.34912, "query": "Does participating in seminars meant for boosting growth mindset lead to better academic achievement?"}}
+
+{"query_number": 21, "natural_language_query": "Does using billboards lead to higher bank deposits?", "dataset_path": "benchmark/all_data_1/billboard_impact.csv", "answer": "6.52"}
+
+{"type": "analysis_result", "data": {"method_used": "Difference-in-Differences", "causal_effect": -158398780214296.72, "confidence_interval": [-812668204204522.1, 495870643775928.6], "standard_error": 333817064574155.0, "query": "Does using billboards lead to higher bank deposits?"}}
+
+{"query_number": 22, "natural_language_query": "By how much does turning 21, the legal drinking age affect the risk of death from any cause?", "dataset_path": "benchmark/all_data_1/drinking.csv", "answer": "7.66"}
+
+{"type": "analysis_result", "data": {"method_used": "Regression Discontinuity Design", "causal_effect": 7.9230672163444815, "confidence_interval": [4.713307828104135, 11.132826604584828], "standard_error": 1.5841335148596065, "query": "By how much does turning 21, the legal drinking age affect the risk of death from any cause?"}}
+
+{"query_number": 23, "natural_language_query": "Did Proposition 99 help reduce cigarette sales?", "dataset_path": "benchmark/all_data_1/smoking2.csv", "answer": "-27.35"}
+
+{"type": "analysis_result", "data": {"method_used": "Difference-in-Differences", "causal_effect": -15.05894934547373, "confidence_interval": [-23.40854696142068, -6.70935172952678], "standard_error": 4.260077063562142, "query": "Did Proposition 99 help reduce cigarette sales?"}}
+
+{"query_number": 24, "natural_language_query": "How much did the earnings for people who took part in the trainee program increase on average compared to similar people who didn\u2019t join?", "dataset_path": "benchmark/all_data_1/trainee_unique_on_age.csv", "answer": "2457.9"}
+
+{"query_number": 25, "natural_language_query": "What is the effect of becoming members of Parliament on the net (log) wealth for Tory candidates?", "dataset_path": "benchmark/all_data_1/MPs.csv", "answer": "1.37"}
+
+{"query_number": 26, "natural_language_query": "What is the effect of the reservation policy on the number of new or repaired drinking water facilities since the reserve policy started?", "dataset_path": "benchmark/all_data_1/women.csv", "answer": "9.25"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 9.25242298373138, "confidence_interval": [1.4856077350146535, 17.019238232448107], "standard_error": 3.94774606771564, "query": "My question is: What is the effect of the reservation policy on the number of new or repaired drinking water facilities since the reserve policy started?"}}
+
+{"query_number": 27, "natural_language_query": "What is the difference in the effect of the Neighbors message on whether the voter voted in the 2006 primary election between those who voted in the 2004 primary election and those who did not?", "dataset_path": "benchmark/all_data_1/social.csv", "answer": "0.027"}
+
+{"query_number": 28, "natural_language_query": "What is the effect of the Neighbors message on whether the voter voted in the 2006 primary election if the voter's age was 25 in 2006?", "dataset_path": "benchmark/all_data_1/social.csv", "answer": "0.055"}
+
+{"query_number": 29, "natural_language_query": "What is the effect of the Neighbors message on whether the voter voted in the 2006 primary election if the voter's age was 65 in 2006?", "dataset_path": "benchmark/all_data_1/social.csv", "answer": "0.079"}
+
+{"query_number": 30, "natural_language_query": "Does the job training program improve employment prospects for those who received the training?", "dataset_path": "benchmark/all_data_1/jobs_1.csv", "answer": "0.025"}

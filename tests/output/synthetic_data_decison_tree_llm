@@ -1,0 +1,178 @@
+
+{"query_number": 1, "natural_language_query": "\"Did students' grades improve after participating in the after-school program?\"", "dataset_path": "benchmark/synthetic_data/did_canonical_data_0.csv", "answer": "5.089956982132045"}
+
+{"type": "analysis_result", "data": {"method_used": "Difference-in-Differences", "causal_effect": 4.937848371505884, "query": "My question is: \"Did students' grades improve after participating in the after-school program?\" The dataset is located at: benchmark/synthetic_data/did_canonical_data_0.csv Dataset Description: This dataset was collected from a middle school in a suburban area, where an after-school program was implemented to improve academic performance. The dataset includes 618 students, with data collected before and after the implementation of the program. Some of the students participated in the program while others did not. In addition to their final grades, the dataset contains information about the number of hours they studied, the education level of their parents, their participation in sports, their access to the internet and their school attendance.", "confidence_interval": [4.638891906917874, 5.236804836093893], "standard_error": 0.15253161126742099}}
+
+{"query_number": 2, "natural_language_query": "\"Did the administration of the new vaccine improve the overall health of patients?\"", "dataset_path": "benchmark/synthetic_data/did_canonical_data_1.csv", "answer": "1.3208427907169762"}
+
+{"type": "analysis_result", "data": {"method_used": "Difference-in-Differences", "causal_effect": 1.1446114845120996, "query": "\"Did the administration of the new vaccine improve the overall health of patients?\"", "confidence_interval": [0.8093309307067394, 1.4798920383174599], "standard_error": 0.17106465039664526}}
+
+{"query_number": 3, "natural_language_query": "The query is already filtered. So, the output is: \"Did the professional development program change the attitudes of teachers towards inclusive education?\"", "dataset_path": "benchmark/synthetic_data/did_canonical_data_3.csv", "answer": "3.8469083334980994"}
+
+{"type": "analysis_result", "data": {"method_used": "Difference-in-Differences", "causal_effect": 4.0923327431237695, "query": "Did the professional development program change the attitudes of teachers towards inclusive education?", "confidence_interval": [3.8277313553182806, 4.356934130929258], "standard_error": 0.13500318877929954}}
+
+{"query_number": 4, "natural_language_query": "The filtered query is: \"Did the diversity training program improve the work performance of employees?\"", "dataset_path": "benchmark/synthetic_data/did_canonical_data_2.csv", "answer": "4.0456692500080225"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 1.615087991555595, "query": "Did the diversity training program improve the work performance of employees?", "confidence_interval": [1.3703465506000945, 1.8598294325110953], "standard_error": 0.12470502080803425}}
+
+{"query_number": 5, "natural_language_query": "\"Did the implementation of the new environmentally-friendly policy have an impact on the sales of the grocery stores?\"", "dataset_path": "benchmark/synthetic_data/did_canonical_data_4.csv", "answer": "4.891193930548267"}
+
+{"type": "analysis_result", "data": {"method_used": "Difference-in-Differences", "causal_effect": 0.9174704789224429, "query": "\"Did the implementation of the new environmentally-friendly policy have an impact on the sales of the grocery stores?\"", "confidence_interval": [0.8263926780817556, 1.0085482797631302], "standard_error": 0.046469119616022195}}
+
+{"query_number": 6, "natural_language_query": "The query seems to be already filtered as it is not providing any information on what variables one needs to consider in course of causal analysis. The filtered query is: \"Did the introduction of the new tax incentive policy lead to an increase in the annual revenue of small businesses in the country?\"", "dataset_path": "benchmark/synthetic_data/did_twfe_data_4.csv", "answer": "8.205443486790724"}
+
+{"type": "analysis_result", "data": {"method_used": "Difference-in-Differences", "causal_effect": 6.405011100729388, "query": "Did the introduction of the new tax incentive policy lead to an increase in the annual revenue of small businesses in the country?", "confidence_interval": [5.691480918370318, 7.118541283088459], "standard_error": 0.3640527009615001}}
+
+{"query_number": 7, "natural_language_query": "\"Did the introduction of the new professional training program lead to an increase in job satisfaction levels among the employees in the tech firm?\"", "dataset_path": "benchmark/synthetic_data/did_twfe_data_2.csv", "answer": "5.518126741516703"}
+
+{"type": "analysis_result", "data": {"method_used": "Difference-in-Differences", "causal_effect": 5.945337517402599, "query": "Did the introduction of the new professional training program lead to an increase in job satisfaction levels among the employees in the tech firm?", "confidence_interval": [5.587246238531178, 6.30342879627402], "standard_error": 0.18270298928755793}}
+
+{"query_number": 8, "natural_language_query": "Did the introduction of a free lunch program in schools lead to an improvement in the students' academic performance?", "dataset_path": "benchmark/synthetic_data/did_twfe_data_3.csv", "answer": "3.0314519928382966"}
+
+{"type": "analysis_result", "data": {"method_used": "Difference-in-Differences", "causal_effect": 3.0569109353906168, "query": "My question is: Did the introduction of a free lunch program in schools lead to an improvement in the students' academic performance?", "confidence_interval": [2.830381302584524, 3.2834405681967094], "standard_error": 0.11557846704986907}}
+
+{"query_number": 9, "natural_language_query": "Did the new drug treatment increase the recovery rate of patients suffering from the specific illness?", "dataset_path": "benchmark/synthetic_data/did_twfe_data_1.csv", "answer": "9.500944538118738"}
+
+{"type": "analysis_result", "data": {"method_used": "Difference-in-Differences", "causal_effect": 9.596604140709948, "query": "My question is: Did the new drug treatment increase the recovery rate of patients suffering from the specific illness?", "confidence_interval": [9.287768110169953, 9.905440171249943], "standard_error": 0.15757229876469925}}
+
+{"query_number": 10, "natural_language_query": "The filtered query is: \"Did the introduction of electricity in rural villages lead to an increase in their average income?\"", "dataset_path": "benchmark/synthetic_data/did_twfe_data_0.csv", "answer": "3.821950733"}
+
+{"type": "analysis_result", "data": {"method_used": "Difference-in-Differences", "causal_effect": 3.5390686024414553, "query": "Did the introduction of electricity in rural villages lead to an increase in their average income?", "confidence_interval": [3.1588130602695648, 3.9193241446133458], "standard_error": 0.1940114946862787}}
+
+{"query_number": 11, "natural_language_query": "The filtered query is: \"Did the employees who participated in the newly introduced training program show an improvement in their productivity scores?\"", "dataset_path": "benchmark/synthetic_data/iv_encouragement_data_4.csv", "answer": "6.980410870992743"}
+
+{"type": "analysis_result", "data": {"method_used": "Instrumental Variable Analysis", "causal_effect": 6.887133258616382, "query": "Did the employees who participated in the newly introduced training program show an improvement in their productivity scores?", "confidence_interval": [5.8421090380556455, 7.956765661254603], "standard_error": null}}
+
+{"query_number": 12, "natural_language_query": "\"Does attending a health awareness program lead to a decrease in potential cancer risk factors?\"", "dataset_path": "benchmark/synthetic_data/iv_encouragement_data_0.csv", "answer": "2.5198801332968626"}
+
+{"type": "analysis_result", "data": {"method_used": "Instrumental Variable Analysis", "causal_effect": 2.1170624704107155, "query": "Does attending a health awareness program lead to a decrease in potential cancer risk factors?", "confidence_interval": [1.363922004799028, 2.999974036176909], "standard_error": null}}
+
+{"query_number": 13, "natural_language_query": "Did participating in the physical activity program improve the mental health of the senior citizens?", "dataset_path": "benchmark/synthetic_data/iv_encouragement_data_1.csv", "answer": "9.203920975593215"}
+
+{"type": "analysis_result", "data": {"method_used": "Instrumental Variable Analysis", "causal_effect": 9.649010869250828, "query": "My question is: Did participating in the physical activity program improve the mental health of the senior citizens?", "confidence_interval": [7.772932115312031, 10.742419221485369], "standard_error": null}}
+
+{"query_number": 14, "natural_language_query": "\"Did the 'Quit Smoking' campaign impact the smoking intensity among the participants?\"", "dataset_path": "benchmark/synthetic_data/iv_encouragement_data_3.csv", "answer": "6.137908312283837"}
+
+{"type": "analysis_result", "data": {"method_used": "Instrumental Variable Analysis", "causal_effect": 5.306484895618219, "query": "Did the 'Quit Smoking' campaign impact the smoking intensity among the participants?", "confidence_interval": [3.6118181589809026, 6.458542022898348], "standard_error": null}}
+
+{"query_number": 15, "natural_language_query": "Did the individuals who decided to follow the new dietary plan experience an improvement in their overall health status?", "dataset_path": "benchmark/synthetic_data/iv_encouragement_data_2.csv", "answer": "5.8430901748019135"}
+
+{"type": "analysis_result", "data": {"method_used": "Instrumental Variable Analysis", "causal_effect": 5.660577439595419, "query": "My question is: Did the individuals who decided to follow the new dietary plan experience an improvement in their overall health status?", "confidence_interval": [5.288831098920782, 6.0088777467861245], "standard_error": null}}
+
+{"query_number": 16, "natural_language_query": "\"Does the use of the new anti-hypertensive drug reduce the blood pressure in hypertensive patients?\"", "dataset_path": "benchmark/synthetic_data/iv_data_0.csv", "answer": "1.6755042719092241"}
+
+{"query_number": 17, "natural_language_query": "\"Does taking the new cholesterol-lowering drug reduce cholesterol levels in high-risk patients?\"", "dataset_path": "benchmark/synthetic_data/iv_data_1.csv", "answer": "3.906515411974026"}
+
+{"type": "analysis_result", "data": {"method_used": "Instrumental Variable Analysis", "causal_effect": 3.7474859180100197, "query": "\"Does taking the new cholesterol-lowering drug reduce cholesterol levels in high-risk patients?\"", "confidence_interval": [3.4991927423093157, 4.048220805959799], "standard_error": null}}
+
+{"query_number": 18, "natural_language_query": "\"Does running online advertisements increase the sales of an e-commerce platform?\"", "dataset_path": "benchmark/synthetic_data/iv_data_3.csv", "answer": "4.814678840535846"}
+
+{"type": "analysis_result", "data": {"method_used": "Instrumental Variable Analysis", "causal_effect": 4.853510683535333, "query": "Does running online advertisements increase the sales of an e-commerce platform?", "confidence_interval": [4.6367100608980785, 5.138055289605003], "standard_error": null}}
+
+{"query_number": 19, "natural_language_query": "\"Did the introduction of the educational reform policy lead to an improvement in national standardized test scores?\"", "dataset_path": "benchmark/synthetic_data/iv_data_2.csv", "answer": "1.3693586953611558"}
+
+{"type": "analysis_result", "data": {"method_used": "Instrumental Variable Analysis", "causal_effect": 1.2407350174330578, "query": "Did the introduction of the educational reform policy lead to an improvement in national standardized test scores?", "confidence_interval": [0.9220334058105923, 1.7599976437782066], "standard_error": null}}
+
+{"query_number": 20, "natural_language_query": "Can a higher dosage of statins reduce the severity of heart disease?", "dataset_path": "benchmark/synthetic_data/iv_data_4.csv", "answer": "4.2160975166439805"}
+
+{"type": "analysis_result", "data": {"method_used": "Instrumental Variable Analysis", "causal_effect": 4.346770756981091, "query": "Can a higher dosage of statins reduce the severity of heart disease?", "confidence_interval": [3.791793806646197, 4.625288720971727], "standard_error": null}}
+
+{"query_number": 21, "natural_language_query": "\"Did the adults who followed the Mediterranean diet show a greater reduction in their weight compared to those who followed the other types of diets?\"", "dataset_path": "benchmark/synthetic_data/multi_rct_data_1.csv", "answer": "[0.0, 9.548445162702263, 5.254055209391606]"}
+
+{"type": "analysis_result", "data": {"method_used": "Linear Regression", "causal_effect": 2.8865019975117403, "query": "\"Did the adults who followed the Mediterranean diet show a greater reduction in their weight compared to those who followed the other types of diets?\"", "confidence_interval": [1.6595838267966145, 4.113420168226866], "standard_error": 0.6248542505297572}}
+
+{"query_number": 22, "natural_language_query": "\"Did the patients who were assigned the drug with the highest dosage show a greater decrease in their blood sugar levels compared to patients who received the other treatments?\"", "dataset_path": "benchmark/synthetic_data/multi_rct_data_0.csv", "answer": "[0.0, 4.917404388638106, 5.334706963930968, 7.242823887300747]"}
+
+{"type": "analysis_result", "data": {"method_used": "Linear Regression", "causal_effect": 2.1741927550761027, "query": "Did the patients who were assigned the drug with the highest dosage show a greater decrease in their blood sugar levels compared to patients who received the other treatments?", "confidence_interval": [2.074321209369376, 2.2740643007828294], "standard_error": 0.050849839456876884}}
+
+{"query_number": 23, "natural_language_query": "\"Did students who were assigned to the blended study technique exhibit a higher academic performance compared to those who used traditional study methods or online learning platforms?\"", "dataset_path": "benchmark/synthetic_data/multi_rct_data_2.csv", "answer": "[0.0, 6.617078909810423, 6.2214609548121675]"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 0.2518758068675243, "query": "Did students who were assigned to the blended study technique exhibit a higher academic performance compared to those who used traditional study methods or online learning platforms?", "confidence_interval": [-0.22939249339972068, 0.7331441071347693], "standard_error": 0.24515488028487056}}
+
+{"query_number": 24, "natural_language_query": "\"Does the combination of medication and lifestyle modification lead to a higher reduction in cholesterol levels compared to only medication or lifestyle modification?\"", "dataset_path": "benchmark/synthetic_data/multi_rct_data_3.csv", "answer": "[0.0, 3.7026948446488213, 8.339108242956602]"}
+
+{"type": "analysis_result", "data": {"method_used": "Linear Regression", "causal_effect": 4.214520674792657, "query": "Does the combination of medication and lifestyle modification lead to a higher reduction in cholesterol levels compared to only medication or lifestyle modification?", "confidence_interval": [4.114821642067788, 4.314219707517525], "standard_error": 0.050768965525121015}}
+
+{"query_number": 25, "natural_language_query": "Did the participants who engaged in yoga show a greater improvement in their cognitive performance compared to those who were assigned other types of exercises?", "dataset_path": "benchmark/synthetic_data/multi_rct_data_4.csv", "answer": "[0.0, 6.375471250492411, 6.807301544211651, 7.129073755898374, 8.346422069254587]"}
+
+{"type": "analysis_result", "data": {"method_used": "Linear Regression", "causal_effect": 1.6637680987930004, "query": "Did the participants who engaged in yoga show a greater improvement in their cognitive performance compared to those who were assigned other types of exercises?", "confidence_interval": [1.235999554780441, 2.09153664280556], "standard_error": 0.21791718746232136}}
+
+{"query_number": 26, "natural_language_query": "\"Does having a gym membership improve the physical fitness score of individuals?\"", "dataset_path": "benchmark/synthetic_data/observational_data_8.csv", "answer": "6.272087883742298"}
+
+{"type": "analysis_result", "data": {"method_used": "Regression Discontinuity Design", "causal_effect": -0.5622697557453448, "query": "\"Does having a gym membership improve the physical fitness score of individuals?\"", "confidence_interval": [-13.861677929643136, 12.737138418152448], "standard_error": 6.042479710947517}}
+
+{"query_number": 27, "natural_language_query": "\"Does receiving psychological counseling improve the mental health score of adults?\"", "dataset_path": "benchmark/synthetic_data/observational_data_9.csv", "answer": "8.366674159926987"}
+
+{"query_number": 28, "natural_language_query": "\"Does participation in a professional development training program enhance the performance of employees in a multinational company?\"", "dataset_path": "benchmark/synthetic_data/observational_data_2.csv", "answer": "6.457189039988279"}
+
+{"query_number": 29, "natural_language_query": "\"Does receiving financial education contribute to improving an individual's overall financial wellness?\"", "dataset_path": "benchmark/synthetic_data/observational_data_3.csv", "answer": "1.9545841535925945"}
+
+{"query_number": 30, "natural_language_query": "\"Does the use of blood pressure medication help in controlling blood pressure levels among adults?\"", "dataset_path": "benchmark/synthetic_data/observational_data_1.csv", "answer": "1.303792393808875"}
+
+{"query_number": 31, "natural_language_query": "\"Did participation in the health and wellness program improve the overall health score of adults?\"", "dataset_path": "benchmark/synthetic_data/observational_data_0.csv", "answer": "3.5744843949446405"}
+
+{"query_number": 32, "natural_language_query": "\"Does the provision of physical therapy after hip replacement surgery contribute to a decrease in the recovery time of the patients?\"", "dataset_path": "benchmark/synthetic_data/observational_data_4.csv", "answer": "6.870936932176191"}
+
+{"type": "analysis_result", "data": {"method_used": "Regression Discontinuity Design", "causal_effect": -1.9093247313126716, "query": "\"Does the provision of physical therapy after hip replacement surgery contribute to a decrease in the recovery time of the patients?\"", "confidence_interval": [-3.8015491158789434, -0.01710034674639993], "standard_error": 0.9615435180181836}}
+
+{"query_number": 33, "natural_language_query": "\"Does providing loans to customers have a positive impact on their credit scores?\"", "dataset_path": "benchmark/synthetic_data/observational_data_5.csv", "answer": "5.884287934440813"}
+
+{"query_number": 34, "natural_language_query": "\"Does undergoing an employment training program lead to increased job satisfaction among adults?\"", "dataset_path": "benchmark/synthetic_data/observational_data_7.csv", "answer": "7.227879569599541"}
+
+{"query_number": 35, "natural_language_query": "\"Does providing financial aid to individuals help in improving their credit score?\"", "dataset_path": "benchmark/synthetic_data/observational_data_6.csv", "answer": "1.932955176164378"}
+
+{"query_number": 36, "natural_language_query": "\"Does undergoing the newly developed cognitive behavioral therapy program lead to a significant reduction in anxiety levels among individuals suffering from Generalized Anxiety Disorder compared to those who continue their usual care?\"", "dataset_path": "benchmark/synthetic_data/rct_data_8.csv", "answer": "8.786058619102619"}
+
+{"type": "analysis_result", "data": {"method_used": "Linear Regression", "causal_effect": 8.828626593294219, "query": "Does undergoing the newly developed cognitive behavioral therapy program lead to a significant reduction in anxiety levels among individuals suffering from Generalized Anxiety Disorder compared to those who continue their usual care?", "confidence_interval": [8.525525104186098, 9.13172808240234], "standard_error": 0.1542448060709656}}
+
+{"query_number": 37, "natural_language_query": "\"Does participation in the new cognitive enrichment program lead to a significant improvement in the academic performance of students?\"", "dataset_path": "benchmark/synthetic_data/rct_data_9.csv", "answer": "8.629701286"}
+
+{"query_number": 38, "natural_language_query": "Does administering the newly developed vaccine improve the immune response among individuals compared to those who received the placebo?", "dataset_path": "benchmark/synthetic_data/rct_data_2.csv", "answer": "6.072467523"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 5.5906950305282255, "query": "My question is: Does administering the newly developed vaccine improve the immune response among individuals compared to those who received the placebo?", "confidence_interval": [4.6526630580742845, 6.5287270029821665], "standard_error": 0.47674000929530747}}
+
+{"query_number": 39, "natural_language_query": "Did the new type of physical therapy technique improve knee mobility compared to the standard therapy?", "dataset_path": "benchmark/synthetic_data/rct_data_3.csv", "answer": "2.5779798542488677"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 3.3852965761582956, "query": "Did the new type of physical therapy technique improve knee mobility compared to the standard therapy?", "confidence_interval": [2.2393036477561843, 4.531289504560407], "standard_error": 0.5832358577233442}}
+
+{"query_number": 40, "natural_language_query": "\"Does the administration of statins significantly lower the risk of heart attacks among adults?\"", "dataset_path": "benchmark/synthetic_data/rct_data_1.csv", "answer": "5.584149973506322"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 5.313034282490872, "query": "Does the administration of statins significantly lower the risk of heart attacks among adults?", "confidence_interval": [4.422871528924405, 6.203197036057338], "standard_error": 0.452364871755712}}
+
+{"query_number": 41, "natural_language_query": "\"Does taking the new antidepressant medication reduce the severity of depression more than taking a placebo?\"", "dataset_path": "benchmark/synthetic_data/rct_data_0.csv", "answer": "8.811160787560906"}
+
+{"type": "analysis_result", "data": {"method_used": "Linear Regression", "causal_effect": 8.913114731503686, "query": "Does taking the new antidepressant medication reduce the severity of depression more than taking a placebo?", "confidence_interval": [8.197818769909109, 9.628410693098264], "standard_error": 0.3638493669659587}}
+
+{"query_number": 42, "natural_language_query": "\"Does the administration of the new experimental drug result in better blood sugar control for type 2 diabetes patients compared to a placebo?\"", "dataset_path": "benchmark/synthetic_data/rct_data_4.csv", "answer": "3.490116611027265"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 4.170891574555521, "query": "Does the administration of the new experimental drug result in better blood sugar control for type 2 diabetes patients compared to a placebo?", "confidence_interval": [3.491722366656151, 4.85006078245489], "standard_error": 0.3451856382238265}}
+
+{"query_number": 43, "natural_language_query": "\"Does the intake of the experimental nutritional supplement lead to a significant reduction in cholesterol levels among adults?\"", "dataset_path": "benchmark/synthetic_data/rct_data_5.csv", "answer": "7.507661165306301"}
+
+{"type": "analysis_result", "data": {"method_used": "Linear Regression", "causal_effect": 7.545459011657453, "query": "Does the intake of the experimental nutritional supplement lead to a significant reduction in cholesterol levels among adults?", "confidence_interval": [7.019276360813357, 8.07164166250155], "standard_error": 0.2675849212910504}}
+
+{"query_number": 44, "natural_language_query": "\"Does participating in a mindfulness-based stress reduction program help decrease the stress levels of employees in a corporation more than their usual work routine?\"", "dataset_path": "benchmark/synthetic_data/rct_data_7.csv", "answer": "3.9596172463185857"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 3.8495829572121645, "query": "\"Does participating in a mindfulness-based stress reduction program help decrease the stress levels of employees in a corporation more than their usual work routine?\"", "confidence_interval": [3.2915216859770218, 4.407644228447307], "standard_error": 0.2837168241233108}}
+
+{"query_number": 45, "natural_language_query": "\"Does participation in a high-intensity interval training regimen help lower cholesterol levels compared to maintaining a regular exercise routine?\"", "dataset_path": "benchmark/synthetic_data/rct_data_6.csv", "answer": "4.986693134126712"}
+
+{"type": "analysis_result", "data": {"method_used": "Diff In Means", "causal_effect": 3.817680282330316, "query": "\"Does participation in a high-intensity interval training regimen help lower cholesterol levels compared to maintaining a regular exercise routine?\"", "confidence_interval": [2.2913206898819167, 5.344039874778716], "standard_error": 0.7759387728346899}}
+
+{"query_number": 46, "natural_language_query": "\"Did approving loans for applicants with a credit score just above the cutoff lead to a higher loan repayment rate compared to those just below the cutoff?\"", "dataset_path": "benchmark/synthetic_data/rdd_data_2.csv", "answer": "1.962260886"}
+
+{"query_number": 47, "natural_language_query": "Did the introduction of a cholesterol-lowering drug to individuals with high cholesterol levels improve their overall health status?\"", "dataset_path": "benchmark/synthetic_data/rdd_data_3.csv", "answer": "9.688903386"}
+
+{"type": "analysis_result", "data": {"method_used": "Regression Discontinuity Design", "causal_effect": 9.794654219840265, "query": "Did the introduction of a cholesterol-lowering drug to individuals with high cholesterol levels improve their overall health status?", "confidence_interval": [9.425535094237548, 10.163773345442982], "standard_error": 0.18723376096072689}}
+
+{"query_number": 48, "natural_language_query": "\"Did the job training program improve job satisfaction among the employees?\"", "dataset_path": "benchmark/synthetic_data/rdd_data_1.csv", "answer": "9.29291052"}
+
+{"type": "analysis_result", "data": {"method_used": "Regression Discontinuity Design", "causal_effect": 9.391864651209003, "query": "Did the job training program improve job satisfaction among the employees?", "confidence_interval": [9.04283284385969, 9.740896458558316], "standard_error": 0.17714772909063034}}
+
+{"query_number": 49, "natural_language_query": "\"Did the provision of additional educational resources to students with an average grade below 4 lead to an improvement in their end-of-year grades?\"", "dataset_path": "benchmark/synthetic_data/rdd_data_0.csv", "answer": "3.138267772"}
+
+{"type": "analysis_result", "data": {"method_used": "Regression Discontinuity Design", "causal_effect": 3.076581440626329, "query": "\"Did the provision of additional educational resources to students with an average grade below 4 lead to an improvement in their end-of-year grades?\"", "confidence_interval": [2.7107935576702733, 3.442369323582385], "standard_error": 0.18550057481341012}}
+
+{"query_number": 50, "natural_language_query": "\"Did the administration of a new blood pressure medication to individuals with high systolic blood pressure improve their overall health?\"", "dataset_path": "benchmark/synthetic_data/rdd_data_4.csv", "answer": "5.984575409"}
+
+{"type": "analysis_result", "data": {"method_used": "Regression Discontinuity Design", "causal_effect": 6.055176808518116, "query": "\"Did the administration of a new blood pressure medication to individuals with high systolic blood pressure improve their overall health?\"", "confidence_interval": [5.734580238049195, 6.375773378987037], "standard_error": 0.16268495809805855}}

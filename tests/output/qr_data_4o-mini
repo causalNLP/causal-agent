@@ -1,0 +1,150 @@
+
+{"query_number": 1, "natural_language_query": "Does home visit from specilaist doctors lead to an improvement in cognitive scores?", "dataset_path": "benchmark/all_data_1/ihdp_0.csv", "answer": "4.02"}
+
+{"type": "analysis_result", "data": {"query": null, "method_used": "Linear Regression (OLS)", "causal_effect": null, "standard_error": null, "confidence_interval": [null, null]}}
+
+{"query_number": 2, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_1.csv", "answer": "4.05"}
+
+{"type": "analysis_result", "data": {"query": "My question is: What is the effect of home visits on the cognitive test scores of children who actually received the intervention? The dataset is located at: benchmark/all_data_1/ihdp_1.csv Dataset Description: The CSV file ihdp_1.csv contains data obtained from the Infant Health and Development Program (IHDP). The study is designed to evaluate the effect of home visit from specialist doctors on the cognitive test scores of premature infants. The confounders x (x1-x25) correspond to collected measurements of the children and their mothers, including measurements on the child (birth weight, head circumference, weeks born preterm, birth order, first born, neonatal health index, sex, twin status), as well as behaviors engaged in during the pregnancy (smoked cigarettes, drank alcohol, took drugs) and measurements on the mother at the time she gave birth (age, marital status, educational attainment, whether she worked during pregnancy, whether she received prenatal care) and the site (8 total) in which the family resided at the start of the intervention. There are 6 continuous covariates and 19 binary covariates.", "method_used": "Linear Regression (OLS)", "causal_effect": null, "standard_error": null, "confidence_interval": [null, null]}}
+
+{"query_number": 3, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_2.csv", "answer": "4.1"}
+
+{"type": "analysis_result", "data": {"query": "My question is: What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "method_used": "Linear Regression (OLS)", "causal_effect": null, "standard_error": null, "confidence_interval": [null, null]}}
+
+{"query_number": 4, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_3.csv", "answer": "4.27"}
+
+{"type": "analysis_result", "data": {"query": "My question is: What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "method_used": "Linear Regression (OLS)", "causal_effect": null, "standard_error": null, "confidence_interval": [null, null]}}
+
+{"query_number": 5, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_4.csv", "answer": "4.16"}
+
+{"type": "analysis_result", "data": {"query": null, "method_used": "Linear Regression (OLS)", "causal_effect": null, "standard_error": null, "confidence_interval": [null, null]}}
+
+{"query_number": 6, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_5.csv", "answer": "4"}
+
+{"type": "analysis_result", "data": {"query": "My question is: What is the effect of home visits on the cognitive test scores of children who actually received the intervention? The dataset is located at: benchmark/all_data_1/ihdp_5.csv Dataset Description: The CSV file ihdp_5.csv contains data obtained from the Infant Health and Development Program (IHDP). The study is designed to evaluate the effect of home visit from specialist doctors on the cognitive test scores of premature infants. The confounders x (x1-x25) correspond to collected measurements of the children and their mothers, including measurements on the child (birth weight, head circumference, weeks born preterm, birth order, first born, neonatal health index, sex, twin status), as well as behaviors engaged in during the pregnancy (smoked cigarettes, drank alcohol, took drugs) and measurements on the mother at the time she gave birth (age, marital status, educational attainment, whether she worked during pregnancy, whether she received prenatal care) and the site (8 total) in which the family resided at the start of the intervention. There are 6 continuous covariates and 19 binary covariates.", "method_used": "Linear Regression (OLS)", "causal_effect": null, "standard_error": null, "confidence_interval": [null, null]}}
+
+{"query_number": 7, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_6.csv", "answer": "3.99"}
+
+{"type": "analysis_result", "data": {"query": "My question is: What is the effect of home visits on the cognitive test scores of children who actually received the intervention? The dataset is located at: benchmark/all_data_1/ihdp_6.csv Dataset Description: The CSV file ihdp_6.csv contains data obtained from the Infant Health and Development Program (IHDP). The study is designed to evaluate the effect of home visit from specialist doctors on the cognitive test scores of premature infants. The confounders x (x1-x25) correspond to collected measurements of the children and their mothers, including measurements on the child (birth weight, head circumference, weeks born preterm, birth order, first born, neonatal health index, sex, twin status), as well as behaviors engaged in during the pregnancy (smoked cigarettes, drank alcohol, took drugs) and measurements on the mother at the time she gave birth (age, marital status, educational attainment, whether she worked during pregnancy, whether she received prenatal care) and the site (8 total) in which the family resided at the start of the intervention. There are 6 continuous covariates and 19 binary covariates.", "method_used": "Linear Regression (OLS)", "causal_effect": null, "standard_error": null, "confidence_interval": [null, null]}}
+
+{"query_number": 8, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_7.csv", "answer": "3.85"}
+
+{"type": "analysis_result", "data": {"query": "My question is: What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "method_used": "Linear Regression (OLS)", "causal_effect": null, "standard_error": null, "confidence_interval": [null, null]}}
+
+{"query_number": 9, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_8.csv", "answer": "10.47"}
+
+{"type": "analysis_result", "data": {"query": "My question is: What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "method_used": "Linear Regression (OLS)", "causal_effect": null, "standard_error": null, "confidence_interval": [null, null]}}
+
+{"query_number": 10, "natural_language_query": "What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "dataset_path": "benchmark/all_data_1/ihdp_9.csv", "answer": "4.59"}
+
+{"type": "analysis_result", "data": {"query": "My question is: What is the effect of home visits on the cognitive test scores of children who actually received the intervention?", "method_used": "Linear Regression (OLS)", "causal_effect": null, "standard_error": null, "confidence_interval": [null, null]}}
+
+{"query_number": 11, "natural_language_query": "Is there any advantage to taking classes online in comparison to face-to-face or blended format in terms of exam performance?", "dataset_path": "benchmark/all_data_1/online_classroom.csv", "answer": "-4.91"}
+
+{"query_number": 12, "natural_language_query": "Do more years of education lead to higher log hourly wages?", "dataset_path": "benchmark/all_data_1/wage.csv", "answer": "0.0529"}
+
+{"type": "analysis_result", "data": {"query": "My question is: Do more years of education lead to higher log hourly wages? The dataset is located at: benchmark/all_data_1/wage.csv Dataset Description: To estimate the impact of an additional year of education on hourly wage, we look at a sample size representing individuals with varying levels of education and their hourly wages. The dataset wage.csv contains the necessary data for our analysis. The columns in this dataset include 'wage', representing the total income; 'hours', representing the total hours worked; and 'educ', representing the years of education; and other variables like father's education (feduc), mother's education (feduc), number of siblings (sibs), birth order in the family (brthord), marital status (married), race(black), urban (urban) etc.", "method_used": "evan-magnusson/rdd", "causal_effect": 5.908710655651985, "standard_error": 0.11207733728214295, "confidence_interval": [5.688362787894473, 6.129058523409498]}}
+
+{"query_number": 13, "natural_language_query": "Does an increase in years of education help increase log hourly wages when considering other variables of interest?", "dataset_path": "benchmark/all_data_1/wage.csv", "answer": "0.0411"}
+
+{"type": "analysis_result", "data": {"query": null, "method_used": "evan-magnusson/rdd", "causal_effect": 5.908710655651985, "standard_error": 0.11207733728214295, "confidence_interval": [5.688362787894473, 6.129058523409498]}}
+
+{"query_number": 14, "natural_language_query": "What's the effect of graduating 12th grade on hourly wage?", "dataset_path": "benchmark/all_data_1/wage.csv", "answer": "4.9"}
+
+{"type": "analysis_result", "data": {"query": "My question is: What's the effect of graduating 12th grade on hourly wage?", "method_used": "evan-magnusson/rdd", "causal_effect": 5.908710655651985, "standard_error": 0.11207733728214295, "confidence_interval": [5.688362787894473, 6.129058523409498]}}
+
+{"query_number": 15, "natural_language_query": "Does sending reminder emails have an impact on the repayment of debts while including suitable controls?", "dataset_path": "benchmark/all_data_1/collections_email.csv", "answer": "4.43"}
+
+{"type": "analysis_result", "data": {"query": "My question is: Does sending reminder emails have an impact on the repayment of debts while including suitable controls?", "method_used": "Linear Regression (OLS)", "causal_effect": null, "standard_error": null, "confidence_interval": [null, null]}}
+
+{"query_number": 16, "natural_language_query": "Is the new drug effective in reducing hospital stay if we control for severity?", "dataset_path": "benchmark/all_data_1/hospital_treatment.csv", "answer": "-7.59"}
+
+{"type": "analysis_result", "data": {"query": null, "method_used": "Linear Regression (OLS)", "causal_effect": null, "standard_error": null, "confidence_interval": [null, null]}}
+
+{"query_number": 17, "natural_language_query": "How much more does a person earn for each extra year of education?", "dataset_path": "benchmark/all_data_1/ak91.csv", "answer": "0.0853"}
+
+{"type": "analysis_result", "data": {"query": "How much more does a person earn for each extra year of education?", "method_used": null, "causal_effect": -0.00028670110980054387, "standard_error": 0.00024245986938782455, "confidence_interval": [-0.0007619137214969656, 0.00018851150189587782]}}
+
+{"query_number": 18, "natural_language_query": "Did the marketing push help increase in-app purchases?", "dataset_path": "benchmark/all_data_1/app_engagement_push.csv", "answer": "3.29"}
+
+{"type": "analysis_result", "data": {"query": "Did the marketing push help increase in-app purchases?", "method_used": null, "causal_effect": 36.44995771074147, "standard_error": null, "confidence_interval": [2.004093737840293, 70.89582168364265]}}
+
+{"query_number": 19, "natural_language_query": "What is the effect of the medication on the recovery time?", "dataset_path": "benchmark/all_data_1/medicine_impact_recovery.csv", "answer": "-7.7"}
+
+{"type": "analysis_result", "data": {"query": null, "method_used": "Linear Regression (OLS)", "causal_effect": null, "standard_error": null, "confidence_interval": [null, null]}}
+
+{"query_number": 20, "natural_language_query": "Does participating in seminars meant for boosting growth mindset lead to better academic achievement?", "dataset_path": "benchmark/all_data_1/learning_mindset.csv", "answer": "0.389"}
+
+{"type": "analysis_result", "data": {"query": null, "method_used": "evan-magnusson/rdd", "causal_effect": 0.06547822573212665, "standard_error": 0.08062086755223902, "confidence_interval": [-0.09260089429930606, 0.22355734576355935]}}
+
+{"query_number": 21, "natural_language_query": "Does using billboards lead to higher bank deposits?", "dataset_path": "benchmark/all_data_1/billboard_impact.csv", "answer": "6.52"}
+
+{"type": "analysis_result", "data": {"query": null, "method_used": null, "causal_effect": 6.537610021590434, "standard_error": 0.19951422646983133, "confidence_interval": [6.146569323306197, 6.928650719874671]}}
+
+{"query_number": 22, "natural_language_query": "By how much does turning 21, the legal drinking age affect the risk of death from any cause?", "dataset_path": "benchmark/all_data_1/drinking.csv", "answer": "7.66"}
+
+{"type": "analysis_result", "data": {"query": "My question is: By how much does turning 21, the legal drinking age affect the risk of death from any cause? The dataset is located at: benchmark/all_data_1/drinking.csv Dataset Description: To estimate the impacts of alcohol on death, we could use the fact that legal drinking age imposes a discontinuity on nature. In the US, those just under 21 years don\u2019t drink (or drink much less) while those just older than 21 do drink. The csv file drinking.csv contains mortality data aggregated by age. Each row is the average age of a group of people and the average mortality by all causes (all), by moving vehicle accident (mva), by suicide (suicide), by homicide (homicide), by drugs (drugs).", "method_used": "evan-magnusson/rdd", "causal_effect": 7.9230672163444815, "standard_error": 1.5841335148596065, "confidence_interval": [4.713307828104135, 11.132826604584828]}}
+
+{"query_number": 23, "natural_language_query": "Did Proposition 99 help reduce cigarette sales?", "dataset_path": "benchmark/all_data_1/smoking2.csv", "answer": "-27.35"}
+
+{"type": "analysis_result", "data": {"query": null, "method_used": null, "causal_effect": -10.797285328544858, "standard_error": 1.413248006746052, "confidence_interval": [-13.567200522990138, -8.027370134099577]}}
+
+{"query_number": 24, "natural_language_query": "How much did the earnings for people who took part in the trainee program increase on average compared to similar people who didn\u2019t join?", "dataset_path": "benchmark/all_data_1/trainee_unique_on_age.csv", "answer": "2457.9"}
+
+{"query_number": 25, "natural_language_query": "What is the effect of becoming members of Parliament on the net (log) wealth for Tory candidates?", "dataset_path": "benchmark/all_data_1/MPs.csv", "answer": "1.37"}
+
+{"type": "analysis_result", "data": {"query": "What is the effect of becoming members of Parliament on the net (log) wealth for Tory candidates?", "method_used": "evan-magnusson/rdd", "causal_effect": -0.13974188720287636, "standard_error": 0.44428629282222626, "confidence_interval": [-1.0147630271349564, 0.7352792527292037]}}
+
+{"query_number": 26, "natural_language_query": "What is the effect of the reservation policy on the number of new or repaired drinking water facilities since the reserve policy started?", "dataset_path": "benchmark/all_data_1/women.csv", "answer": "9.25"}
+
+{"type": "analysis_result", "data": {"query": null, "method_used": "Linear Regression (OLS)", "causal_effect": null, "standard_error": null, "confidence_interval": [null, null]}}
+
+{"query_number": 27, "natural_language_query": "What is the difference in the effect of the Neighbors message on whether the voter voted in the 2006 primary election between those who voted in the 2004 primary election and those who did not?", "dataset_path": "benchmark/all_data_1/social.csv", "answer": "0.027"}
+
+{"type": "analysis_result", "data": {"query": "My question is: What is the difference in the effect of the Neighbors message on whether the voter voted in the 2006 primary election between those who voted in the 2004 primary election and those who did not?", "method_used": "Linear Regression (OLS)", "causal_effect": null, "standard_error": null, "confidence_interval": [null, null]}}
+
+{"query_number": 28, "natural_language_query": "What is the effect of the Neighbors message on whether the voter voted in the 2006 primary election if the voter's age was 25 in 2006?", "dataset_path": "benchmark/all_data_1/social.csv", "answer": "0.055"}
+
+{"type": "analysis_result", "data": {"query": "My question is: What is the effect of the Neighbors message on whether the voter voted in the 2006 primary election if the voter's age was 25 in 2006?", "method_used": "Linear Regression (OLS)", "causal_effect": null, "standard_error": null, "confidence_interval": [null, null]}}
+
+{"query_number": 29, "natural_language_query": "What is the effect of the Neighbors message on whether the voter voted in the 2006 primary election if the voter's age was 65 in 2006?", "dataset_path": "benchmark/all_data_1/social.csv", "answer": "0.079"}
+
+{"type": "analysis_result", "data": {"query": "My question is: What is the effect of the Neighbors message on whether the voter voted in the 2006 primary election if the voter's age was 65 in 2006?", "method_used": "Linear Regression (OLS)", "causal_effect": null, "standard_error": null, "confidence_interval": [null, null]}}
+
+{"query_number": 30, "natural_language_query": "Does the job training program improve employment prospects for those who received the training?", "dataset_path": "benchmark/all_data_1/jobs_0.csv", "answer": "0.074"}
+
+{"type": "analysis_result", "data": {"query": null, "method_used": "evan-magnusson/rdd", "causal_effect": 0.07087701688173485, "standard_error": 0.030801627860122957, "confidence_interval": [0.010430726797099138, 0.13132330696637057]}}
+
+{"query_number": 31, "natural_language_query": "", "dataset_path": "benchmark/all_data_1/jobs_1.csv", "answer": "0.025"}
+
+{"type": "analysis_result", "data": {"query": "My question is: The dataset is located at: benchmark/all_data_1/jobs_1.csv Dataset Description: The CSV file jobs_1.csv contains observational data obtained from the National Supported Work program. The study is designed to evaluate the effect of job training (t) on the income and employment status after training (y). The confounders x (x0-x16) correspond to covariates such as age and education, as well as previous earnings.", "method_used": "evan-magnusson/rdd", "causal_effect": 0.07307492765747285, "standard_error": 0.03086745355932883, "confidence_interval": [0.01250660629619968, 0.13364324901874602]}}
+
+{"query_number": 32, "natural_language_query": "", "dataset_path": "benchmark/all_data_1/jobs_2.csv", "answer": "0.081"}
+
+{"type": "analysis_result", "data": {"query": "My question is: The dataset is located at: benchmark/all_data_1/jobs_2.csv Dataset Description: The CSV file jobs_2.csv contains observational data obtained from the National Supported Work program. The study is designed to evaluate the effect of job training (t) on the income and employment status after training (y). The confounders x (x0-x16) correspond to covariates such as age and education, as well as previous earnings.", "method_used": "evan-magnusson/rdd", "causal_effect": 0.023007075261647546, "standard_error": 0.026122807923686365, "confidence_interval": [-0.028235549484186752, 0.07424970000748185]}}
+
+{"query_number": 33, "natural_language_query": "", "dataset_path": "benchmark/all_data_1/jobs_3.csv", "answer": "0.11"}
+
+{"type": "analysis_result", "data": {"query": null, "method_used": "evan-magnusson/rdd", "causal_effect": 0.03463050353422087, "standard_error": 0.029654139843071612, "confidence_interval": [-0.023554447883699536, 0.09281545495214127]}}
+
+{"query_number": 34, "natural_language_query": "", "dataset_path": "benchmark/all_data_1/jobs_4.csv", "answer": "0.075"}
+
+{"type": "analysis_result", "data": {"query": null, "method_used": null, "causal_effect": 0.0, "standard_error": null, "confidence_interval": [-0.09817612579542488, 0.09817612579542488]}}
+
+{"query_number": 35, "natural_language_query": "", "dataset_path": "benchmark/all_data_1/jobs_5.csv", "answer": "0.097"}
+
+{"type": "analysis_result", "data": {"query": "My question is: The dataset is located at: benchmark/all_data_1/jobs_5.csv Dataset Description: The CSV file jobs_5.csv contains observational data obtained from the National Supported Work program. The study is designed to evaluate the effect of job training (t) on the income and employment status after training (y). The confounders x (x0-x16) correspond to covariates such as age and education, as well as previous earnings.", "method_used": null, "causal_effect": 0.14042553191489363, "standard_error": null, "confidence_interval": [0.03939321648249079, 0.24145784734729647]}}
+
+{"query_number": 36, "natural_language_query": "", "dataset_path": "benchmark/all_data_1/jobs_6.csv", "answer": "0.01"}
+
+{"type": "analysis_result", "data": {"query": "My question is: The dataset is located at: benchmark/all_data_1/jobs_6.csv Dataset Description: The CSV file jobs_6.csv contains observational data obtained from the National Supported Work program. The study is designed to evaluate the effect of job training (t) on the income and employment status after training (y). The confounders x (x0-x16) correspond to covariates such as age and education, as well as previous earnings.", "method_used": null, "causal_effect": 0.08974358974358974, "standard_error": null, "confidence_interval": [-0.023390571471893398, 0.2028777509590729]}}
+
+{"query_number": 37, "natural_language_query": "", "dataset_path": "benchmark/all_data_1/jobs_7.csv", "answer": "0.075"}
+
+{"query_number": 38, "natural_language_query": "", "dataset_path": "benchmark/all_data_1/jobs_8.csv", "answer": "0.094"}
+
+{"type": "analysis_result", "data": {"query": "My question is: The dataset is located at: benchmark/all_data_1/jobs_8.csv Dataset Description: The CSV file jobs_8.csv contains observational data obtained from the National Supported Work program. The study is designed to evaluate the effect of job training (t) on the income and employment status after training (y). The confounders x (x0-x16) correspond to covariates such as age and education, as well as previous earnings.", "method_used": null, "causal_effect": 0.08620689655172414, "standard_error": null, "confidence_interval": [-0.032491561565746924, 0.2049053546691952]}}
+
+{"query_number": 39, "natural_language_query": "", "dataset_path": "benchmark/all_data_1/jobs_9.csv", "answer": "0.073"}
+
+{"type": "analysis_result", "data": {"query": "My question is: The dataset is located at: benchmark/all_data_1/jobs_9.csv Dataset Description: The CSV file jobs_9.csv contains observational data obtained from the National Supported Work program. The study is designed to evaluate the effect of job training (t) on the income and employment status after training (y). The confounders x (x0-x16) correspond to covariates such as age and education, as well as previous earnings.", "method_used": null, "causal_effect": 0.028455284552845527, "standard_error": null, "confidence_interval": [-0.08045647406952827, 0.13736704317521933]}}

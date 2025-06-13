@@ -1,0 +1,77 @@
+
+{"query_number": 1, "natural_language_query": "Does the Hawthorn scheme lead to an increase in voter turnout?", "dataset_path": "benchmark/all_data_1/voter_turnout_data.csv", "answer": "0.026"}
+{'results': {'effect_estimate': {'Hawthorne': 0.025014937811868407}, 'confidence_interval': {'Hawthorne': [0.02012854444318028, 0.029901331180556535]}, 'standard_error': {'Hawthorne': 0.002493094882326923}, 'p_value': {'Hawthorne': 1.0920694967803512e-23},
+
+{"query_number": 2, "natural_language_query": "Does reminding citizens about their Civic Duties make them more likely to vote?", "dataset_path": "benchmark/all_data_1/voter_turnout_data.csv", "answer": "0.018"}
+
+{"query_number": 3, "natural_language_query": "How effective is the Neighbors treatment scheme in increasing voter turnout?", "dataset_path": "benchmark/all_data_1/voter_turnout_data.csv", "answer": "0.081"}
+
+{"query_number": 4, "natural_language_query": "Is the Self-treatment method effective in increasing voter turnout?", "dataset_path": "benchmark/all_data_1/voter_turnout_data.csv", "answer": "0.049"}
+
+{"query_number": 5, "natural_language_query": "Did showing students videos of doctors and soccer players encouraging taking iron supplements lead to a reduction in anemia among anemic patients?", "dataset_path": "benchmark/all_data_1/chong_iron.csv", "answer": "-0.202"}
+
+{"type": "analysis_result", "data": {"confidence_interval": [-0.18527260287830705, 0.7442647608535548], "causal_effect": 0.27949607898762385, "method_used": "Linear Regression", "standard_error": 0.23571752241889118, "query": "Did showing students videos of doctors and soccer players encouraging taking iron supplements lead to a reduction in anemia among anemic patients?"}}
+
+{"query_number": 6, "natural_language_query": "What was the effect of showing students videos of doctors and soccer players encouraging them to take iron supplements on reducing/increasing anemia among anemic students if we also consider other associated factors?", "dataset_path": "benchmark/all_data_1/chong_iron.csv", "answer": "-0.212"}
+
+{"query_number": 7, "natural_language_query": "Did iron supplementation have significant influence on the congnitive functioning of anemic patients?", "dataset_path": "benchmark/all_data_1/chong_iron.csv", "answer": "86.6394"}
+
+{"type": "analysis_result", "data": {"confidence_interval": null, "causal_effect": null, "method_used": "Instrumental Variable Analysis", "standard_error": null, "query": "Did iron supplementation have significant influence on the congnitive functioning of anemic patients?"}}
+
+{"query_number": 8, "natural_language_query": "What was the effect of the intervention on students' cognitive functioning for the anemic group if we also include suitable controls in the model?", "dataset_path": "benchmark/all_data_1/chong_iron.csv", "answer": "80.765"}
+
+{"query_number": 9, "natural_language_query": "Did iron supplementation have any effect on non-anemic students' cognitive functioning?", "dataset_path": "benchmark/all_data_1/chong_iron.csv", "answer": "-11.616"}
+
+{"query_number": 10, "natural_language_query": "What was the effect of the intervention on the anemia status of studets who were non-anemic at baseline?", "dataset_path": "benchmark/all_data_1/chong_iron.csv", "answer": "0.02"}
+
+{"query_number": 11, "natural_language_query": "Does participating in the NSW training program lead to an increase in earnings?", "dataset_path": "benchmark/all_data_1/lalonde_data.csv", "answer": "1794"}
+
+{"type": "analysis_result", "data": {"confidence_interval": [550.5748567170485, 3038.1113130334365], "causal_effect": 1794.3430848752425, "method_used": "Diff In Means", "standard_error": 632.8535512882066, "query": "Does participating in the NSW training program lead to an increase in earnings?"}}
+
+{"query_number": 12, "natural_language_query": "What is the effect of the training program on job earnings when we also consider other factors that could affect earnings?", "dataset_path": "benchmark/all_data_1/lalonde_data.csv", "answer": "1672"}
+
+{"type": "analysis_result", "data": {"confidence_interval": [550.5748567170485, 3038.1113130334365], "causal_effect": 1794.3430848752425, "method_used": "Diff In Means", "standard_error": 632.8535512882066, "query": "What is the effect of the training program on job earnings when we also consider other factors that could affect earnings?"}}
+
+{"query_number": 13, "natural_language_query": "Does participating in the NSW training program lead to an increase in earnings when we also factor in the PSID data?", "dataset_path": "benchmark/all_data_1/lalonde_data_psid.csv", "answer": "2120"}
+
+{"type": "analysis_result", "data": {"confidence_interval": [351.38860064833307, 2759.2826622702964], "causal_effect": 1555.3356314593148, "method_used": "Diff In Means", "standard_error": 612.9679395307511, "query": "Does participating in the NSW training program lead to an increase in earnings when we also factor in the PSID data?"}}
+
+{"query_number": 14, "natural_language_query": "Did an increase in minimum wage lead to an increase in employment in New Jersey?", "dataset_path": "benchmark/all_data_1/min_wage_with_fte.csv", "answer": "2.75"}
+
+{"query_number": 15, "natural_language_query": "Did an increase in minimum wage lead to an increase in employment in New Jersey if we factor in other sources of variation that could influence employment?", "dataset_path": "benchmark/all_data_1/Include covariates", "answer": "2.3"}
+
+{"query_number": 16, "natural_language_query": "Did unilateral divorce laws lead to an increase in divorce rates in the United States in the period 1968 - 1988?", "dataset_path": "benchmark/all_data_1/div_laws_data.csv", "answer": "0"}
+
+{"type": "analysis_result", "data": {"confidence_interval": [2.4251214441330604, 3.116846480616013], "causal_effect": 2.7519824648306854, "method_used": "Instrumental Variable Analysis", "standard_error": null, "query": "Did unilateral divorce laws lead to an increase in divorce rates in the United States in the period 1968 - 1988?"}}
+
+{"query_number": 17, "natural_language_query": "Does being born outside Sweden decrease my chances of getting a callback for an interview?", "dataset_path": "benchmark/all_data_1/vernby_2019.csv", "answer": "-0.089"}
+
+{"type": "analysis_result", "data": {"confidence_interval": [-0.14795086741601465, -0.0539822569309012], "causal_effect": -0.10096656217345792, "method_used": "Diff In Means", "standard_error": 0.02395255198853149, "query": "My question is: Does being born outside Sweden decrease my chances of getting a callback for an interview?"}}
+
+{"query_number": 18, "natural_language_query": "Does being born outside Sweden make it more likely to get a callback while also factoring in other variables that could influence callbacks?", "dataset_path": "benchmark/all_data_1/vernby_2019.csv", "answer": "-0.087"}
+
+{"type": "analysis_result", "data": {"confidence_interval": [-0.14795086741601465, -0.0539822569309012], "causal_effect": -0.10096656217345792, "method_used": "Diff In Means", "standard_error": 0.02395255198853149, "query": "My question is: Does being born outside Sweden make it more likely to get a callback while also factoring in other variables that could influence callbacks?"}}
+
+{"query_number": 19, "natural_language_query": "\"How does being born in Somalia impact callback rates compared to birthplaces such as Poland or Iraq, when controlling for citizenship status?\"", "dataset_path": "benchmark/all_data_1/vernby_2019.csv", "answer": "-0.146"}
+
+{"type": "analysis_result", "data": {"confidence_interval": [-0.13796297849218497, -0.0649941856293236], "causal_effect": -0.10147858206075429, "method_used": "Diff In Means", "standard_error": 0.01859970894073142, "query": "How does being born in Somalia impact callback rates compared to birthplaces such as Poland or Iraq, when controlling for citizenship status?"}}
+
+{"query_number": 20, "natural_language_query": "What is the estimated effect of education on earnings for the year 1978?", "dataset_path": "benchmark/all_data_1/card_geographic.csv", "answer": "0.132"}
+
+{"query_number": 21, "natural_language_query": "What is the estimated effect of education on earnings for the year 1978 if we consider proximity to 4 year college as a determinant of education?", "dataset_path": "benchmark/all_data_1/card_geographic.csv", "answer": "0.132"}
+
+{"type": "analysis_result", "data": {"confidence_interval": [0.06677043327863458, 0.13274114897086484], "causal_effect": 0.09975579112474971, "method_used": "Instrumental Variable Analysis", "standard_error": 0.01682277899788043, "query": "What is the estimated effect of education on earnings for the year 1978 if we consider proximity to 4 year college as a determinant of education?"}}
+
+{"query_number": 22, "natural_language_query": "What is the effect of the What's App messages on individuals' beliefs on dealing with the virus?", "dataset_path": "benchmark/all_data_1/bowles_countering.csv", "answer": "0.26"}
+
+{"type": "analysis_result", "data": {"confidence_interval": [0.05810180661910738, 0.20876012566945493], "causal_effect": 0.13343096614428115, "method_used": "Difference-in-Differences", "standard_error": 0.03843395088856764, "query": "What is the effect of the What's App messages on individuals' beliefs on dealing with the virus?"}}
+
+{"query_number": 23, "natural_language_query": "What is the effect of the What's App messages on individuals' beliefs about dealing with the virus when we also consider other control variables?", "dataset_path": "benchmark/all_data_1/bowles_countering.csv", "answer": "0.27"}
+
+{"type": "analysis_result", "data": {"confidence_interval": [0.1236507572639162, 0.3889198160434577], "causal_effect": 0.25628528665368694, "method_used": "Diff In Means", "standard_error": 0.06757734239132815, "query": "What is the effect of the What's App messages on individuals' beliefs about dealing with the virus when we also consider other control variables?"}}
+
+{"query_number": 24, "natural_language_query": "Does disseminating information to counter misinformation about COVID-19 decrease potential harmful behavior, such as not abiding by lockdowns?", "dataset_path": "benchmark/all_data_1/bowles_countering.csv", "answer": "0.32"}
+
+{"type": "analysis_result", "data": {"confidence_interval": [0.03309969810736796, 0.5733971911217615], "causal_effect": 0.3032484446145647, "method_used": "Linear Regression", "standard_error": 0.13763954355219754, "query": "My question is: Does disseminating information to counter misinformation about COVID-19 decrease potential harmful behavior, such as not abiding by lockdowns?"}}
+
+{"query_number": 25, "natural_language_query": "Does disseminating information to counter misinformation about COVID-19 decrease potential harmful behavior, such as not abiding lockdowns, if we also consider other related variables in the model?", "dataset_path": "benchmark/all_data_1/bowles_countering.csv", "answer": "0.32"}
