@@ -64,6 +64,54 @@ results = run_causal_analysis(
 print(results)
 ```
 
+## Generating Synthetic Data + Context
+### Step 1: Simulate Data
+
+The first step is to generate synthetic datasets using a specified causal inference method. Run the following command:
+
+```python
+python main/generate_synthetic.py --method {METHOD_NAME} --size {DSET_SIZE} --metadata_path {METADATA_DESTINATION} --data_path {DATA_DESTINATION} --observations {N_OBSERVATIONS}
+```
+#### Arguments
+- METHOD_NAME: Causal inference method (e.g., rct, iv, rdd)
+- DSET_SIZE: Number of datasets to generate
+- METADATA_DESTINATION: Path to the folder for saving metadata
+- DATA_DESTINATION: Path to the folder for saving data files
+- N_OBSERVATIONS: Number of observations in each dataset
+
+#### Output:
+- CSV data files in the folder {DATA_DESTINATION}/{METHOD_NAME}/data
+- Metadata file in the folder {METADATA_DESTINATION}/{METHOD_NAME}/metadata
+
+#### Specific Example:
+```python
+python main/generate_synthetic.py --method rct --size 10 --metadata_path synthetic_data --data_path synthetic_data --observations 1000
+```
+This will generate 10 datasets (rct_data_0.csv, ..., rct_data_9.csv) in synthetic_data/rct/data/ and a metadata file rct.json in synthetic_data/rct/metadata/
+
+### Step 2: Generating context + query using GPT
+Once the synthetic data is generated, the next step is to create a hypothetical context and causal query associated with each dataset. This is done using GPT.
+
+```python
+python main/generate_context.py --method {METHOD_NAME} --metadata_path {METADATA_PATH} --dataset_folder {DATASET_PATH} --output_folder {OUTPUT_PATH} -- domain {DOMAIN_NAME}
+```
+#### Arguments
+- METHOD_NAME: Causal inference method (e.g., rct, iv, rdd)
+- METADATA_PATH: Path to folder containing the metadata 
+- DATASET_PATH: Path to folder containing the CSV files 
+- OUTPUT_PATH: Path to the folder where the output is saved as a JSON file
+- DOMAIN_NAME: Name of the domain
+
+The script provides GPT via API calls the numerical summary of the synthetic data along with the metadata. GPT then generates the column names, their descriptions, and a hypothetical story describing how and why the data was collected. Finally, it generates a causal query relevant to the dataset. 
+
+### Outout 
+- A JSON file that contains variable labels, dataset description, query, and a one-to-two-sentence summary of the dataset. The file is saved in the folder OUTPUT_PATH. 
+
+### Specific Example 
+```python
+   python main/generate_context.py --method rct --dataset_folder synthetic_data/rct/data/ --metadata_path synthetic_data/rct/metadata/rct.json --output_folder synthetic_data/rct/context --domain "economics"
+```
+This will generate a JSON file synthetic_data/rct/context/rct.json that contains the relevant context and query for the rct datasets. 
 ## Project Structure
 
 The project is organized into several key directories:
