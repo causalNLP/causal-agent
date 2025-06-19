@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 # Import functions to test
-from causalscientist.auto_causal.methods.instrumental_variable.llm_assist import (
+from auto_causal.methods.instrumental_variable.llm_assist import (
     identify_instrument_variable,
     validate_instrument_assumptions_qualitative,
     interpret_iv_results
@@ -14,7 +14,7 @@ from causalscientist.auto_causal.methods.instrumental_variable.llm_assist import
 # Assume shared helpers are in this location
 # LLM_HELPERS_PATH = "causalscientist.auto_causal.utils.llm_helpers"
 # Correct patch target is where the function is *used*
-LLM_ASSIST_PATH = "causalscientist.auto_causal.methods.instrumental_variable.llm_assist"
+LLM_ASSIST_PATH = "auto_causal.methods.instrumental_variable.llm_assist"
 
 @pytest.fixture
 def mock_llm():

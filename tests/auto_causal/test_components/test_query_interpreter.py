@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import patch, MagicMock
 
-from causalscientist.auto_causal.components.query_interpreter import interpret_query
-from causalscientist.auto_causal.models import LLMTreatmentReferenceLevel
+from auto_causal.components.query_interpreter import interpret_query
+from auto_causal.models import LLMTreatmentReferenceLevel
 
 # Basic mock data setup
 MOCK_QUERY_INFO_REF_LEVEL = {
@@ -76,10 +76,10 @@ def test_interpret_query_identifies_treatment_reference_level():
         return MagicMock() # Default mock for other calls
 
     # Patch _call_llm_for_var which is used internally by interpret_query's helpers
-    with patch('causalscientist.auto_causal.components.query_interpreter._call_llm_for_var', side_effect=mock_llm_call_router) as mock_llm_call:
+    with patch('auto_causal.components.query_interpreter._call_llm_for_var', side_effect=mock_llm_call_router) as mock_llm_call:
         # Patch get_llm_client to return our mock_llm_instance
         # This ensures that _call_llm_for_var uses the intended LLM mock when called from within interpret_query
-        with patch('causalscientist.auto_causal.components.query_interpreter.get_llm_client', return_value=mock_llm_instance) as mock_get_llm:
+        with patch('auto_causal.components.query_interpreter.get_llm_client', return_value=mock_llm_instance) as mock_get_llm:
             
             result = interpret_query(
                 query_info=MOCK_QUERY_INFO_REF_LEVEL,

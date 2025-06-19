@@ -9,7 +9,7 @@ from typing import Dict, List, Any, Optional
 import json # Add this import at the top of the file
 
 # Import the new model
-from causalscientist.auto_causal.models import FormattedOutput
+from auto_causal.models import FormattedOutput
 
 # Add this module-level variable, typically near imports or at the top
 CURRENT_OUTPUT_LOG_FILE = None

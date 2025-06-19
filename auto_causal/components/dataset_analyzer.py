@@ -14,7 +14,7 @@ from scipy import stats
 import logging
 import json
 from langchain_core.language_models import BaseChatModel
-from causalscientist.auto_causal.utils.llm_helpers import llm_identify_temporal_and_unit_vars
+from auto_causal.utils.llm_helpers import llm_identify_temporal_and_unit_vars
 
 logger = logging.getLogger(__name__)
 

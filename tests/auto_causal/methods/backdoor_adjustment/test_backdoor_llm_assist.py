@@ -1,13 +1,13 @@
 import pytest
 from unittest.mock import MagicMock, patch
 import pandas as pd
-from causalscientist.auto_causal.methods.backdoor_adjustment.llm_assist import (
+from auto_causal.methods.backdoor_adjustment.llm_assist import (
     identify_backdoor_set,
     interpret_backdoor_results
 )
 
 # Patch target for the helper function where it's used
-LLM_ASSIST_MODULE = "causalscientist.auto_causal.methods.backdoor_adjustment.llm_assist"
+LLM_ASSIST_MODULE = "auto_causal.methods.backdoor_adjustment.llm_assist"
 
 @pytest.fixture
 def mock_llm():
