@@ -2,9 +2,10 @@ import pytest
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
+from statsmodels.iolib.summary import Summary
 from unittest.mock import patch, MagicMock
 
-from causalscientist.auto_causal.methods.backdoor_adjustment.estimator import estimate_effect
+from auto_causal.methods.backdoor_adjustment.estimator import estimate_effect
 
 # --- Fixtures ---
 
@@ -35,8 +36,8 @@ def sample_confounded_data():
 
 # --- Test Cases ---
 
-@patch('causalscientist.auto_causal.methods.backdoor_adjustment.estimator.run_backdoor_diagnostics')
-@patch('causalscientist.auto_causal.methods.backdoor_adjustment.estimator.interpret_backdoor_results')
+@patch('auto_causal.methods.backdoor_adjustment.estimator.run_backdoor_diagnostics')
+@patch('auto_causal.methods.backdoor_adjustment.estimator.interpret_backdoor_results')
 def test_estimate_effect_basic(mock_interpret, mock_diagnostics, sample_confounded_data):
     """Test basic execution with a valid adjustment set."""
     mock_diagnostics.return_value = {"status": "Success", "details": {}}
@@ -59,7 +60,7 @@ def test_estimate_effect_basic(mock_interpret, mock_diagnostics, sample_confound
     assert abs(results['effect_estimate'] - 3.0) < 1.0 
     assert "outcome ~ treatment + confounder1 + confounder2 + const" in results['formula']
     assert results['method_used'] == 'Backdoor Adjustment (OLS)'
-    assert isinstance(results['model_summary'], sm.iolib.summary.Summary) 
+    assert isinstance(results['model_summary'], Summary) 
     
     mock_diagnostics.assert_called_once()
     mock_interpret.assert_called_once()
