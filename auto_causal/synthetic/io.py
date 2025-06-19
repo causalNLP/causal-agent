@@ -10,8 +10,8 @@ import json
 
 from .util import export_info
 
-Path("logs").mkdir(parents=True, exist_ok=True)
-logging.config.fileConfig('log_config.ini')
+Path("reproduce_results/logs").mkdir(parents=True, exist_ok=True)
+logging.config.fileConfig('reproduce_results/log_config.ini')
 
 def config_hyperparameters(base_seed, base_mean, base_cov_diag, max_cont, max_bin, n_obs,
                            max_obs, min_obs, max_treat=2, max_periods=5, cutoff_max=25):
@@ -238,12 +238,12 @@ def generate_canonical_did_data(base_mean, base_cov, dset_size, max_cont, max_bi
         test_result = gen.test_data()
         data_dict = {"true_effect": params['tau'], "observation": params['obs'], "continuous": params['continuous'],
                      "binary": params['binary'], "type": "did_canonical"}
-        name = "did_data_{}.csv".format(i)
+        name = "did_canonical_data_{}.csv".format(i)
         logger.info("Test result: {}\n".format(test_result))
         metadata_dict[name] = data_dict
         gen.save_data(data_save_loc, name)
 
-    export_info(metadata_dict, metadata_save_loc, "did")
+    export_info(metadata_dict, metadata_save_loc, "did_canonical")
 
 def generate_data_iv(base_mean, base_cov, dset_size, max_cont, max_bin, min_obs, max_obs,
                     data_save_loc, metadata_save_loc, n_obs=None):

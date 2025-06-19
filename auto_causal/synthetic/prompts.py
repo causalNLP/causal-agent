@@ -74,29 +74,29 @@ Below is a statistical summary of the dataset:
 **Dataset Summary**
 {summary}
 
-Here are previously used contexts. **Avoid overlap with these**:
+Here are summaries of previously used contexts. **Avoid overlap with these**:
 **Previous Contexts**
 {history}
 
 ### Your Tasks:
 1. Propose a **realistic real-world scenario for this dataset. It should suit a **{method_names[method]}** study. If the data is from a randomized trial, state this clearly.
-2. Assign **realistic and concise column names**. For example, "Hours Worked per Week" can be renamed to `hours_worked`. Use snake_case formatting.
+2. Assign **realistic and concise column names**. For example, "Hours Worked per Week" can be renamed to `hours_worked`. Use snake_case formatting. 
+In the description section, give a one-line description of each column i.e. describe what each columns represents. For example, "hours_worked: the number of hours worked per week by the individual." Use newline for each column description.
 3. Write a paragraph describing the dataset, including its background, how it was collected, and the motivation for the study.
- Then, give a one-line description of each column.
 4. Propose a **natural language causal question** that is answerable using the dataset.
  **Important notes**:
  - Do not mention column names explicitly.
  - Do not describe covariates or confounders directly.
  - The question should relate the treatment and outcome, but implicitly. These are inferred from the description.
-5. Avoid all causal inference or statistical terminologies in the context and question.
-6. Write a **one-sentence summary** that captures the essence of the dataset.
+4. Avoid all causal inference or statistical terminologies in the context and question.
+5. Write a **one-to-two-sentence summary** that captures the essence of the dataset.
 
  Return your output as a JSON object with the following keys:
  - "variable_labels": {{ "X1": "education_years", ... }}
  - "description": "<paragraph>"
  - "question": "<causal question>"
- - "context": <context>
- - domain": "<domain>"
+ - "summary": <summary>
+ - "domain": "<domain>"
  """
 
     return prompt

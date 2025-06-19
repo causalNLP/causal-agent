@@ -2,8 +2,7 @@
 ## functions in auto_causal.synthetic.generator. The output is a csv file containing the data
 ## and a json file containing the metadata.
 
-## ToDO: change causalscientist after renaming the package 
-from causalscientist.auto_causal.synthetic.io import generate_observational_data, generate_rct_data, \
+from auto_causal.synthetic.io import generate_observational_data, generate_rct_data, \
     generate_multi_rct_data, generate_canonical_did_data, generate_twfe_did_data, generate_data_iv, \
     generate_encouragement_data, generate_rdd_data
 
@@ -126,7 +125,7 @@ def parse_args():
                         help="Maximum number of continuous variables in the dataset")
     parser.add_argument("-mo", "--max_observations", type=int, default=500,
                         help="Maximum number of observations in the dataset")
-    parser.add_argument("-mno", "--min_observations", type=int, default=501,
+    parser.add_argument("-mno", "--min_observations", type=int, default=300,
                         help="Minimum number of observations in the dataset")
     parser.add_argument("-nt", "--n_treatments", type=int, default=2,
                         help="Number of treatments in the dataset (for multi-RCT data)")
