@@ -52,9 +52,10 @@ bash reproduce_results/create_context_all.sh
 
 ## Step 4: Generate Summary Files
 
-1. Navigate to the home directory
-2. Run:
-   ```bash
+1. Go to the home directory
+2. Then run the following command:
+
+   ```
    bash reproduce_results/finalize_synthetic_dataset.sh
    ```
 
