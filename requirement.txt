@@ -29,7 +29,8 @@ langchain-anthropic==0.3.10
 langchain-core==0.3.50
 langchain-openai==0.3.9
 langchain-text-splitters==0.3.7
-langchain-together==0.1.7
+langchain-together==0.3.0
+langchainhub==0.1.21
 langsmith==0.3.24
 lightgbm==4.6.0
 llvmlite==0.44.0
@@ -42,5 +43,6 @@ joblib==1.4.2
 jsonpatch==1.33
 dowhy==0.12
 econml==0.15.1
+matplotlib==3.10.1
 
 
