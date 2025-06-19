@@ -1,0 +1,16 @@
+{
+    "iv_encouragement_data_0.csv": {
+        "true_effect": 2.5198801332968626,
+        "observation": 1000,
+        "continuous": 2,
+        "binary": 2,
+        "type": "encouragement"
+    },
+    "iv_encouragement_data_1.csv": {
+        "true_effect": 9.203920975593215,
+        "observation": 1000,
+        "continuous": 2,
+        "binary": 2,
+        "type": "encouragement"
+    }
+}

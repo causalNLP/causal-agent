@@ -1,0 +1,18 @@
+{
+    "rdd_data_0.csv": {
+        "true_effect": 3.138267771823652,
+        "observation": 1000,
+        "continuous": 2,
+        "binary": 2,
+        "type": "rdd",
+        "cutoff": 4
+    },
+    "rdd_data_1.csv": {
+        "true_effect": 9.2929105234229,
+        "observation": 1000,
+        "continuous": 2,
+        "binary": 2,
+        "type": "rdd",
+        "cutoff": 12
+    }
+}

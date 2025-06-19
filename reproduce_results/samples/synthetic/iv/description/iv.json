@@ -1,0 +1,36 @@
+{
+    "iv_data_0.csv": {
+        "variable_labels": {
+            "X1": "education_years",
+            "X2": "age_years",
+            "X3": "income_usd",
+            "X4": "health_score",
+            "X5": "gender",
+            "X6": "smoking_status",
+            "D": "anti_smoking_campaign_exposure",
+            "Y": "lung_cancer_risk",
+            "Z": "tv_hours_watched"
+        },
+        "description": "This dataset contains information about 1000 individuals and was collected through a nationwide health survey. It includes demographic information such as education level (in years), age (in years), income (in USD), and a health score that takes into account various health factors. It also includes binary information about the individual's gender and smoking status. Additionally, it records if an individual was exposed to an anti-smoking campaign (1 for exposed, 0 for not exposed) and their lung cancer risk score. Lastly, an instrumental variable is included: the number of hours the individual watches TV per week. The anti-smoking campaign exposure is assumed to be directly related to the amount of TV watched as the campaign was primarily disseminated through television. The motivation for this study is to examine the effectiveness of the anti-smoking campaign in reducing lung cancer risk.",
+        "question": "\"Did the exposure to the anti-smoking campaign through television have an impact on reducing the risk of lung cancer among individuals?\"",
+        "summary": "This dataset is a nationwide health survey aimed at understanding the effect of an anti-smoking campaign on reducing lung cancer risk. It includes demographic, health, and behavioral factors.",
+        "domain": "social_science"
+    },
+    "iv_data_1.csv": {
+        "variable_labels": {
+            "X1": "age",
+            "X2": "education_years",
+            "X3": "income",
+            "X4": "work_hours",
+            "X5": "gender",
+            "X6": "urban_residence",
+            "D": "job_training",
+            "Y": "job_satisfaction",
+            "Z": "company_policy"
+        },
+        "description": "The dataset consists of a national employment survey designed to examine the impact of job training on job satisfaction. Variables include age, years of education, income, work hours per week, gender (0 for male, 1 for female), urban residence (1 for urban, 0 for rural), whether the individual received job training (treatment), and job satisfaction score. The instrumental variable is the company's policy, which influences whether an employee receives job training but does not directly affect job satisfaction. The data was collected through an online survey distributed to employees across various industries nationwide. The motivation for the study was to better understand the factors influencing job satisfaction and the effectiveness of job training programs.",
+        "question": "\"Does receiving job training increase an employee's job satisfaction?\"",
+        "summary": "This dataset from a national employment survey investigates the impact of job training on job satisfaction, considering various factors such as age, education, income, work hours, gender, and urban or rural residence.",
+        "domain": "social science"
+    }
+}

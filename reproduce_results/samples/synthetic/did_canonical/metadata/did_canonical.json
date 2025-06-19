@@ -1,0 +1,16 @@
+{
+    "did_canonical_data_0.csv": {
+        "true_effect": 5.089956982132045,
+        "observation": 1000,
+        "continuous": 2,
+        "binary": 2,
+        "type": "did_canonical"
+    },
+    "did_canonical_data_1.csv": {
+        "true_effect": 1.3208427907169762,
+        "observation": 1000,
+        "continuous": 2,
+        "binary": 2,
+        "type": "did_canonical"
+    }
+}

@@ -1,0 +1,35 @@
+{
+    "observational_data_0.csv": {
+        "variable_labels": {
+            "X1": "age",
+            "X2": "education_years",
+            "X3": "monthly_income",
+            "X4": "dependents",
+            "X5": "gender",
+            "X6": "married",
+            "D": "job_training",
+            "Y": "job_satisfaction"
+        },
+        "description": "This dataset was gathered from a survey of 1,000 working adults across a variety of job sectors in a big city. The survey was part of a larger study aiming to explore the factors influencing job satisfaction among adults. Participants were asked about their age, years of education, monthly income, number of dependents, gender, and marital status. They were also asked whether they had received any job training in the past year. Job satisfaction was measured using a standardized questionnaire and transformed into a numerical scale for ease of analysis.",
+        "question": "\"Does undergoing job training lead to increased job satisfaction among working adults?\"",
+        "summary": "A survey dataset of 1,000 working adults in a big city that explores the relationship between job training and job satisfaction, while considering factors such as age, education, income, number of dependents, gender and marital status.",
+        "domain": "Social Science"
+    },
+    "observational_data_1.csv": {
+        "variable_labels": {
+            "X1": "age",
+            "X2": "education_years",
+            "X3": "monthly_income",
+            "X4": "health_score",
+            "X5": "has_children",
+            "X6": "is_employed",
+            "X7": "is_married",
+            "D": "has_health_insurance",
+            "Y": "life_satisfaction_score"
+        },
+        "description": "This dataset represents a social research study conducted on 1,000 adults living in a suburban region. The purpose of the study was to comprehend the social determinants of life satisfaction. Data was collected through a comprehensive survey that collected information on the individuals' age, number of years of education, monthly income, health score (a composite measure of physical and mental health), whether they have children, employment status, marital status, and whether they possess health insurance. A life satisfaction score was also obtained by asking individuals to rate their satisfaction with life on a scale of 0 to 100.",
+        "question": "\"Does having health insurance lead to higher life satisfaction among adults?\"",
+        "summary": "This dataset is a survey of 1,000 adults from a suburban region, exploring the relationship between having health insurance and life satisfaction, taking into account demographic, socioeconomic, and health factors.",
+        "domain": "social_science"
+    }
+}

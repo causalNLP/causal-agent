@@ -1,0 +1,34 @@
+{
+    "did_canonical_data_0.csv": {
+        "variable_labels": {
+            "X1": "income_level",
+            "X2": "age",
+            "X3": "gender",
+            "X4": "marital_status",
+            "Y": "health_score",
+            "D": "exercise_program_participation",
+            "post": "post_program_period",
+            "unit_id": "individual_id"
+        },
+        "description": "This dataset represents a health and wellness study conducted in a large metropolitan area. The study aimed to evaluate the impact of a newly implemented community exercise program on the health of residents. Data was collected from a random selection of individuals over two periods - before the implementation of the exercise program and after its implementation. The variables captured include income level, age, gender, marital status, an overall health score, and whether or not the individual participated in the exercise program. The health score is a composite measure based on various health indicators, such as blood pressure, cholesterol levels, and body mass index. The exercise program was randomly offered to certain residents, allowing for a comparison between those who participated in the program (treated) and those who did not (untreated).",
+        "question": "\"Did participation in the community exercise program improve the health of residents more than those who did not participate?\"",
+        "summary": "This dataset is part of a study assessing the impact of a community exercise program on the health of residents in a metropolitan area, with variables including income, age, gender, marital status, and health scores.",
+        "domain": "social_science"
+    },
+    "did_canonical_data_1.csv": {
+        "variable_labels": {
+            "D": "financial_aid",
+            "Y": "employment_status",
+            "X1": "household_income",
+            "X2": "age",
+            "X3": "gender",
+            "X4": "marital_status",
+            "post": "post_intervention",
+            "unit_id": "individual_id"
+        },
+        "description": "This dataset is part of a governmental study assessing the impact of a financial aid program on the employment status of individuals in a rural area. The variables include household income, age, gender, and marital status. The dataset was collected by surveying the individuals before and after the implementation of the financial aid program. The government launched this financial aid program with the intention of reducing unemployment in the area. The aim of the study is to understand the effectiveness of this financial aid program in improving the employment status of the individuals.",
+        "question": "\"Did the introduction of the financial aid program in the rural area lead to an improvement in employment rates?\"",
+        "summary": "The dataset represents a study on the effect of a financial aid program on employment rates in a rural area, considering factors like household income, age, gender, and marital status.",
+        "domain": "social_science"
+    }
+}

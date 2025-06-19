@@ -1,0 +1,32 @@
+{
+    "iv_encouragement_data_0.csv": {
+        "variable_labels": {
+            "X1": "education_years",
+            "X2": "income_level",
+            "X3": "employment_status",
+            "X4": "children_count",
+            "D": "workshop_attendance",
+            "Y": "productivity_score",
+            "Z": "workshop_invitation"
+        },
+        "description": "This dataset originates from a study examining the impact of attending productivity enhancement workshops on the productivity scores of employees across various companies. The study participants' years of education, income level, employment status (full-time or part-time), and the number of children were recorded. The treatment variable is whether or not the participant attended the workshop, and the instrument is an invitation to the workshop. The outcome variable is the participant's productivity score, a composite measure of their efficiency, effectiveness, and overall job performance. The data was collected through surveys and company records over a period of one year.",
+        "question": "\"Does attending a productivity enhancement workshop increase the productivity of employees?\"",
+        "summary": "This dataset explores the influence of attending productivity enhancement workshops on the productivity scores of employees, considering factors such as education, income level, employment status, and number of children.",
+        "domain": "social science"
+    },
+    "iv_encouragement_data_1.csv": {
+        "variable_labels": {
+            "X1": "age",
+            "X2": "gender",
+            "X3": "smoking_status",
+            "X4": "alcohol_consumption",
+            "Y": "physical_health_score",
+            "D": "exercise_program_participation",
+            "Z": "exercise_program_invitation"
+        },
+        "description": "The dataset was collected as part of a public health initiative that aimed to promote physical well-being among adults. A group of 1000 adults were randomly invited to participate in a structured exercise program. The dataset includes information about the individual's age, gender, smoking status, and alcohol consumption habits. The outcome variable is the individual's physical health score, a metric derived from several health markers including cardiovascular fitness, flexibility, and body composition. The treatment variable indicates whether the individual ended up participating in the exercise program. This study was conducted to understand how participation in an exercise program influences physical health, taking into consideration factors such as age, gender, smoking status, and alcohol consumption.",
+        "question": "\"Does receiving an invitation to a structured exercise program lead to improved physical health scores among adults?\"",
+        "summary": "This dataset examines the impact of a structured exercise program on the physical health of adults, considering factors such as age, gender, smoking status, and alcohol consumption.",
+        "domain": "Social Science"
+    }
+}

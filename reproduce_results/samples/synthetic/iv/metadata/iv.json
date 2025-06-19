@@ -1,0 +1,16 @@
+{
+    "iv_data_0.csv": {
+        "true_effect": 1.6755042719092241,
+        "observation": 1000,
+        "continuous": 4,
+        "binary": 2,
+        "type": "IV"
+    },
+    "iv_data_1.csv": {
+        "true_effect": 3.906515411974026,
+        "observation": 1000,
+        "continuous": 4,
+        "binary": 2,
+        "type": "IV"
+    }
+}

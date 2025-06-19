@@ -1,0 +1,32 @@
+{
+    "rdd_data_0.csv": {
+        "variable_labels": {
+            "X1": "age",
+            "X2": "income",
+            "X3": "gender",
+            "X4": "marital_status",
+            "D": "job_training",
+            "Y": "job_satisfaction",
+            "running_X": "job_experience"
+        },
+        "description": "This dataset includes information about a group of individuals who are part of a job training program designed to enhance job satisfaction. The variables include age, income, gender (1 for male, 0 for female), marital status (1 for married, 0 for unmarried), whether they received job training (1 for yes, 0 for no), their job satisfaction score, and years of job experience. Data was collected through surveys and program records over a certain period. The motivation for the study is to understand the impact of job training on job satisfaction, taking into account various demographic factors and job experience.",
+        "question": "\"Do employees who receive job training report higher job satisfaction than those who do not?\"",
+        "summary": "This dataset explores the impact of a job training program on job satisfaction, accounting for factors like age, income, gender, marital status, and job experience.",
+        "domain": "social_science"
+    },
+    "rdd_data_1.csv": {
+        "variable_labels": {
+            "X1": "age",
+            "X2": "income",
+            "X3": "gender",
+            "X4": "region",
+            "D": "subsidy_received",
+            "Y": "home_ownership_rate",
+            "running_X": "credit_score"
+        },
+        "description": "The dataset is from a policy intervention study in which a housing subsidy program was implemented in various regions to promote homeownership. The age, income, gender, and region of the individuals were recorded. The running variable is the individual's credit score, with the cutoff point being a score of 12. Individuals with a credit score above 12 were more likely to receive the subsidy. The outcome variable is the rate of homeownership. The study is designed to assess the effect of the subsidy program on homeownership rates, controlling for age, income, gender, and region. The data was collected through surveys and credit score records.",
+        "question": "\"Did the introduction of the housing subsidy program lead to an increase in homeownership rates?\"",
+        "summary": "This dataset explores the effect of a housing subsidy program on homeownership rates, taking into account factors such as age, income, gender, region, and credit score.",
+        "domain": "Social Science"
+    }
+}

@@ -1,0 +1,37 @@
+{
+    "rct_data_0.csv": {
+        "variable_labels": {
+            "X1": "age",
+            "X2": "education_years",
+            "X3": "income_thousands",
+            "X4": "work_hours_week",
+            "X5": "gender",
+            "X6": "smoker_status",
+            "X7": "married_status",
+            "D": "exercise_program",
+            "Y": "health_score"
+        },
+        "description": "This dataset was collected from a health and lifestyle survey conducted among 1,000 individuals across a variety of demographic backgrounds. The survey asked participants about their age, years of education, annual income (in thousands), average work hours per week, gender, smoking habits, and marital status. Additionally, half of the participants were randomly selected to partake in a year-long exercise program. At the end of the year, participants' health was evaluated using a composite health score, which takes into account factors like heart rate, blood pressure, cholesterol levels, and mental wellbeing. The purpose of the study was to assess the impact of regular exercise on overall health.",
+        "question": "\"Would adults who participate in a regular exercise program for a year have a higher overall health score than those who do not?\"",
+        "summary": "This dataset is from a health and lifestyle survey where half of the participants were randomly chosen to partake in a year-long exercise program. It explores the impact of regular exercise on overall health.",
+        "domain": "social_science"
+    },
+    "rct_data_1.csv": {
+        "variable_labels": {
+            "X1": "education_years",
+            "X2": "income_thousands",
+            "X3": "age_years",
+            "X4": "work_hours_week",
+            "X5": "family_size",
+            "X6": "gender",
+            "X7": "marital_status",
+            "X8": "urban_resident",
+            "D": "financial_literacy_training",
+            "Y": "savings_amount"
+        },
+        "description": "This dataset is collected from a social science research project studying the impact of financial literacy training on individuals' savings behavior. The participants are a diverse group of 1,000 adults who were randomly selected from different regions across the country. These individuals were then randomly assigned to either receive financial literacy training (treatment group) or not (control group). The study collected demographic data (age, gender, marital status, whether they live in an urban area), socio-economic data (education level, income level, work hours per week, family size), and whether they received financial literacy training. The objective of the study was to evaluate the effect of financial literacy training on the amount of savings.",
+        "question": "\"Does participating in a financial literacy program increase the amount of savings among adults?\"",
+        "summary": "This dataset examines the impact of financial literacy training on the savings behavior of adults, while considering various socio-economic and demographic factors.",
+        "domain": "social_science"
+    }
+}

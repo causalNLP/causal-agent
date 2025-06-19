@@ -1,0 +1,34 @@
+{
+    "did_twfe_data_0.csv": {
+        "variable_labels": {
+            "unit": "county_id",
+            "year": "year",
+            "D": "minimum_wage_policy",
+            "Y": "poverty_rate",
+            "X1": "average_income",
+            "X2": "unemployment_rate",
+            "X3": "urban_county",
+            "X4": "education_level"
+        },
+        "description": "This dataset is a collection of economic and demographic data from 100 different counties across the United States from 2010 to 2019. The data includes information on county minimum wage policies, poverty rates, average income, unemployment rates, and whether the county is urban or rural. It also includes data on the education level of the county, categorized as either 'high' (more than 50% of the population holds a bachelor's degree or higher) or 'low' (less than 50% holds a bachelor's degree). The data was collected from various government databases and is being used to study the impact of minimum wage policies on poverty rates.",
+        "question": "\"Did the implementation of minimum wage policies in certain counties lead to a decrease in the poverty rates in those areas?\"",
+        "summary": "The dataset compiles ten years of economic and demographic data from 100 U.S. counties, with a focus on poverty rates and minimum wage policies.",
+        "domain": "social_science"
+    },
+    "did_twfe_data_1.csv": {
+        "variable_labels": {
+            "unit": "school_id",
+            "year": "academic_year",
+            "D": "computer_lab",
+            "Y": "average_test_scores",
+            "X1": "class_size",
+            "X2": "teacher_experience",
+            "X3": "urban_location",
+            "X4": "low_income_status"
+        },
+        "description": "This dataset was collected over a decade from 100 different public schools across the country. It includes information about the average class size, teacher experience, whether the school is located in an urban area or not, and if it has a high percentage of students from low income families. The primary focus, however, is whether the school has a computer lab or not, and how this may impact average student test scores. The data was collected from annual educational reports and surveys.",
+        "question": "\"Does the introduction of a computer lab in schools lead to an increase in average student test scores?\"",
+        "summary": "The dataset includes information on 100 public schools over a decade, focusing on the impact of having a computer lab on average student test scores.",
+        "domain": "social science education"
+    }
+}

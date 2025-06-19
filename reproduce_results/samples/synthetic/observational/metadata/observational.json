@@ -1,0 +1,16 @@
+{
+    "observational_data_0.csv": {
+        "true_effect": 3.5744843949446405,
+        "observation": 1000,
+        "continuous": 4,
+        "binary": 2,
+        "type": "observational"
+    },
+    "observational_data_1.csv": {
+        "true_effect": 1.303792393808875,
+        "observation": 1000,
+        "continuous": 4,
+        "binary": 3,
+        "type": "observational"
+    }
+}

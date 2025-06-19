@@ -1,0 +1,25 @@
+{
+    "multi_rct_data_0.csv": {
+        "true_effect": [
+            0.0,
+            4.917404388638106,
+            5.334706963930968,
+            7.242823887300747
+        ],
+        "observation": 1000,
+        "continuous": 2,
+        "binary": 3,
+        "type": "multi_rct"
+    },
+    "multi_rct_data_1.csv": {
+        "true_effect": [
+            0.0,
+            9.548445162702263,
+            5.254055209391606
+        ],
+        "observation": 1000,
+        "continuous": 2,
+        "binary": 3,
+        "type": "multi_rct"
+    }
+}

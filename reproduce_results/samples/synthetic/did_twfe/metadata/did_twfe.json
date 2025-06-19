@@ -1,0 +1,18 @@
+{
+    "did_twfe_data_0.csv": {
+        "true_effect": 3.82195073297605,
+        "observation": 100,
+        "continuous": 2,
+        "binary": 2,
+        "type": "did_twfe",
+        "periods": 6
+    },
+    "did_twfe_data_1.csv": {
+        "true_effect": 9.500944538118738,
+        "observation": 100,
+        "continuous": 2,
+        "binary": 2,
+        "type": "did_twfe",
+        "periods": 3
+    }
+}
