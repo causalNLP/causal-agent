@@ -96,12 +96,12 @@ except FileNotFoundError:
 setup(
     name='auto_causal',
     version='0.1.0',
-    author='Your Name',
-    author_email='your.email@example.com',
+    author='Vishal Verma',
+    author_email='vishal.verma@andrew.cmu.edu',
     description='A library for automated causal inference',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/your-repo/auto-causal',
+    url='https://github.com/causalNLP/causal-agent',
     packages=find_packages(exclude=['tests', 'tests.*']),
     install_requires=requirements,
     classifiers=[
