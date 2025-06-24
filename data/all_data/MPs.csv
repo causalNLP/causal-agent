@@ -1,0 +1,428 @@
+surname,firstname,party,gross,net,margin_pre,region,margin
+Llewellyn,David,tory,12.13590622,12.13590622,NA,Wales,0.056904044
+Morris,Claud,labour,12.44809055,12.44809055,NA,South West England,-0.049738325
+Walker,George,tory,12.42844963,10.34900856,-0.057168204,North East England,-0.041588679
+Walker,Harold,labour,11.91845226,12.39503384,-0.072508894,Yorkshire and Humberside,0.02329524
+Waring,John,tory,13.52021885,13.52021885,-0.26968962,Greater London,-0.230005816
+Brown,Ronald,labour,12.46051502,9.631836891,0.340958685,Greater London,0.367970258
+Pine,Leslie,tory,11.98583603,11.98583603,-0.210566834,South West England,-0.072641052
+Pink,Bonner,tory,11.6340313,11.6340313,0.273771912,South East England,0.21294491
+Webster,Reginald,tory,12.51625443,12.51003647,-0.169646636,North West England,-0.01446593
+Ridley,Jasper,labour,14.66086197,14.65282154,-0.078550898,South West England,-0.130096912
+Underhill,Michael,tory,12.55596924,12.55596924,-0.143719226,Greater London,-0.054886274
+Roberts,Thomas,labour,11.08812904,11.03748035,-0.001930548,Yorkshire and Humberside,-0.035208959
+Roberts,Gwilym,labour,11.86298656,11.86298656,-0.005034379,East of England,0.058464177
+Roberts,Shelagh,tory,13.69424057,13.69424057,-0.231120676,Wales,-0.301682472
+Roberts,Gordon,labour,12.43200874,8.647819519,-0.0568261,East Midlands,-0.139704719
+Coles,Gerald,tory,11.46880245,11.44368839,-0.088661134,North East England,-0.07340128
+Grant,William,tory,12.13590622,12.13590622,0.067399248,Scotland,0.121591456
+Grant,John,labour,12.71802616,12.6896944,0.290152043,Greater London,0.234982327
+Rees,Robert,labour,12.00744343,12.00744343,-0.027663354,Greater London,-0.058776647
+Cryer,Robert,labour,12.47742271,12.47742271,-0.178920731,North West England,-0.098551802
+Horne,Hampden,labour,11.94882679,11.94882679,-0.13437587,East of England,-0.168305665
+Bidgood,John,tory,12.78876209,12.77304363,0.032599512,North West England,0.071530789
+Fidler,Michael,tory,13.15902996,13.15902996,-0.083164379,North West England,0.056820601
+Faulds,Andrew,labour,12.44809055,12.39929962,-0.050627854,South West England,0.10295593
+Greene,Royden,tory,12.42844963,11.83061218,-0.257032424,East Midlands,-0.088293843
+McWhirter,Norris,tory,15.03261662,15.03117275,-0.065625601,South East England,-0.033458475
+Bourne-Arton,Anthony,tory,12.84560013,12.84560013,0.052728351,North East England,0.088195361
+Baker,Wilfred,tory,12.44809055,11.70615292,0.411134601,Scotland,0.21129857
+Baker,Douglas,labour,11.37770844,11.37770844,-0.006847612,East of England,-0.097068436
+Stone,Frank,labour,11.83968353,11.83968353,-0.145861194,East of England,-0.155972794
+Berkeley,Humphry,tory,12.70203972,12.70203972,0.12924397,North West England,0.153393641
+Lee,Edwin,tory,12.25040054,12.25040054,-0.316821188,Greater London,-0.293753356
+Dilks,John,labour,12.84288406,12.83700943,-0.225506827,East Midlands,-0.188053504
+Read,George,labour,12.48967361,12.30735111,-0.12169221,North West England,-0.079581171
+Cowling,Maurice,tory,12.59795475,11.74335766,-0.16212593,East Midlands,-0.160563737
+Jenkin-Jones,Peter,tory,14.22256851,14.22256851,-0.048688967,East Midlands,-0.038212713
+Irving,Sydney,labour,12.31218815,12.31218815,NA,South East England,0.088085949
+Torney,Thomas,labour,12.44373798,10.83430004,0.171721101,Yorkshire and Humberside,0.043249868
+Hindle,John,labour,12.08924484,12.08924484,-0.197237402,North West England,-0.247255087
+Tinn,James,labour,12.42844963,10.81901169,-0.027939564,Yorkshire and Humberside,0.069758371
+Davis,James,tory,12.54927731,11.91950321,-0.023094604,South East England,-0.082747735
+Grundy,Colin,labour,12.09625626,12.09625626,0.173075721,East Midlands,-0.003313639
+Goodwin,Harry,tory,13.83508396,13.83508396,-0.018822797,West Midlands,-0.065891661
+Reeves,Kenneth,tory,12.40266132,12.40266132,-0.142971739,Greater London,-0.11689318
+Ennals,John,labour,12.73641682,12.73641682,NA,West Midlands,-0.053052835
+Monks,Constance,tory,11.83859825,11.83859825,-0.095081575,North West England,0.029819164
+Normanton,Tom,tory,12.18284035,12.18284035,-0.008649034,North West England,0.020451471
+Clippingdale,Harold,tory,12.1201086,12.1201086,-0.222669557,West Midlands,-0.191514865
+Pearson-Clarke,Anthony,labour,12.14628029,12.14628029,-0.219733283,East of England,-0.139503628
+Hurst,Eric,labour,15.88568974,15.87712574,NA,Greater London,-0.021468319
+Havers,Michael,tory,12.13590622,12.13590622,0.187986612,Greater London,0.235448435
+Williamson,Muriel,tory,12.5872879,12.5872879,-0.103025965,West Midlands,-0.031723361
+Bell,Brian,tory,15.68696022,15.68696022,-0.048081692,North West England,-0.040410206
+Bell,David,tory,12.17262554,12.17262554,-0.189736798,West Midlands,-0.018391639
+Foord,John,labour,11.99850845,11.99850845,-0.059196617,Yorkshire and Humberside,-0.011575436
+Bradley,Thomas,labour,13.25766373,13.25436115,0.038250782,East Midlands,0.098769501
+Lawn,William,labour,11.30337048,11.30337048,NA,North West England,-0.084759995
+Carter-Jones,Lewis,labour,12.5811882,10.10007668,0.040410206,North West England,0.146884412
+Larrow,Dennis,tory,11.34424496,11.34424496,-0.113639355,North East England,-0.094972491
+Leach,Robin,tory,14.89271545,14.89271545,-0.185350716,Greater London,-0.220049113
+Brum,Robert,tory,11.15843201,11.15843201,-0.105291903,Greater London,-0.039678264
+Shearer,William,tory,12.37208652,12.37208652,-0.502400815,Scotland,-0.485874563
+Keigwin,Timothy,tory,12.45554733,12.45554733,-0.03024251,South West England,-0.008609426
+Johnston,Robert,tory,13.03167629,13.02794647,-0.030456379,Scotland,-0.058093488
+Beaumont,Christopher,labour,12.55333805,10.80982494,-0.060687881,South West England,-0.165521011
+Griffith,Huw,tory,12.37208652,12.37208652,-0.009384608,West Midlands,-0.062366772
+Bassett,Philip,labour,12.59795475,10.97016811,-0.187404081,South East England,-0.112112932
+Gurden,Harold,tory,13.37553024,13.37553024,NA,West Midlands,0.149906307
+Moeran,Edward,labour,12.37208652,12.37208652,NA,East of England,0.034369998
+Manley,Roy,labour,12.55840302,12.54715633,-0.076650545,East of England,-0.167965293
+Insley,Noel,labour,12.59795475,12.54952812,-0.003643365,East of England,-0.022152351
+Tucker,Geoffrey,tory,12.93239594,12.92425728,-0.272126704,West Midlands,-0.18558602
+Unsworth,Cyril,tory,12.2629509,12.2629509,-0.299292117,North West England,-0.108873151
+Wegg-Prosser,Charles,labour,11.6527319,11.6527319,NA,Greater London,-0.191152573
+Attlee,Christopher,labour,12.0808363,12.0808363,-0.063538052,North West England,-0.12924397
+Russell,Dorothy,tory,11.78296089,11.78296089,-0.167750135,East Midlands,-0.116642848
+Russell,Conrad,labour,13.00191498,12.99121857,-0.165361226,Greater London,-0.067679755
+Barber,Anthony,tory,11.94604778,11.40702438,-0.018284049,Yorkshire and Humberside,0.007737879
+Edmonds,Richard,labour,11.81514454,11.81514454,-0.098728515,Greater London,-0.143551365
+Benenson,Peter,labour,13.02210999,13.00787067,-0.052753512,South West England,-0.01863762
+King,Horace,labour,12.51008701,12.51008701,NA,South East England,0.026501564
+Derbyshire,William,tory,12.44809055,12.44809055,-0.233774036,East Midlands,-0.148557678
+Hooker,Michael,tory,13.29814243,13.25070286,-0.245824039,West Midlands,-0.123763181
+Waite,Geoffrey,tory,9.760890007,9.760890007,-0.097273245,East Midlands,-0.082264863
+Thompson,Richard,tory,14.03788757,14.03021431,NA,Greater London,0.021801556
+Thompson,Kenneth,tory,11.84294128,11.84294128,NA,North West England,0.080306396
+Thompson,Frank,labour,12.44809055,12.44809055,-0.076304547,East of England,-0.058526304
+Crehan,Thomas,labour,10.61162853,10.61162853,NA,West Midlands,-0.079055354
+Janis,Morris,labour,13.09868622,13.07790661,-0.053813796,East of England,-0.091724455
+Rippon,Geoffrey,tory,14.00491905,14.00491905,0.050886661,East of England,0.049437571
+Cleaver,Leonard,tory,13.08046055,13.08046055,-0.070487365,West Midlands,0.030386802
+Matterson,Alan,labour,12.70423985,12.60378933,-0.114482291,South East England,-0.055126131
+Moody,Aubrey,tory,11.25135326,11.25135326,-0.039843768,East of England,-0.015711481
+Warren,Brian,tory,12.4029789,12.4029789,-0.139269218,Greater London,-0.061895553
+Johnson,Walter,labour,12.51902008,11.97285461,0.257032424,East Midlands,0.088293843
+Johnson,Carol,labour,12.86856556,12.86856556,0.148551494,Greater London,0.072639398
+Leitch,Alexander,tory,12.43200874,10.84504414,-0.242477387,Yorkshire and Humberside,-0.164692625
+Richardson,Josephine,labour,12.09625626,12.09625626,-0.144481421,Greater London,-0.058897145
+Richardson,Francis,tory,12.39494991,12.39494991,NA,East Midlands,-0.082849272
+Richardson,Kenneth,labour,10.85843658,10.85843658,-0.13275075,West Midlands,-0.197824299
+Miller,Maurice,labour,12.6048851,12.60271072,-0.045217462,Scotland,0.08096806
+Patient,Alan,labour,12.46051502,12.16063786,-0.135337114,Yorkshire and Humberside,-0.139306635
+Adley,Robert,tory,12.91753674,12.91753674,NA,South West England,0.010033445
+Hanbidge,Lewis,labour,11.43675995,11.43675995,-0.120967917,North West England,-0.129396439
+Walsh,Robert,labour,12.09625626,12.09625626,-0.071530789,North West England,-0.073268592
+Ridsdale,Julian,tory,13.05743694,12.94442844,NA,East of England,0.22360836
+Parris,Edward,labour,12.4029789,12.4029789,-0.046775982,Yorkshire and Humberside,-0.085829407
+Gray,Alfred,labour,11.43675995,11.43675995,NA,East of England,-0.103772007
+Lofthouse,Francis,tory,12.1201086,12.1201086,-0.084850527,North West England,-0.172695652
+Lamb,Richard,tory,15.93645191,15.93098927,0.225245401,South West England,-0.125369638
+Tomney,Frank,labour,12.81000042,12.81000042,NA,Greater London,0.087471366
+Oakes,Gordon,labour,13.80791473,13.80088139,-0.092576258,North West England,0.074687868
+Lowe,William,tory,13.72416687,13.72416687,-0.125341073,North West England,-0.257291406
+Burden,Frederick,tory,12.59060383,12.59060383,NA,South East England,0.053431977
+Nurse,Graham,labour,12.51902008,11.1492548,-0.124975003,East of England,-0.038018033
+MacDonald,Alistair,labour,12.42844963,9.432717323,-0.030132463,South East England,0.016050728
+Marks,Kenneth,labour,10.36301517,10.36301517,0.20192495,North West England,0.137402341
+Henry,Martin,tory,12.42844963,9.432717323,-0.030806936,North West England,-0.013672409
+Routledge,K Graham,tory,11.48853207,11.48853207,-0.069346644,North West England,-0.077197984
+Lewis,Kenneth,tory,14.10416317,14.10416317,0.086655803,East Midlands,0.148758098
+Lewis,Ronald,labour,12.14628029,12.14628029,-0.04768724,North West England,0.050401788
+Fitt,Gerard,labour,13.53912067,13.47087669,NA,,0.0397643
+Foley,Maurice,labour,12.41399479,12.27089405,0.148201495,West Midlands,0.102821708
+Marten,Neil,tory,13.40546799,13.40546799,0.087633573,South East England,0.128655195
+Ripley,Sydney,tory,12.83901024,12.83901024,-0.031715281,East of England,-0.010877712
+Ascher,Conrad,labour,13.28078175,13.28078175,0.095936634,East of England,-0.022730399
+Papworth,Anne,tory,10.84884644,10.84884644,-0.207504779,North West England,-0.207352266
+Crotty,Patrick,tory,12.06219006,12.06219006,-0.230759785,Yorkshire and Humberside,-0.152917624
+McCrindle,Robert,tory,13.32674122,13.31347847,-0.019099465,East of England,0.043220673
+Allen,Donald,tory,11.82233524,11.74531364,-0.134306118,East Midlands,-0.023602244
+Orme,Stanley,labour,12.00868988,11.98626423,0.065810964,North West England,0.109486677
+Orme,Robert,tory,11.48383904,11.48383904,-0.160563737,East Midlands,-0.180529729
+O'Reilly,Noel,tory,12.61510181,12.61510181,-0.126600534,North West England,-0.076018102
+Mactaggart,Ian,tory,11.86298656,11.86298656,-0.202874988,Greater London,-0.118204504
+Tilney,John,tory,11.73530865,11.73530865,NA,North West England,0.151388481
+Woodhouse,Christopher,tory,13.12671661,13.10957527,0.146826744,South East England,0.161371887
+Coulson,Michael,tory,12.71086025,12.69029522,0.011575436,Yorkshire and Humberside,0.013467368
+Beard,Paul,tory,13.08229542,13.08229542,-0.101915747,Yorkshire and Humberside,-0.073692761
+Tylecote,Mabel,labour,11.16172123,11.16172123,-0.050886661,East of England,-0.049437571
+Leadbeater,David,labour,12.44373798,12.44373798,NA,Wales,-0.170131415
+Ogden,Michael,tory,14.6469183,14.6416893,-0.041072085,East of England,-0.093287937
+Huzzard,Ronald,labour,12.44373798,10.83430004,-0.130492553,South East England,-0.030132463
+Thomas,Roger,labour,12.4029789,12.4029789,-0.129513606,South West England,-0.141734764
+Cavanagh,Edward,labour,12.09691525,12.09691525,-0.165703759,North West England,-0.035002183
+Payne,Kenneth,tory,12.79774475,12.79853249,-0.061895553,Greater London,-0.161113456
+Ford,Donald,labour,12.17262554,12.17262554,NA,East of England,-0.062282018
+Renier,Olive,labour,12.74772739,12.71773529,-0.084449336,Greater London,-0.145039871
+Crabb,Rowland,labour,12.39929962,11.34947777,-0.080836453,South West England,-0.007057366
+Stanley,Neville,labour,12.17982769,12.17982769,-0.090213902,East of England,-0.087923475
+Brierley,Eric,labour,12.2407198,12.2407198,-0.118091911,Yorkshire and Humberside,-0.050961435
+Hallinan,Lincoln,tory,12.37208652,12.35527897,-0.105301134,Wales,-0.065732032
+Rogers,Albert,labour,12.42844963,12.42844963,-0.125576839,South West England,-0.127646625
+Rogers,Katherine,labour,12.09152126,12.09152126,-0.068611868,West Midlands,-0.023569226
+Rodgers,John,tory,13.51984406,13.51984406,NA,South East England,0.157189339
+Howson,Clive,tory,12.51562214,12.51562214,-0.116780989,North West England,-0.057382282
+Maxwell,David,tory,12.09625626,12.09625626,-0.13100563,North West England,-0.169646636
+Alport,Cuthbert,tory,13.09686756,13.08365631,NA,East of England,0.020225061
+Brinton,Tatton,tory,14.2850914,14.2850914,0.202866137,West Midlands,0.142405987
+Bray,Jeremy,labour,12.46051502,12.05732059,-0.194289535,North East England,0.025742486
+Bray,Ronald,tory,13.2081337,13.2081337,-0.107912913,North West England,0.04818536
+Stuart-Mills,John,tory,11.81514454,11.81514454,-0.381796569,North West England,-0.469758928
+Higgs,Michael,tory,12.26897049,12.26897049,NA,West Midlands,0.003853721
+Higgs,Thomas,labour,12.44373798,12.44373798,-0.072685383,Greater London,-0.009964144
+Webb,Dennis,labour,12.16807938,12.16807938,NA,East Midlands,-0.045031216
+Murray,Richard,labour,12.14628029,12.14628029,-0.061844002,Scotland,-0.151416227
+Murray,Neil,tory,12.70378113,12.69419384,-0.154781133,North East England,-0.211074501
+Murray,James,labour,11.74024105,11.74024105,-0.094977252,East Midlands,-0.191473082
+Beale,William,tory,13.61345196,13.61345196,-0.010842938,Scotland,-0.096439704
+Corfield,Frederick,tory,14.02127552,14.01528835,NA,South West England,0.041297793
+Hamilton,Michael,tory,12.44809055,12.44809055,-0.020779105,East Midlands,0.01337099
+Horrocks,Robert,tory,11.34424496,11.34424496,-0.038936336,North West England,-0.055900872
+Boyden,James,labour,13.25772858,13.25772858,0.154781133,North East England,0.211074501
+Young,David,labour,12.6606102,12.64930248,-0.088577606,South East England,-0.07233686
+Courtney,Anthony,tory,10.45913029,10.45913029,0.088635474,Greater London,0.144481421
+Kitts,Albert,labour,10.73416424,10.65261173,-0.191128209,East Midlands,-0.225506827
+Partridge,Ernest,tory,11.37770844,11.37770844,-0.010554998,Greater London,0.014127202
+Partridge,Graham,tory,13.93413925,13.91971493,NA,Wales,-0.101998962
+Shaw,Arnold,labour,11.20268154,11.20268154,-0.038867716,Greater London,0.058182489
+Churchill,Winston,tory,12.44373798,12.44373798,-0.064101346,North West England,0.075408973
+Taylor,Ewart,labour,12.41399479,9.464782715,NA,West Midlands,-0.064539239
+Taylor,Frank,tory,12.51902008,11.45722198,0.245875746,North West England,0.12882781
+Taylor,James,tory,12.82492352,12.81401253,-0.229191378,South West England,-0.134792715
+Curran,James,labour,12.59222126,12.40216827,-0.125431865,East of England,-0.195933536
+Lyon,Alexander,labour,12.1201086,12.1201086,-0.018365426,Yorkshire and Humberside,0.104749806
+Edwards,Anthony,labour,13.85093689,13.84375572,-0.174117848,South East England,-0.136134744
+Hingston,Frederick,tory,13.35220814,13.32398701,-0.160962746,West Midlands,-0.045761604
+Soames,Christopher,tory,15.31922436,15.31922436,NA,East of England,0.045783289
+Gower,Raymond,tory,12.55594063,12.55594063,-0.021950958,Wales,0.034511626
+Powe,Frederick,labour,10.76425457,10.76425457,-0.18615441,Greater London,-0.201271564
+Chesworth,Donald,labour,12.17262554,12.17262554,NA,West Midlands,-0.003853721
+Field,Xenia,labour,14.98322296,14.98322296,NA,South West England,-0.017175136
+White,Eirene,labour,12.93357944,12.9153347,NA,Wales,0.15093191
+White,Roger,tory,12.39929962,11.34947777,-0.078748442,South East England,0.018991999
+Boyle,William,labour,11.43675995,11.43675995,-0.279352546,Scotland,-0.257683039
+Hornsby-Smith,Dame Patricia,tory,11.832551,11.832551,NA,South East England,0.002966147
+Douglas-Mann,Bruce,labour,13.85093689,13.84375572,0.180097863,Greater London,0.135553151
+Lawson,Charles,tory,12.26749134,12.26749134,-0.049013536,North West England,-0.048081692
+MacKenzie,Donald,labour,12.1201086,12.1201086,-0.235977486,Scotland,-0.140603393
+Le Marchant,Spencer,tory,14.76024055,14.76024055,-0.01982851,East Midlands,0.033623215
+Speir,Rupert,tory,13.55333805,13.54104614,0.712097585,North East England,0.192109644
+Smith,Patten,labour,12.4029789,12.4029789,-0.273771912,South East England,-0.21294491
+Morgan,Geraint,tory,13.44309616,13.44309616,NA,Wales,0.107914507
+Morgan,Frederick,labour,12.33837795,12.33837795,-0.019245416,South West England,-0.037555773
+Morgan,Leslie,tory,12.46051502,11.92669964,NA,Wales,-0.107066214
+Bowyer,John,labour,12.60582924,12.60582924,-0.144685715,South East England,-0.086094603
+Dyer,Henry,labour,13.60857582,13.60857582,NA,East Midlands,-0.113109782
+Alison,Michael,tory,15.19918346,15.19557667,0.168417066,Yorkshire and Humberside,0.176344082
+Bullus,Eric,tory,12.4305315,10.30230045,NA,Greater London,0.172343522
+Longden,Gilbert,tory,12.77808094,12.77808094,NA,South West England,0.203940421
+John,Thomas,tory,12.37208652,12.37208652,-0.273647785,West Midlands,-0.264067084
+Allaun,Frank,labour,12.46051502,11.30099392,0.139235824,North West England,0.04433725
+Hodge,Robert,labour,12.74939919,12.72672272,-0.112521686,North West England,-0.059584245
+Hickman,Robert,labour,12.17262554,12.17262554,-0.107189767,East Midlands,-0.005956645
+Lucas,Percy,tory,13.48951912,13.48951912,NA,Greater London,0.022291005
+Quas-Cohen,K A,tory,12.09971809,12.09971809,NA,North West England,-0.258799076
+Bishop,Leonard,labour,12.4906168,12.48175621,-0.125923008,South East England,-0.079228148
+Mitchell,Richard,labour,12.29727173,12.28315544,-0.006816579,South East England,0.047920186
+Mitchell,Colin,tory,12.4029789,12.4029789,-0.034031041,Scotland,0.140495241
+Page,Derek,labour,12.37208652,12.37208652,-0.042451356,East of England,0.002428998
+Stonehouse,John,labour,11.81514454,11.81514454,-0.03073198,West Midlands,-0.014948506
+Fisher,Nigel,tory,13.15218353,13.15218353,NA,South West England,0.033497859
+Barnard,Douglas,tory,12.09625626,12.09625626,-0.123600893,South West England,-0.158535764
+Parkinson,Arnold,labour,12.61283398,12.57290459,-0.015367748,North East England,-0.052728351
+Pike,Leonard,labour,12.47973251,12.47973251,-0.141590223,South West England,-0.103374697
+Allaker,Lawrence,labour,12.44373798,12.44373798,-0.203940421,South West England,-0.175021723
+Barnett,Guy,labour,12.68792534,12.68792534,-0.151103988,South West England,-0.019245416
+Boyd,Christopher,labour,12.48967361,11.70951462,-0.072544239,South West England,0.037405357
+Owens,Bernard,tory,14.31635475,14.27999115,-0.215554595,West Midlands,-0.147216007
+Critchley,Julian,tory,12.44809055,12.44809055,-0.048128553,South East England,0.019674212
+Pegler,Alfred,labour,12.53365135,12.53365135,-0.216408044,South East England,-0.144685715
+McKitterick,Thomas,labour,12.50183296,12.50183296,-0.014249687,Yorkshire and Humberside,-0.017893031
+Urwin,Kenneth,labour,13.27022457,13.26627636,-0.12775743,East Midlands,-0.125125006
+Fletcher-Cooke,Charles,tory,14.66213131,14.6585083,0.123844631,North West England,0.086823568
+Ponsonby,Thomas,labour,13.26972008,13.26972008,-0.145039871,Greater London,-0.196714759
+Walter,Alison,labour,12.37208652,12.37208652,-0.102710478,East of England,-0.174996704
+Royle,William,labour,12.13444042,12.13444042,-0.117211796,South East England,-0.144080997
+Fraser,Ian,tory,13.23875046,13.23875046,0.067682795,South West England,0.115094565
+Loughlin,Charles,labour,12.1201086,12.1201086,0.098742388,South West England,0.123600893
+Hyam,Sydney,labour,12.46658802,12.46658802,NA,Yorkshire and Humberside,-0.124786161
+Jenkins,Hugh,labour,13.49108791,13.47376728,-0.08903455,Greater London,0.023889164
+Leighton,Ronald,labour,12.94439411,12.94439411,NA,North West England,-0.038429558
+Denman,Harold,tory,13.07971668,13.0705843,-0.203695416,North West England,-0.242339432
+Martin-Jones,David,tory,12.63683891,12.63683891,NA,West Midlands,-0.186340824
+Wedgwood,John,tory,11.03131294,11.03131294,NA,West Midlands,-0.018822797
+Beattie-Edwards,Thomas,tory,13.36706734,13.36706734,-0.207352266,North West England,-0.225883797
+Kaberry,Donald,tory,13.06046486,13.06046486,NA,Yorkshire and Humberside,0.229635656
+Orr-Ewing,Charles,tory,15.24988937,15.27617645,NA,Greater London,0.048237357
+Heath,Edward,tory,15.57725525,15.56832123,NA,Greater London,0.002364781
+Napley,David,tory,12.65407372,12.65407372,NA,South West England,-0.017826501
+Stogdon,Norman,labour,12.4029789,12.4029789,NA,South East England,-0.087633573
+Bence,Cyril,labour,12.13590622,12.13590622,0.092891075,Scotland,0.065773308
+Flett,Alexander,labour,12.55333805,12.3518219,-0.318788022,Scotland,-0.417493999
+Scott-Miller,Ronald,tory,12.13590622,12.13590622,-0.006309296,East of England,0.021805404
+Lagden,Godfrey,tory,12.09691525,12.09691525,-0.016294498,Greater London,0.021724328
+Sloan,Norman,tory,13.94037914,13.93872452,-0.202086836,Scotland,-0.145092145
+May,Richard,labour,12.5811882,12.15069771,-0.037555773,South West England,-0.1295681
+Bazin,James,tory,13.38290787,13.38290787,-0.172923923,North East England,-0.15833424
+Scholfield,Michael,tory,13.60297585,13.60039234,-0.195033222,North West England,-0.203266531
+Aldridge,Harold,labour,12.5811882,11.9926405,-0.059159536,East of England,-0.110971361
+Radford,Patrick,tory,14.69969463,14.68476295,-0.214812979,North East England,-0.10644637
+Burgess,Lewis,labour,11.08243275,11.08243275,-0.072432235,West Midlands,-0.199450448
+Gardner,Edward,tory,14.64808846,14.64259624,0.094627433,East of England,0.0765725
+Hart,Norman,labour,13.47636795,13.47636795,-0.181925833,South West England,-0.132798731
+Newey,John,tory,11.61452293,11.61452293,NA,West Midlands,-0.184170812
+Butcher,Bruce,tory,12.33837795,12.33837795,-0.037934918,North West England,-0.039130222
+Fawcett,John,tory,13.10481167,13.09193325,-0.104580007,Yorkshire and Humberside,-0.090919457
+McNair-Wilson,Michael,tory,12.30914116,12.30914116,-0.055044476,Greater London,0.017289368
+Green,Alan,tory,15.21859455,15.21859455,-0.000351617,North West England,0.011147696
+Grigg,John,tory,14.37883759,14.3752861,-0.101233475,North West England,-0.08915668
+Daly,James,labour,13.19882011,12.74219131,-0.210239723,South East England,-0.14843078
+Potter,Dennis,labour,13.56173801,13.56173801,-0.185523987,South West England,-0.127373472
+Potter,Leslie,labour,12.4305315,12.4305315,-0.022152351,East of England,-0.145597026
+Lister,Peter,labour,12.46051502,11.89520168,-0.114242934,West Midlands,-0.060487039
+Barrington-Ward,Frank,labour,11.27648354,11.27648354,-0.152767032,West Midlands,-0.070403539
+Skeet,Trevor,tory,13.76570606,13.76183605,-0.014284166,Greater London,0.051147934
+Caplan,Leonard,tory,13.14204979,13.06898403,NA,Greater London,-0.084912956
+Medd,Patrick,tory,13.11338902,13.11338902,-0.140492722,South West England,-0.098689653
+Bangay,John,tory,12.61614799,12.61614799,-0.182539418,Greater London,-0.13578932
+Silkin,John,labour,13.55340099,13.55340099,0.238968015,Greater London,0.333027184
+Silkin,Samuel,labour,13.591012,13.591012,-0.04242767,Greater London,0.060994815
+Heselton,Philip,tory,12.48967361,11.50884342,NA,North East England,-0.047510438
+Astor,Jacob,tory,16.31149101,16.30447006,-0.016030256,South West England,0.012433019
+Astor,John,tory,15.44864368,15.44864368,0.200363711,South East England,0.108957693
+Powell,Enoch,tory,12.6532011,12.6532011,NA,West Midlands,0.015698837
+Parker,Thomas,labour,12.21061039,12.21061039,-0.028912555,Greater London,-0.01388505
+Prendergast,Michael,labour,10.69848442,10.69848442,-0.216195494,South West England,-0.069885768
+Emery,Peter,tory,14.65335655,14.65335655,-0.004739337,South East England,0.080967836
+Gardiner,Gerald,labour,11.07175732,11.07175732,-0.021801556,Greater London,-0.043316007
+Stokes,John,tory,13.61974239,13.61305809,NA,West Midlands,0.051948052
+MacMillan,Maurice,tory,14.5854044,14.5854044,-0.012694874,Yorkshire and Humberside,0.027870072
+Hughes,Cledwyn,labour,12.4305315,12.4305315,-0.065688208,Wales,0.020238783
+Leadbitter,Edward,labour,13.07689285,13.07689285,-0.003586631,North East England,0.058631055
+James,Howell,labour,12.00651836,12.00651836,NA,Scotland,-0.011605206
+Allison,Peter,labour,12.48967361,12.37967205,-0.145958439,South East England,-0.074121155
+Allison,John,labour,11.81514454,11.81514454,-0.025568599,Wales,-0.145870835
+Loftus,William,tory,12.13590622,12.13590622,-0.469758928,North West England,-0.407240957
+Lane,David,tory,14.0831337,14.08027077,-0.020516749,East of England,0.106675379
+Priestley,Leslie,tory,12.17262554,12.17262554,-0.123381533,East Midlands,-0.102381676
+Sutton,David,labour,12.39929962,10.78986168,-0.15676105,South West England,-0.108854607
+Way,Michael,tory,12.55333805,11.73477459,-0.548968971,North East England,-0.486311972
+Scurfield,George,labour,12.17262554,12.17262554,0.020516749,East of England,-0.106675379
+Hall,Percy,labour,12.35269642,12.35269642,-0.317870289,North West England,-0.166433573
+Biggs-Davison,John,tory,10.95826721,10.95826721,NA,East of England,0.050496891
+Sefton,William,labour,12.4305315,12.4305315,NA,North West England,-0.111111112
+Woodburn,Gordon,labour,11.42061996,11.42061996,-0.14311406,North West England,-0.216280773
+Parry,Gordon,labour,12.71638012,12.69731426,0.119719021,Wales,-0.022359459
+Dunkley,Kenneth,tory,11.72827721,11.72827721,-0.037683554,West Midlands,-0.081751578
+Carlisle,Mark,tory,13.60090542,13.59564114,0.315880537,North West England,0.169307247
+O'Connor,Arthur,tory,11.81514454,11.81514454,-0.325622708,North West England,-0.417057365
+Spence,John,tory,13.93869495,13.93869495,-0.079796836,Yorkshire and Humberside,0.012001953
+Evans,Dengar,labour,11.14469624,11.0905056,-0.101778708,South West England,-0.120970145
+Evans,Ioan,labour,9.401908875,9.401908875,NA,West Midlands,0.003721893
+Evans,Gwyn,labour,11.03540707,11.03540707,-0.198746502,Wales,-0.176937968
+Bean,Robert,labour,11.26262665,11.26262665,-0.077108197,South East England,-0.17679508
+Levin,Ian,labour,11.47230816,11.47230816,-0.080306396,North West England,-0.071772896
+Toch,Henry,labour,12.59528637,12.55130386,-0.228035435,South West England,-0.15676105
+Neate,Eric,labour,12.97402,12.97402,NA,South East England,-0.129762292
+Griffin,Robert,labour,12.22336292,12.22336292,-0.218227819,North East England,-0.087734155
+Lonsdale,Richard,tory,11.81514454,11.81514454,-0.23851198,West Midlands,-0.226617977
+Luard,Evan,labour,12.83600235,12.83600235,-0.027591133,South East England,0.046145648
+Butler,Joyce,labour,12.73762131,12.73762131,0.115766264,Greater London,0.078421429
+Butler,Victor,labour,10.77098179,10.77098179,-0.11064966,East Midlands,-0.067873575
+Lipman,Cyril,tory,13.9055233,13.9055233,-0.253354341,North East England,-0.174664915
+Heffer,Eric,labour,12.17262554,12.17262554,-0.09056621,North West England,0.072653636
+Whitlock,William,labour,12.4305315,12.4305315,0.127060294,East Midlands,0.099333584
+Haseldine,Norman,labour,12.44373798,12.44373798,-0.080496229,Yorkshire and Humberside,0.04050272
+Davies,Herbert,tory,12.40503979,12.40503979,NA,North West England,-0.065810964
+Davies,John,tory,12.14628029,12.14628029,-0.167169139,Wales,-0.145930097
+Davies,Wyndham,tory,11.43675995,11.43675995,-0.004635963,West Midlands,0.008924916
+Cutler,Horace,tory,12.88262177,12.88262177,-0.17581369,Greater London,-0.126525804
+Argyle,Michael,tory,9.802969933,9.802969933,-0.139074013,East Midlands,-0.097273245
+Bennett,Frederic,tory,13.72031307,13.70032978,-0.015466792,South East England,0.00876531
+Bennett,Lionel,labour,12.4305315,10.30230045,-0.234479427,South West England,-0.182772085
+Murphy,Brian,labour,12.21061039,12.21061039,-0.127373472,South West England,-0.08194425
+St Clair,Malcolm,tory,14.53984547,14.52522755,-0.189488307,South West England,-0.124724418
+Tennant,Alison,tory,14.46441841,14.46441841,-0.02485342,South West England,-0.095693015
+Holding,Norman,labour,12.16117382,12.16117382,-0.168417066,Yorkshire and Humberside,-0.176344082
+Collings,Geoffrey,labour,12.4029789,12.4029789,NA,Yorkshire and Humberside,-0.0014478
+Hill,James,tory,12.42844963,12.42844963,-0.047920186,South East England,0.034742706
+Matthews,Gordon,tory,12.63502407,12.62785244,-0.024838718,West Midlands,0.004987389
+Vickers,Joan,tory,13.44778919,13.44778919,NA,South West England,0.001899624
+Clarke,Terence,tory,12.51373959,12.51373959,NA,South East England,0.019225292
+Yates,William,tory,12.1201086,12.1201086,-0.046962045,West Midlands,0.012726304
+Holdsworth,Albert,tory,12.64053917,12.64053917,-0.070042573,East of England,-0.067570582
+Bidwell,Sydney,labour,12.37208652,12.37208652,0.050458837,Greater London,0.142971739
+Hastings,Stephen,tory,13.51797676,13.35973072,0.11364685,East of England,0.109212637
+Cooper,John,labour,12.42844963,12.42844963,-0.251355588,Greater London,-0.039926022
+Dunn,James,labour,11.37770844,11.37770844,-0.065272659,North West England,0.110571615
+Bullard,Denys,tory,13.369133,13.369133,-0.007867582,East of England,0.013194818
+Ratcliffe,Joyce,tory,11.95521545,11.95521545,-0.112260491,East Midlands,-0.074326061
+Donovan,William,tory,12.35146618,12.35146618,-0.04340959,Greater London,-0.026974561
+Browne,Percy,tory,12.95700359,12.947999,NA,South West England,0.059708968
+Hirst,Geoffrey,tory,13.83780003,13.83780003,NA,Yorkshire and Humberside,0.001930548
+Boydell,Peter,tory,14.14927197,14.12507248,0.04768724,North West England,-0.050401788
+Cronin,John,labour,13.60904217,13.60904217,0.139074013,East Midlands,0.097273245
+Cheetham,Stanley,tory,12.13590622,12.13590622,NA,Yorkshire and Humberside,-0.084373534
+Hinchcliffe,Denton,tory,12.13409901,12.13409901,-0.165641531,Yorkshire and Humberside,-0.209052876
+Brannan,Martin,tory,12.09625626,12.09625626,-0.200361595,North West England,-0.187458619
+Harman,Anthony,labour,12.60074615,12.52911377,NA,South East England,-0.085235342
+Chandler,Maurice,tory,12.18675518,12.18675518,-0.13360557,West Midlands,-0.056648776
+Gordon,Dennis,labour,10.7268486,10.7268486,NA,South East England,-0.140056178
+Scott,Nicholas,tory,12.63367271,11.79336834,0.165361226,Greater London,0.067679755
+Glyn,Alan,tory,15.43469715,15.43469715,-0.005048126,Greater London,0.043979745
+Rutter,William,labour,12.44373798,12.44373798,-0.106398329,North West England,-0.129133359
+McLean,Neil,tory,12.90451813,12.90451813,0.29077974,Scotland,0.027895695
+Lindsay,James,tory,13.46525574,13.46525574,0.242408186,South West England,0.146740049
+Alderson,John,labour,12.4305315,12.4305315,NA,North East England,-0.188212201
+Pritchard,Thomas,labour,12.46051502,12.1544838,-0.122899204,West Midlands,-0.064877525
+Adkins,Banner,tory,12.02733231,12.02733231,-0.016141772,West Midlands,-0.068304159
+Reynolds,John,labour,12.14628029,12.14628029,-0.214725032,Wales,-0.0740453
+Amery,Julian,tory,15.59376907,15.59376907,NA,North West England,0.020744869
+Park,Trevor,labour,12.06219006,12.06219006,-0.000215378,East Midlands,0.015004382
+Swain,Mervyn,labour,12.33837795,12.33837795,-0.107390597,North West England,-0.073642351
+Mayer,George,labour,11.57471943,11.57471943,NA,South West England,-0.136739433
+Gibson-Watt,David,tory,15.40265751,15.38672829,0.269572705,South West England,0.210237205
+Budgen,Nicholas,tory,12.71186638,11.15913391,-0.407485694,West Midlands,-0.304188073
+Hunt,Dennis,labour,12.1201086,12.1201086,0.083164379,North West England,-0.056820601
+Fox,Marcus,tory,13.15024471,13.13725376,0.037749145,Yorkshire and Humberside,0.114922896
+Nicholls,Harmar,tory,14.4133215,14.40704823,NA,East Midlands,0.002899368
+Arbuthnot,John,tory,14.80275917,14.80275917,NA,South East England,0.04413395
+Singleton,Geoffrey,tory,8.805781364,7.819964409,-0.258799076,North West England,-0.246039554
+How,William,tory,8.502623558,8.502623558,-0.193436325,Scotland,-0.16457811
+Mills,Peter,tory,12.16187286,12.16187286,0.059708968,South West England,0.055004388
+Maynard,Francis,tory,9.726797104,9.726797104,-0.069042802,West Midlands,-0.027682973
+Fowler,Sir Gerald,labour,12.54548645,12.54548645,-0.060136072,West Midlands,0.018178692
+Morton,Catherine,tory,12.47723961,12.47723961,-0.116968453,Scotland,-0.017762864
+Stanbrook,Ivor,tory,12.48967361,9.311619759,-0.033458475,South East England,0.025646996
+Jones,Arthur,tory,14.5760994,14.5760994,0.139564425,East Midlands,0.085419446
+Jones,Daniel,labour,12.62727356,12.62727356,0.112508483,South East England,0.139428124
+Leask,Murray,tory,12.58162117,8.892742157,-0.238968015,Greater London,-0.333027184
+Owen,Idris,tory,14.60377121,14.59468079,-0.083692923,North West England,0.022098185
+Nicholson,Marjorie,labour,12.94747543,12.94747543,NA,South East England,-0.217741743
+Norton,Joseph,tory,13.30686855,13.3019743,-0.028717948,North West England,-0.018038245
+Hargreaves,Kenneth,tory,13.98959732,13.98959732,-0.123892821,Yorkshire and Humberside,-0.054354101
+Perry,George,labour,12.33837795,7.145421028,NA,East Midlands,0.006469577
+Pitt,David Thomas,labour,12.681283,12.681283,0.11017888,Greater London,-0.093558833
+Pitt,Terence,labour,11.75195694,11.75195694,0.079794623,West Midlands,-0.032622334
+Hockton,Thomas,labour,13.47094154,13.4689455,-0.042286355,North West England,-0.065272659
+Lomas,Kenneth,labour,12.44809055,11.70615292,-0.236024842,Yorkshire and Humberside,0.030925345
+Price,William,labour,11.14151192,11.04660511,-0.039667442,West Midlands,0.009384608
+Frears,John,labour,13.22255898,13.21811295,-0.207860589,East Midlands,-0.11855147
+Huddart,Joseph,labour,13.18189907,13.16982937,NA,South East England,-0.065332867
+Bevins,Reginald,tory,12.4029789,12.4029789,NA,North West England,0.059918582
+Youngson,Robert,tory,8.433170319,8.433170319,-0.210071072,North East England,-0.154781133
+Scott-Hopkins,James,tory,11.70354748,11.70354748,0.045171648,South West England,0.027624154
+Clapham,Brian,labour,13.14447403,13.13950157,-0.132978618,East of England,-0.094627433
+Hiley,Joseph,tory,13.42472553,13.42472553,0.106506117,Yorkshire and Humberside,0.143344641
+Cope,Joyce,labour,12.655159,12.655159,-0.188113809,North West England,-0.132690296
+Reid,Alastair,labour,12.00150585,12.00150585,NA,Scotland,-0.251878619
+Hawkins,Paul,tory,12.59776783,12.54610443,-0.002318806,East of England,0.003643365
+Hawkins,George,tory,12.09691525,12.09691525,-0.148201495,West Midlands,-0.102821708
+Tresman,John,tory,12.41399479,11.89520168,-0.286855519,North West England,-0.325622708
+Lawton,Kenneth,tory,12.67013168,12.67013168,-0.203981802,North West England,-0.138151452
+Jonas,George,labour,12.59795475,12.11108303,-0.206778243,West Midlands,-0.076550297
+Braine,Bernard,tory,13.18476868,13.16653633,NA,East of England,0.09267278
+Sisson,Douglas,tory,12.41651726,12.41651726,NA,North West England,-0.074687868
+Leavey,Anthony,tory,14.44626427,14.44496918,0.076731391,North West England,0.066270284
+Wilde,Ivor,labour,10.62002277,10.62002277,-0.139564425,East Midlands,-0.085419446
+Wallace,William,labour,12.09691525,12.09691525,-0.054451719,Scotland,-0.001031145
+Brown,Roger,labour,12.59795475,12.4824419,-0.231718481,South East England,-0.161202922
+Davies,Clifford,labour,12.37208652,12.37208652,-0.141681954,South East England,-0.174687743
+Grant,Alec,labour,13.98940182,13.98940182,-0.290727377,Greater London,-0.182944968
+Jones,George,labour,12.09691525,12.09691525,-0.202866137,West Midlands,-0.142405987
+Morris,Norman,labour,12.68599701,12.68392277,-0.286600977,North West England,-0.245875746
+Smith,Kathleen,tory,12.71696854,12.70979214,-0.339458287,Wales,-0.200647727
+Smith,Ronald,labour,12.4029789,12.4029789,-0.138601467,South West England,-0.100796334
+Thompson,Donald,tory,12.55333805,6.981184006,-0.271667391,Yorkshire and Humberside,-0.159207359
