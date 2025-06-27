@@ -20,5 +20,21 @@ All datasets used to evaluate CAIA and the baseline models are available in the 
 * `real_info.csv`: Metadata for the real-world datasets.
 * `synthetic_info.csv`: Metadata for the synthetic datasets.
 
+## Run 
+To run the program, one can run
+```python
+python main/run_agent.py -f ${CSV_PATH} -d ${DATA_FOLDER} -t ${DATA_CATEGORY} -o ${OUTPUT_FOLDER} -l ${LLM_NAME}
+```
+**Args**
+* `CSV_PATH`: A csv file containing the queries, the dataset description, name of the data file
+* `DATA_FOLDER`: Path to the folder containing the data
+* `DATA_CATEGORY`: The name of the dataset collection (real, qrdata, synthetic, or other name)
+* `OUTPUT_FOLDER`: Folder where the output is saved
+* `LLM_NAME`: Name of the LLM
+  
+A specific example, 
+```python
+python main/run_agent.py -f data/test.csv -d data/all_data -t test -o output -l gpt-4o-mini 
+```
 
  
