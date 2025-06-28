@@ -64,32 +64,44 @@ def create_prompt(summary, method, domain, history):
                     "multi_rct": "Multi-Treatment Randomized Control Trial", "rdd": "Regression Discontinuity Design",
                     "observational": "Observational", "rct": "Randomized Control Trial"}
 
-
+    domain_guides = {
+        "education": "Education data often includes student performance, school-level features, socioeconomic background, and intervention types like tutoring or online classes.",
+        "healthcare": "Healthcare data may include treatments, diagnoses, hospital visits, recovery outcomes, or demographic details.",
+        "labor": "Labor datasets typically include income, education, job type, employment history, and training programs.",
+        "policy": "Policy evaluation data may track program participation, regional differences, economic impact, and public outcomes like housing, safety, or benefits."
+    }
+    
     prompt = f"""
 You are a helpful assistant generating realistic, domain-specific contexts for synthetic datasets.
 
 The current dataset is designed for **{method_names[method]}** studies in the **{domain}** domain.
 
-Below is a statistical summary of the dataset:
-**Dataset Summary**
+### Dataset Summary
 {summary}
 
-Here are summaries of previously used contexts. **Avoid overlap with these**:
-**Previous Contexts**
+### Previously Used Contexts (avoid duplication)
 {history}
 
+### Domain-Specific Guidance
+{domain_guides.get(domain, '')}
+
+
+---
+
 ### Your Tasks:
-1. Propose a **realistic real-world scenario for this dataset. It should suit a **{method_names[method]}** study. If the data is from a randomized trial, state this clearly.
-2. Assign **realistic and concise column names**. For example, "Hours Worked per Week" can be renamed to `hours_worked`. Use snake_case formatting. 
-In the description section, give a one-line description of each column i.e. describe what each columns represents. For example, "hours_worked: the number of hours worked per week by the individual." Use newline for each column description.
-3. Write a paragraph describing the dataset, including its background, how it was collected, and the motivation for the study.
-4. Propose a **natural language causal question** that is answerable using the dataset.
- **Important notes**:
- - Do not mention column names explicitly.
- - Do not describe covariates or confounders directly.
- - The question should relate the treatment and outcome, but implicitly. These are inferred from the description.
-4. Avoid all causal inference or statistical terminologies in the context and question.
-5. Write a **one-to-two-sentence summary** that captures the essence of the dataset.
+1. Propose a **realistic real-world scenario** that fits a {method_names[method]} study in the {domain} domain. Mention whether the data was collected from a randomized trial, policy rollout, or real-world observation.
+2a. Assign **realistic and concise variable names** in snake_case. Map original variable names like `"X1"` to names like `"education_years"`.
+2b. Provide a **one-line natural-language description for each variable** (e.g., `education_years: total years of formal schooling completed by the individual.`). Use newline-separated key-value format.
+3. Write a **paragraph** describing the dataset's background: who collected it, what was studied, why, and how.
+4. Write a **natural language causal question** the dataset could answer. The question should:
+   - Relate implicitly to the treatment and outcome
+   - Avoid any statistical or causal terminology
+   - Avoid naming variables directly
+   - Feel like it belongs in a news article or report
+5. Write a **1-2 sentence summary** capturing the dataset's overall intent and contents.
+
+---
+
 
  Return your output as a JSON object with the following keys:
  - "variable_labels": {{ "X1": "education_years", ... }}
@@ -97,7 +109,11 @@ In the description section, give a one-line description of each column i.e. desc
  - "question": "<causal question>"
  - "summary": <summary>
  - "domain": "<domain>"
+
+ Return only a valid JSON object. Do not include any markdown, explanations, or extra text.
  """
+
+
 
     return prompt
 
@@ -115,18 +131,14 @@ def filter_question(question):
     prompt = """
     You are a helpful assistant. Help me filter this causal query.
 
-    The query is: {}
+    The query is: {question}
     The query should not provide information on what variables one needs to consider in course of causal analysis.
     For example,
-    Bad question: "What is the effect of the training program on job outcomes considering education and experience?" is
-    a bad question because it mentions the use of specific variables in the analysis.
-    One can change the question to "What is the effect of the training program on job outcomes?"
+    Bad question: "What is the effect of the training program on job outcomes considering education and experience?"
+    Good question: "What is the effect of the training program on job outcomes?"
 
-    If the question is already filtered, return the question as it is.
-
-    In the output, return only the filtered query. For the above example, the output should be:
-    "What is the effect of the training program on job outcomes?"
-    No need to say "The filtered query is" or anything like that. Return the query only.
+    If the question is already filtered, return it as is.
+    Return only the filtered query. Do not say anything else.
     """
 
     return prompt.format(question)
