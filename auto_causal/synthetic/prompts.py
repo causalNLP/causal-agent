@@ -131,7 +131,7 @@ def filter_question(question):
     prompt = """
     You are a helpful assistant. Help me filter this causal query.
 
-    The query is: {question}
+    The query is: {}
     The query should not provide information on what variables one needs to consider in course of causal analysis.
     For example,
     Bad question: "What is the effect of the training program on job outcomes considering education and experience?"
