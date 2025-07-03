@@ -12,9 +12,9 @@ from langchain_anthropic import ChatAnthropic # Example
 # Add other providers if needed, e.g.:
 # from langchain_community.chat_models import ChatOllama 
 from dotenv import load_dotenv
-
-# Import Together provider
+from langchain_deepseek import ChatDeepSeek
 from langchain_together import ChatTogether
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +34,10 @@ def get_llm_client(provider: Optional[str] = None, model_name: Optional[str] = N
     # Default model depends on provider
     default_models = {
         "openai": "gpt-4o-mini",
-        "anthropic": "claude-3-haiku-20240307",
-        "together": "Qwen/Qwen2.5-72B-Instruct-Turbo"  # Default Together model
+        "anthropic": "claude-3-5-sonnet-latest",
+        "together": "deepseek-ai/DeepSeek-V3",  # Default Together model
+        "gemini" : "gemini-2.5-pro",
+        "deepseek" : "deepseek-chat"
     }
     
     model_name = model_name or os.getenv("LLM_MODEL", default_models.get(provider, default_models["openai"]))
@@ -63,6 +65,18 @@ def get_llm_client(provider: Optional[str] = None, model_name: Optional[str] = N
             if not api_key:
                 raise ValueError("TOGETHER_API_KEY not found in environment.")
             return ChatTogether(model=model_name, api_key=api_key, **kwargs)
+
+        elif provider == "gemini":
+            api_key = os.getenv("GEMINI_API_KEY")
+            if not api_key:
+                raise ValueError("GEMINI_API_KEY not found in environment.")
+            return ChatGoogleGenerativeAI(model=model_name, **kwargs)
+
+        elif provider == "deepseek":
+            api_key = os.getenv("DEEPSEEK_API_KEY")
+            if not api_key:
+                raise ValueError("DEEPSEEK_API_KEY not found in environment.")
+            return ChatDeepSeek(model=model_name, **kwargs)
             
         # Example for Ollama (ensure langchain_community is installed)
         # elif provider == "ollama":
