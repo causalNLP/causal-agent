@@ -1,5 +1,6 @@
 from typing import List, Optional, Union, Dict, Any, Tuple
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
+import json
 
 # --- Pydantic models for LLM structured output ---
 # These models are used by query_interpreter and potentially other components
@@ -164,9 +165,8 @@ class MethodExecutorInput(BaseModel):
     dataset_analysis: DatasetAnalysis
     dataset_description: Optional[str] = None
     # Include validation_info from validator output if needed by estimator or LLM assist later?
-    validation_info: Optional[Dict[str, Any]] = None 
+    validation_info: Optional[Any] = None 
     original_query: Optional[str] = None
-
 # --- Model for Explanation Generator Tool --- 
 
 class ExplainerInput(BaseModel):

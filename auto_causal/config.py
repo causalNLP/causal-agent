@@ -9,12 +9,17 @@ from typing import Optional
 from langchain_core.language_models import BaseChatModel
 from langchain_openai import ChatOpenAI # Default
 from langchain_anthropic import ChatAnthropic # Example
+from langchain_google_genai import ChatGoogleGenerativeAI
 # Add other providers if needed, e.g.:
 # from langchain_community.chat_models import ChatOllama 
 from dotenv import load_dotenv
+from langchain_core.globals import set_llm_cache
+from langchain_community.cache import SQLiteCache
 from langchain_deepseek import ChatDeepSeek
+# Create a disk-backed SQLite cache:
+set_llm_cache(SQLiteCache(database_path="langchain_cache.db"))
+# Import Together provider
 from langchain_together import ChatTogether
-from langchain_google_genai import ChatGoogleGenerativeAI
 
 logger = logging.getLogger(__name__)
 
@@ -58,19 +63,19 @@ def get_llm_client(provider: Optional[str] = None, model_name: Optional[str] = N
             api_key = os.getenv("ANTHROPIC_API_KEY")
             if not api_key:
                 raise ValueError("ANTHROPIC_API_KEY not found in environment.")
-            return ChatAnthropic(model=model_name, api_key=api_key, **kwargs)
+            return ChatAnthropic(model=model_name, api_key=api_key, **kwargs, streaming=False)
         
         elif provider == "together":
             api_key = os.getenv("TOGETHER_API_KEY")
             if not api_key:
                 raise ValueError("TOGETHER_API_KEY not found in environment.")
-            return ChatTogether(model=model_name, api_key=api_key, **kwargs)
+            return ChatTogether(model=model_name, api_key=api_key, **kwargs, cache=True)
 
         elif provider == "gemini":
             api_key = os.getenv("GEMINI_API_KEY")
             if not api_key:
                 raise ValueError("GEMINI_API_KEY not found in environment.")
-            return ChatGoogleGenerativeAI(model=model_name, **kwargs)
+            return ChatGoogleGenerativeAI(model=model_name, **kwargs, function_calling="auto")
 
         elif provider == "deepseek":
             api_key = os.getenv("DEEPSEEK_API_KEY")

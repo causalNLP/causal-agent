@@ -13,7 +13,7 @@ from langchain_core.tools import tool
 from auto_causal.components.input_parser import parse_input
 from auto_causal.config import get_llm_client
 from auto_causal.components.state_manager import create_workflow_state_update
-
+import json
 logger = logging.getLogger(__name__)
 
 @tool
@@ -95,9 +95,9 @@ def input_parser_tool(input_text: str) -> Dict[str, Any]:
         # Pass dataset_description along
         "dataset_description": dataset_description 
     }
-    
+    print('before workflow: ', result)
     # Add workflow state to the result
     result.update(workflow_update)
-    
+    print('after workflow: ', result)
     logger.info("input_parser_tool finished successfully.")
-    return result 
+    return result

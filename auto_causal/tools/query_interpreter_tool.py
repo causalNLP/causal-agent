@@ -37,7 +37,7 @@ from auto_causal.components.query_interpreter import interpret_query
 from auto_causal.components.state_manager import create_workflow_state_update
 
 
-@tool(args_schema=QueryInterpreterInput)
+@tool()
 # Modify signature to accept individual Pydantic models/types as arguments
 def query_interpreter_tool(
     query_info: QueryInfo, 
@@ -63,7 +63,6 @@ def query_interpreter_tool(
     query_info_dict = query_info.model_dump()
     dataset_analysis_dict = dataset_analysis.model_dump()
     # dataset_description is already a string
-
     # Call the component function 
     try:
         # Assume interpret_query returns a dictionary compatible with Variables model
@@ -115,4 +114,4 @@ def query_interpreter_tool(
     )
     
     logger.info("query_interpreter_tool finished successfully.")
-    return output 
+    return output

@@ -24,7 +24,6 @@ from langchain.agents.output_parsers.tools import ToolsAgentOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.language_models import BaseChatModel
 from langchain_anthropic.chat_models import convert_to_anthropic_tool
-import os
 # Import actual tools from the tools directory
 from auto_causal.tools.input_parser_tool import input_parser_tool
 from auto_causal.tools.dataset_analyzer_tool import dataset_analyzer_tool
@@ -51,7 +50,6 @@ from langchain.agents import AgentOutputParser
 from langchain.agents.agent import AgentAction, AgentFinish, OutputParserException
 import re
 from typing import Union, List
-from auto_causal.models import *
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -125,6 +123,13 @@ class ReActMultiInputOutputParser(AgentOutputParser):
             return AgentFinish({"output": answer}, text)
 
         # No calls and no final answer → figure out which error to throw
+        if not re.search(r"Action\s*\d*\s*:", text):
+            raise OutputParserException(
+                f"Could not parse LLM output: `{text}`",
+                observation=MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE,
+                llm_output=text,
+                send_to_llm=True,
+            )
         if not re.search(r"Action\s*\d*\s*Input\s*\d*:", text):
             raise OutputParserException(
                 f"Could not parse LLM output: `{text}`",
@@ -136,10 +141,16 @@ class ReActMultiInputOutputParser(AgentOutputParser):
         # Fallback
         raise OutputParserException(f"Could not parse LLM output: `{text}`")
 
+
 # Set up basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# --- Centralized LLM Client Factory (REMOVED FROM HERE) --- 
+# load_dotenv() # Moved to config
+# def get_llm_client(...): # Moved to config
+#     ...
+# --- End Removed Section --- 
 
 def create_agent_prompt(tools: List[tool]) -> ChatPromptTemplate:
     """Create the prompt template for the causal inference agent, emphasizing workflow and data handoff.
@@ -153,7 +164,6 @@ def create_agent_prompt(tools: List[tool]) -> ChatPromptTemplate:
     system_template = """
 You are a causal inference expert helping users answer causal questions by following a strict workflow using specialized tools.
 
-Remember you always have to always generate the Thought, Action and Action Input block.
 TOOLS:
 ------
 You have access to the following tools:
@@ -162,15 +172,19 @@ You have access to the following tools:
 
 To use a tool, please use the following format:
 
+```
 Thought: Do I need to use a tool? Yes
 Action: the action to take, should be one of [{tool_names}]
 Action Input: the input to the action, as a single, valid JSON object string. Check the tool definition for required arguments and structure.
 Observation: the result of the action, often containing structured data like 'variables', 'dataset_analysis', 'method_info', etc.
+```
 
 When you have a response to say to the Human, or if you do not need to use a tool, you MUST use the format:
 
+```
 Thought: Do I need to use a tool? No
 Final Answer: [your response here]
+```
 
 DO NOT UNDER ANY CIRCUMSTANCE CALL MORE THAN ONE TOOL IN A  STEP
 
@@ -205,8 +219,7 @@ IMPORTANT RULES:
 3. Don't use action names like default_api.dataset_analyzer_tool, instead use tool names like dataset_analyzer_tool.
 4. Always start, action, and observation with a new line.
 5. Don't use '\\' before double quotes
-6. Don't include ```json for Action Input. Also ensure that Action Input is a valid json. DO no add any text after Action Iput.
-7. You have to always choose one of the tools unless it's the final answer.
+6. Don't include ```json for Action Input
 Begin!
 """ 
 
@@ -242,8 +255,9 @@ def create_causal_agent(llm: BaseChatModel) -> AgentExecutor:
     # anthropic_agent_tools = [ convert_to_anthropic_tool(anthropic_tool) for anthropic_tool in agent_tools]
     # Create the prompt using the helper
     prompt = create_agent_prompt(agent_tools)
-    # Bind tools to the LLM (using the passed shared instance)
     
+    # Bind tools to the LLM (using the passed shared instance)
+    llm_with_tools = llm.bind_tools(agent_tools)
     
     # Create memory
     # Consider if memory needs to be passed in or created here
@@ -253,15 +267,7 @@ def create_causal_agent(llm: BaseChatModel) -> AgentExecutor:
     from langchain_anthropic.output_parsers import ToolsOutputParser
     from langchain.agents.output_parsers.json import JSONAgentOutputParser
     # from langchain.agents.react.output_parser import MultiActionAgentOutputParsers ReActMultiInputOutputParser
-    provider = os.getenv("LLM_PROVIDER", "openai")
-    if provider == "gemini":
-        base_parser=ReActMultiInputOutputParser()
-        llm_with_tools = llm.bind_tools(agent_tools)
-    else:
-        base_parser=ToolsAgentOutputParser()
-        llm_with_tools = llm.bind_tools(agent_tools, tool_choice="any")
-    agent = create_react_agent(llm_with_tools, agent_tools, prompt, output_parser=base_parser)
-    
+    agent = create_react_agent(llm_with_tools, agent_tools, prompt, output_parser=ReActMultiInputOutputParser())
     
     # Create executor (should now work with the manually constructed agent)
     executor = AgentExecutor(
@@ -309,7 +315,7 @@ def run_causal_analysis(query: str, dataset_path: str,
         # --- End Note --- 
 
         # --- Create agent using the shared LLM --- 
-        # agent_executor = create_causal_agent(shared_llm) 
+        agent_executor = create_causal_agent(shared_llm) 
         
         # Construct input, including description if available
         # IMPORTANT: Agent now expects 'input' and potentially 'chat_history'
@@ -329,50 +335,17 @@ def run_causal_analysis(query: str, dataset_path: str,
         # Log the constructed input text
         logger.info(f"Constructed input for agent: \n{input_text}")
 
-        input_parsing_result = input_parser_tool(input_text)
-        dataset_analysis_result = dataset_analyzer_tool.func(dataset_path=input_parsing_result["dataset_path"], dataset_description=input_parsing_result["dataset_description"], original_query=input_parsing_result["original_query"]).analysis_results
-        query_info = QueryInfo(
-        query_text=input_parsing_result["original_query"],
-        potential_treatments=input_parsing_result["extracted_variables"].get("treatment"),
-        potential_outcomes=input_parsing_result["extracted_variables"].get("outcome"),
-        covariates_hints=input_parsing_result["extracted_variables"].get("covariates_mentioned"),
-        instrument_hints=input_parsing_result["extracted_variables"].get("instruments_mentioned")
-    )
+        result = agent_executor.invoke({
+    "input": input_text,
+})
 
-        query_interpreter_output = query_interpreter_tool.func(query_info=query_info, dataset_analysis=dataset_analysis_result, dataset_description=input_parsing_result["dataset_description"], original_query = input_parsing_result["original_query"]).variables
-        method_selector_output = method_selector_tool.func(variables=query_interpreter_output,
-            dataset_analysis=dataset_analysis_result,
-            dataset_description=input_parsing_result["dataset_description"],
-            original_query = input_parsing_result["original_query"])
-        method_info = MethodInfo(
-            **method_selector_output['method_info']
-        )
-        method_validator_input = MethodValidatorInput(
-            method_info=method_info,
-            variables=query_interpreter_output,
-            dataset_analysis=dataset_analysis_result,
-            dataset_description=input_parsing_result["dataset_description"],
-            original_query = input_parsing_result["original_query"]
-        )
-        method_validator_output = method_validator_tool.func(method_validator_input)
-        method_executor_input = MethodExecutorInput(
-            **method_validator_output
-        )
-        method_executor_output = method_executor_tool.func(method_executor_input, original_query = input_parsing_result["original_query"])
-        explainer_output = explanation_generator_tool.func(            method_info=method_info,
-            validation_info=method_validator_output,
-            variables=query_interpreter_output,
-            results=method_executor_output,
-            dataset_analysis=dataset_analysis_result,
-            dataset_description=input_parsing_result["dataset_description"],
-            original_query = input_parsing_result["original_query"])
-        result = output_formatter_tool.func(query=explainer_output['query'],method=explainer_output['method'],results=explainer_output['results']['results'],explanation=explainer_output['explanation'],dataset_analysis = explainer_output["dataset_analysis"], dataset_description=explainer_output["dataset_description"])
+        
         # AgentExecutor returns dict. Extract the final output dictionary.
         logger.info("Causal analysis run finished.")
         
         # Ensure result is a dict and extract the 'output' part
         if isinstance(result, dict):
-            final_output = result
+            final_output = result.get("output")
             if isinstance(final_output, dict):
                 return final_output # Return only the dictionary from the final tool
             else:
