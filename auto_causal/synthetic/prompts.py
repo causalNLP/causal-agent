@@ -62,7 +62,7 @@ def create_prompt(summary, method, domain, history):
     method_names = {"encouragement": "Encouragement Design", "did_twfe": "Difference in Differences with Two-Way Fixed Effects",
                     "did_canonical": "Canonical Difference in Differences", "IV": "Instrumental Variable",
                     "multi_rct": "Multi-Treatment Randomized Control Trial", "rdd": "Regression Discontinuity Design",
-                    "observational": "Observational", "rct": "Randomized Control Trial"}
+                    "observational": "Observational", "rct": "Randomized Control Trial", "frontdoor": "Front-Door Causal Inference"}
 
     domain_guides = {
         "education": "Education data often includes student performance, school-level features, socioeconomic background, and intervention types like tutoring or online classes.",

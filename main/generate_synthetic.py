@@ -4,7 +4,7 @@
 
 from auto_causal.synthetic.io import generate_observational_data, generate_rct_data, \
     generate_multi_rct_data, generate_canonical_did_data, generate_twfe_did_data, generate_data_iv, \
-    generate_encouragement_data, generate_rdd_data
+    generate_encouragement_data, generate_rdd_data, generate_frontdoor_data
 
 from pathlib import Path
 import numpy as np
@@ -35,6 +35,19 @@ RCT2_COV_POOL = np.array([
     [3, 5],
     [0.5, 2],
 ])
+
+FRONTDOOR_MEAN_POOL = np.array([
+    [10, 20, 5],
+    [12, 18, 6],
+    [8,  25, 4],
+])
+
+FRONTDOOR_COV_POOL = np.array([
+    [4, 6, 2],
+    [5, 5, 3],
+    [3, 7, 2],
+])
+
 
 DID_CAN_MEAN_POOL = np.array([
     [3, 7],
@@ -108,7 +121,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", "--method", type=str, required=True,
                         choices=["observational", "rct", "multi_rct", "did_canonical",
-                                 "did_twfe", "iv", "iv_encouragement", "rdd"],
+                                 "did_twfe", "iv", "iv_encouragement", "rdd", "frontdoor"],
                         help="Method to generate data for")
     parser.add_argument("-d", "--data_path", type=str, required=True,
                         help="Path to the folder where the data will be saved")
@@ -168,6 +181,16 @@ if __name__ == "__main__":
         generate_multi_rct_data(base_mean2, base_cov_diag2, args.size, args.n_treatments, args.max_continuous,
                                 args.max_binary, args.min_observations, args.max_observations,
                                 data_path, metadata_path, n_obs=args.observations)
+
+    elif method == "frontdoor":
+        idx = np.random.choice(len(OBS_MEAN_POOL)) 
+        base_mean8 = OBS_MEAN_POOL[idx]
+        base_cov_diag8 = OBS_COV_POOL[idx]
+
+        generate_frontdoor_data(base_mean8, base_cov_diag8, args.size, args.max_continuous, args.max_binary,
+                                args.min_observations, args.max_observations,
+                                data_path, metadata_path, n_obs=args.observations)
+
 
     elif method == "did_canonical":
         idx = np.random.choice(len(DID_CAN_MEAN_POOL))

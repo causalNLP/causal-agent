@@ -161,6 +161,59 @@ class MultiTreatRCTGenerator(DataGenerator):
             print(result)
         return result
 
+
+# Front-Door Criterion Generator
+class FrontDoorGenerator(DataGenerator):
+    """
+    Generates synthetic data satisfying the front-door criterion.
+    D → M → Y, D ← U → Y
+    """
+    def __init__(self, n_observations, n_continuous_covars=2, n_binary_covars=2,
+                 mean=None, covar=None, seed=111, true_effect=2.0, heterogeneity=0):
+        super().__init__(n_observations, n_continuous_covars, n_binary_covars=n_binary_covars,
+                         mean=mean, covar=covar, seed=seed, true_effect=true_effect,
+                         n_treatments=1, heterogeneity=heterogeneity)
+        self.method = "FrontDoor"
+
+    def generate_data(self):
+        X = self.generate_covariates()
+        cols = [f"X{i+1}" for i in range(self.n_covars)]
+        df = pd.DataFrame(X, columns=cols)
+
+        # Latent confounder
+        U = np.random.normal(0, 1, self.n_observations)
+
+        # Treatment depends on U and X
+        vec_d = np.random.uniform(0.5, 1.5, size=self.n_covars)
+        df['D'] = (X @ vec_d + 0.8 * U + np.random.normal(0, 1, self.n_observations)) > 0
+        df['D'] = df['D'].astype(int)
+
+        # Mediator depends on D and X
+        vec_m = np.random.uniform(0.5, 1.5, size=self.n_covars)
+        df['M'] = X @ vec_m + df['D'] * 1.5 + np.random.normal(0, 1, self.n_observations)
+
+        # Outcome depends on M, U and X
+        vec_y = np.random.uniform(0.5, 1.5, size=self.n_covars)
+        df['Y'] = 50 + 2.0 * df['M'] + 1.0 * U + X @ vec_y + np.random.normal(0, 1, self.n_observations)
+
+        self.data = df
+        return df
+
+    def test_data(self, print_=False):
+        if self.data is None:
+            raise ValueError("Data not generated yet. Please generate data first.")
+        
+        model_m = smf.ols("M ~ D", data=self.data).fit()
+        model_y = smf.ols("Y ~ M + D", data=self.data).fit()
+
+        if print_:
+            print("Regression: M ~ D")
+            print(model_m.summary())
+            print("\nRegression: Y ~ M + D")
+            print(model_y.summary())
+
+        return {"M~D": model_m.summary(), "Y~M+D": model_y.summary()}
+
 class ObservationalDataGenerator(DataGenerator):
     """
     Generate synthetic data for observational studies.

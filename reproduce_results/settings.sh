@@ -5,6 +5,7 @@ export BASE_FOLDER="reproduce_results/samples/synthetic"
 ## dataset sizes
 export RCT_SIZE=10
 export MULTI_RCT_SIZE=5
+export FRONTDOOR_SIZE=5
 export CANONICAL_DID_SIZE=5
 export TWFE_DID_SIZE=5
 export OBSERVATIONAL_SIZE=5
@@ -30,6 +31,7 @@ export MAX_PERIODS=10
 ## maximum number of covariates
 export N_CONTINUOUS=5
 export N_CONTINUOUS_MULTI=2
+export N_CONTINUOUS_FRONTDOOR=3
 export N_CONTINUOUS_DID_CANONICAL=2
 export N_CONTINUOUS_DID_TWFE=2
 export N_CONTINUOUS_IV=4

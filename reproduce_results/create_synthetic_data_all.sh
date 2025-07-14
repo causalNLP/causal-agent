@@ -14,6 +14,9 @@ bash reproduce_results/create_data/create_rct_data.sh
 echo "Generating Multi-RCT Data"
 bash reproduce_results/create_data/create_multi_rct_data.sh
 
+echo "Generating Front_Door Data"
+bash reproduce_results/create_data/create_front_door_data.sh
+
 echo "Generating Observational Data"
 bash reproduce_results/create_data/create_observational_data.sh
 
