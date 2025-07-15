@@ -140,6 +140,7 @@ def _validate_llm_output(parsed_info: ParsedQueryInfo, dataset_info: Optional[Di
     # 1. Check required fields exist (Pydantic handles this on parsing)
     # 2. Check query type is one of the allowed types (can add enum to Pydantic later)
     allowed_types = {"EFFECT_ESTIMATION", "COUNTERFACTUAL", "CORRELATION", "DESCRIPTIVE", "OTHER"}
+    print(parsed_info)
     assert parsed_info.query_type in allowed_types, f"Invalid query_type: {parsed_info.query_type}"
     
     # 3. Check that if it's an effect query, treatment and outcome are likely present
@@ -187,7 +188,9 @@ def _extract_query_information_with_llm(query: str, dataset_info: Optional[Dict]
             # --- Invoke LangChain LLM with structured output (using passed llm) ---
             parsed_info = structured_llm.invoke(messages)
             # ---------------------------------------------------
-                        
+            print(messages)
+            print('---------------------------------------------------')
+            print(parsed_info)
             # Perform custom assertions/validation
             if _validate_llm_output(parsed_info, dataset_info):
                 return parsed_info # Success!

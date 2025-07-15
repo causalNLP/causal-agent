@@ -41,14 +41,15 @@ def get_llm_client(provider: Optional[str] = None, model_name: Optional[str] = N
         "openai": "gpt-4o-mini",
         "anthropic": "claude-3-5-sonnet-latest",
         "together": "deepseek-ai/DeepSeek-V3",  # Default Together model
-        "gemini" : "gemini-2.5-pro",
+        "gemini" : "gemini-2.5-flash",
         "deepseek" : "deepseek-chat"
     }
     
     model_name = model_name or os.getenv("LLM_MODEL", default_models.get(provider, default_models["openai"]))
     
     api_key = None
-    kwargs.setdefault("temperature", 0) # Default temperature if not provided
+    if model_name not in ['o3-mini', 'o3', 'o4-mini']:
+        kwargs.setdefault("temperature", 0) # Default temperature if not provided
 
     logger.info(f"Initializing LLM client: Provider='{provider}', Model='{model_name}'")
 
@@ -69,7 +70,7 @@ def get_llm_client(provider: Optional[str] = None, model_name: Optional[str] = N
             api_key = os.getenv("TOGETHER_API_KEY")
             if not api_key:
                 raise ValueError("TOGETHER_API_KEY not found in environment.")
-            return ChatTogether(model=model_name, api_key=api_key, **kwargs, cache=True)
+            return ChatTogether(model=model_name, api_key=api_key, **kwargs)
 
         elif provider == "gemini":
             api_key = os.getenv("GEMINI_API_KEY")

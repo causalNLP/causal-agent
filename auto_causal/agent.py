@@ -296,7 +296,12 @@ def run_causal_analysis(query: str, dataset_path: str,
     
     try:
         # --- Instantiate the shared LLM client --- 
-        shared_llm = get_llm_client(temperature=0) # Or read provider/model from env
+        model_name = os.getenv("LLM_MODEL", "gpt-4")
+        if model_name in ['o3', 'o4-mini', 'o3-mini']:
+            print('-------------------------')
+            shared_llm = get_llm_client()
+        else:
+            shared_llm = get_llm_client(temperature=0) # Or read provider/model from env
         
         # --- Dependency Injection Note (REMAINS RELEVANT) --- 
         # If tools need the LLM, they must be adapted. Example using partial:
@@ -366,8 +371,11 @@ def run_causal_analysis(query: str, dataset_path: str,
             dataset_analysis=dataset_analysis_result,
             dataset_description=input_parsing_result["dataset_description"],
             original_query = input_parsing_result["original_query"])
-        result = output_formatter_tool.func(query=explainer_output['query'],method=explainer_output['method'],results=explainer_output['results']['results'],explanation=explainer_output['explanation'],dataset_analysis = explainer_output["dataset_analysis"], dataset_description=explainer_output["dataset_description"])
+        # result = output_formatter_tool.func(query=explainer_output['query'],method=explainer_output['method'],results=explainer_output['results'],explanation=explainer_output['explanation'],dataset_analysis = explainer_output["dataset_analysis"], dataset_description=explainer_output["dataset_description"])
         # AgentExecutor returns dict. Extract the final output dictionary.
+        result = explainer_output
+        result['results']['results']["method_used"] = method_info.selected_method
+        logger.info(result)
         logger.info("Causal analysis run finished.")
         
         # Ensure result is a dict and extract the 'output' part
