@@ -1,324 +1,176 @@
-﻿paper_name,data_description,natural_language_query,answer,std_error,is_significant,method,data_files,remark,reference,other_notes
-Social Pressure and Voter Turnout: Evidence from a Large-Scale Field Experiment,"
-This study aims to determine the extent to which social norms influence voter turnout. The authors conduct an randomized experiment to encourage voters to consider their civic duty while applying different levels of social pressure.
+﻿paper_name,data_description,natural_language_query,answer,std_error,is_significant,method,treatment,outcome,covariates,running_var,temporal_var,instrument_var,state_var,interacting_variable,multirct_treatment,data_files,remark,reference,other_notes,publication_year
+Social Pressure and Voter Turnout: Evidence from a Large-Scale Field Experiment,"The randomized experiment aims to analyze the effect of different types of social pressures on voter behavior. A field experiment was conducted in Michigan ahead of the August 2006 primary election. 
+Households were randomly assigned to a control group or one of four treatment groups: Civic Duty, Hawthorne, Self, Neighbors. Eleven days before the election, each treatment group received a different mailing:
+Civic Duty: Emphasized the recipient’s responsibility as a citizen to vote.
+Hawthorne: Notified recipients that their voting behavior would be studied using public records, introducing mild social pressure.
+Self: Listed the voting history of all registered voters in the household and noted that an updated chart would be mailed after the election.
+Neighbors: Included both the household's and neighbors’ voting records, implying public exposure of voting behavior.
+Control Group: Received no mailing.
+Variables in the Dataset
+sex: Participant’s sex (male or female)
+g2000, g2002, g2004: Voted in the 2000, 2002, and 2004 gubernatorial elections
+p2000, p2002, p2004: Voted in the 2000, 2002, and 2004 primary elections
+treatment: Assigned group (Civic Duty, Hawthorne, Neighbors, Self, or Control)
+cluster: Cluster identifier for the unit
+voted: Indicator for voting in the 2006 primary election
+hh_id: Household ID
+hh_size: Number of individuals in the household
+yob: Year of birth of the participant",Does the Hawthorn scheme lead to an increase in voter turnout?,0.026,0.003,1,ols,treatment,voted,"g2000, g2002, p2000, p2002, p2004",,,,,,Hawthorne,voter_turnout_data.csv,OLS or difference in means. OLS with covariates also works in this case,table 3a,There are other models with fixed effects as well. But I have ignored them. ,2008
+Social Pressure and Voter Turnout: Evidence from a Large-Scale Field Experiment,"The randomized experiment aims to analyze the effect of different types of social pressures on voter behavior. A field experiment was conducted in Michigan ahead of the August 2006 primary election. 
+Households were randomly assigned to a control group or one of four treatment groups: Civic Duty, Hawthorne, Self, Neighbors. Eleven days before the election, each treatment group received a different mailing:
+Civic Duty: Emphasized the recipient’s responsibility as a citizen to vote.
+Hawthorne: Notified recipients that their voting behavior would be studied using public records, introducing mild social pressure.
+Self: Listed the voting history of all registered voters in the household and noted that an updated chart would be mailed after the election.
+Neighbors: Included both the household's and neighbors’ voting records, implying public exposure of voting behavior.
+Control Group: Received no mailing.
+Variables in the Dataset
+sex: Participant’s sex (male or female)
+g2000, g2002, g2004: Voted in the 2000, 2002, and 2004 gubernatorial elections
+p2000, p2002, p2004: Voted in the 2000, 2002, and 2004 primary elections
+treatment: Assigned group (Civic Duty, Hawthorne, Neighbors, Self, or Control)
+cluster: Cluster identifier for the unit
+voted: Indicator for voting in the 2006 primary election
+hh_id: Household ID
+hh_size: Number of individuals in the household
+yob: Year of birth of the participant",Does reminding citizens about their Civic Duties make them more likely to vote?,0.018,0.003,1,ols,treatment,voted,,,,,,,Civic Duty,voter_turnout_data.csv,OLS or difference in means. OLS with covariates also works in this case,table 3a,,2008
+Social Pressure and Voter Turnout: Evidence from a Large-Scale Field Experiment,"The randomized experiment aims to analyze the effect of different types of social pressures on voter behavior. A field experiment was conducted in Michigan ahead of the August 2006 primary election. 
+Households were randomly assigned to a control group or one of four treatment groups: Civic Duty, Hawthorne, Self, Neighbors. Eleven days before the election, each treatment group received a different mailing:
+Civic Duty: Emphasized the recipient’s responsibility as a citizen to vote.
+Hawthorne: Notified recipients that their voting behavior would be studied using public records, introducing mild social pressure.
+Self: Listed the voting history of all registered voters in the household and noted that an updated chart would be mailed after the election.
+Neighbors: Included both the household's and neighbors’ voting records, implying public exposure of voting behavior.
+Control Group: Received no mailing.
+Variables in the Dataset
+sex: Participant’s sex (male or female)
+g2000, g2002, g2004: Voted in the 2000, 2002, and 2004 gubernatorial elections
+p2000, p2002, p2004: Voted in the 2000, 2002, and 2004 primary elections
+treatment: Assigned group (Civic Duty, Hawthorne, Neighbors, Self, or Control)
+cluster: Cluster identifier for the unit
+voted: Indicator for voting in the 2006 primary election
+hh_id: Household ID
+hh_size: Number of individuals in the household
+yob: Year of birth of the participant",How effective is the Neighbors treatment scheme in increasing voter turnout?,0.081,0.003,1,ols,treatment,voted,,,,,,,Neighbors,voter_turnout_data.csv,OLS or difference in means. OLS with covariates also works in this case,table 3a,,2008
+Social Pressure and Voter Turnout: Evidence from a Large-Scale Field Experiment,"The randomized experiment aims to analyze the effect of different types of social pressures on voter behavior. A field experiment was conducted in Michigan ahead of the August 2006 primary election. 
+Households were randomly assigned to a control group or one of four treatment groups: Civic Duty, Hawthorne, Self, Neighbors. Eleven days before the election, each treatment group received a different mailing:
+Civic Duty: Emphasized the recipient’s responsibility as a citizen to vote.
+Hawthorne: Notified recipients that their voting behavior would be studied using public records, introducing mild social pressure.
+Self: Listed the voting history of all registered voters in the household and noted that an updated chart would be mailed after the election.
+Neighbors: Included both the household's and neighbors’ voting records, implying public exposure of voting behavior.
+Control Group: Received no mailing.
+Variables in the Dataset
+sex: Participant’s sex (male or female)
+g2000, g2002, g2004: Voted in the 2000, 2002, and 2004 gubernatorial elections
+p2000, p2002, p2004: Voted in the 2000, 2002, and 2004 primary elections
+treatment: Assigned group (Civic Duty, Hawthorne, Neighbors, Self, or Control)
+cluster: Cluster identifier for the unit
+voted: Indicator for voting in the 2006 primary election
+hh_id: Household ID
+hh_size: Number of individuals in the household
+yob: Year of birth of the participant",Is the Self-treatment method effective in increasing voter turnout?,0.048,0.003,1,ols,treatment,voted,,,,,,,Self,voter_turnout_data.csv,OLS or difference in means. OLS with covariates also works in this case,table 3a,,2008
+Propensity Score Matching for methods for non-experimental causal studies,"The data originates from the National Supported Work (NSW) Demonstration, which was a temporary employment program created to assist disadvantaged workers lacking basic job skills in entering the labor market. The NSW program randomly assigned qualified applicants into either a treatment group, which received the benefits of the NSW program, or a control group, which did not. Participants in the treatment group were guaranteed a job for a duration of 9 to 18 months. 
 
-Data Collection Process:
-
-* Field Experiment Setting: The experiment was conducted in Michigan before the August 2006 primary election.
-* Random Assignment: Households were randomly assigned to either a control group or one of four treatment groups.
-* Mailings: Treatment groups received one of four mailings 11 days before the primary election. The mailings aimed to emphasize civic duty and apply varying degrees of social pressure.
-* Data Acquisition: Voter turnout data was obtained from public records after the August 2006 election.
-
-Data Collected:
-
-* Treatment Group: Assignment to one of the four mailing treatments:
-* Civic Duty: Reminded recipients of their rights and responsibilities as citizens, urging them to vote. This group voted at a rate of 31.5%.
-* Hawthorne Effect: Informed recipients that their voting behavior would be studied using public records, introducing a mild form of social pressure. This increased turnout to 32.2%.
-* Self: Listed the recent voting record of each registered voter in the household, indicating who voted in past elections and implying that an updated chart would be mailed after the primary. Turnout climbed to 34.5% in this group.
-* Neighbors: Listed both the household's voting records and the voting records of nearby residents, suggesting that voting behavior would be publicized within the neighborhood. Turnout in this experimental group was 37.8%.
-
-Variables 
-sex: sex of the participant (male or female)
-g2000, g2002, g2004: whether or not the participant voted in the 2000, 2002, and 2004 Gubernatorial elections 
-p2000, p2004, p2004: whether or not the participant voted in the 2000, 2002, and 2004 primary elections 
-treatment: type of treatment; one of Civic Duty, Hawthorne, Neighbors, Self 
-cluster: the cluster to which the unit belongs 
-voted: whether or not the participant voted in the 2006 elections 
-hh_id: household ID 
-hh_size: household size ",Does the Hawthorn scheme lead to an increase in voter turnout?,0.026,0.003,1,OLS,voter_turnout_data.csv,OLS or difference in means. OLS with covariates also works in this case,table 3a,There are other models with fixed effects as well. But I have ignored them. 
-Social Pressure and Voter Turnout: Evidence from a Large-Scale Field Experiment,"
-This study aims to determine the extent to which social norms influence voter turnout. The authors conduct an randomized experiment to encourage voters to consider their civic duty while applying different levels of social pressure.
-
-Data Collection Process:
-
-* Field Experiment Setting: The experiment was conducted in Michigan before the August 2006 primary election.
-* Random Assignment: Households were randomly assigned to either a control group or one of four treatment groups.
-* Mailings: Treatment groups received one of four mailings 11 days before the primary election. The mailings aimed to emphasize civic duty and apply varying degrees of social pressure.
-* Data Acquisition: Voter turnout data was obtained from public records after the August 2006 election.
-
-Data Collected:
-
-* Treatment Group: Assignment to one of the four mailing treatments:
-* Civic Duty: Reminded recipients of their rights and responsibilities as citizens, urging them to vote. This group voted at a rate of 31.5%.
-* Hawthorne Effect: Informed recipients that their voting behavior would be studied using public records, introducing a mild form of social pressure. This increased turnout to 32.2%.
-* Self: Listed the recent voting record of each registered voter in the household, indicating who voted in past elections and implying that an updated chart would be mailed after the primary. Turnout climbed to 34.5% in this group.
-* Neighbors: Listed both the household's voting records and the voting records of nearby residents, suggesting that voting behavior would be publicized within the neighborhood. Turnout in this experimental group was 37.8%.
-
-Variables 
-sex: sex of the participant (male or female)
-g2000, g2002, g2004: whether or not the participant voted in the 2000, 2002, and 2004 Gubernatorial elections 
-p2000, p2004, p2004: whether or not the participant voted in the 2000, 2002, and 2004 primary elections 
-treatment: type of treatment; one of Civic Duty, Hawthorne, Neighbors, Self 
-cluster: the cluster to which the unit belongs 
-voted: whether or not the participant voted in the 2006 elections 
-hh_id: household ID 
-hh_size: household size ",Does reminding citizens about their Civic Duties make them more likely to vote?,0.018,0.003,1,OLS,voter_turnout_data.csv,OLS or difference in means. OLS with covariates also works in this case,table 3a,
-Social Pressure and Voter Turnout: Evidence from a Large-Scale Field Experiment,"
-This study aims to determine the extent to which social norms influence voter turnout. The authors conduct an randomized experiment to encourage voters to consider their civic duty while applying different levels of social pressure.
-
-Data Collection Process:
-
-* Field Experiment Setting: The experiment was conducted in Michigan before the August 2006 primary election.
-* Random Assignment: Households were randomly assigned to either a control group or one of four treatment groups.
-* Mailings: Treatment groups received one of four mailings 11 days before the primary election. The mailings aimed to emphasize civic duty and apply varying degrees of social pressure.
-* Data Acquisition: Voter turnout data was obtained from public records after the August 2006 election.
-
-Data Collected:
-
-* Treatment Group: Assignment to one of the four mailing treatments:
-* Civic Duty: Reminded recipients of their rights and responsibilities as citizens, urging them to vote. This group voted at a rate of 31.5%.
-* Hawthorne Effect: Informed recipients that their voting behavior would be studied using public records, introducing a mild form of social pressure. This increased turnout to 32.2%.
-* Self: Listed the recent voting record of each registered voter in the household, indicating who voted in past elections and implying that an updated chart would be mailed after the primary. Turnout climbed to 34.5% in this group.
-* Neighbors: Listed both the household's voting records and the voting records of nearby residents, suggesting that voting behavior would be publicized within the neighborhood. Turnout in this experimental group was 37.8%.
-
-Variables 
-sex: sex of the participant (male or female)
-g2000, g2002, g2004: whether or not the participant voted in the 2000, 2002, and 2004 Gubernatorial elections 
-p2000, p2004, p2004: whether or not the participant voted in the 2000, 2002, and 2004 primary elections 
-treatment: type of treatment; one of Civic Duty, Hawthorne, Neighbors, Self 
-cluster: the cluster to which the unit belongs 
-voted: whether or not the participant voted in the 2006 elections 
-hh_id: household ID 
-hh_size: household size 
-This study aims to determine the extent to which social norms influence voter turnout. The authors conduct an randomized experiment to encourage voters to consider their civic duty while applying different levels of social pressure.
-
-Data Collection Process:
-
-* Field Experiment Setting: The experiment was conducted in Michigan before the August 2006 primary election.
-* Random Assignment: Households were randomly assigned to either a control group or one of four treatment groups.
-* Mailings: Treatment groups received one of four mailings 11 days before the primary election. The mailings aimed to emphasize civic duty and apply varying degrees of social pressure.
-* Data Acquisition: Voter turnout data was obtained from public records after the August 2006 election.
-
-Data Collected:
-
-* Treatment Group: Assignment to one of the four mailing treatments:
-* Civic Duty: Reminded recipients of their rights and responsibilities as citizens, urging them to vote. This group voted at a rate of 31.5%.
-* Hawthorne Effect: Informed recipients that their voting behavior would be studied using public records, introducing a mild form of social pressure. This increased turnout to 32.2%.
-* Self: Listed the recent voting record of each registered voter in the household, indicating who voted in past elections and implying that an updated chart would be mailed after the primary. Turnout climbed to 34.5% in this group.
-* Neighbors: Listed both the household's voting records and the voting records of nearby residents, suggesting that voting behavior would be publicized within the neighborhood. Turnout in this experimental group was 37.8%.
-
-Variables 
-sex: sex of the participant (male or female)
-g2000, g2002, g2004: whether or not the participant voted in the 2000, 2002, and 2004 Gubernatorial elections 
-p2000, p2004, p2004: whether or not the participant voted in the 2000, 2002, and 2004 primary elections 
-treatment: type of treatment; one of Civic Duty, Hawthorne, Neighbors, Self 
-cluster: the cluster to which the unit belongs 
-voted: whether or not the participant voted in the 2006 elections 
-hh_id: household ID 
-hh_size: household size ",How effective is the Neighbors treatment scheme in increasing voter turnout?,0.081,0.003,1,OLS,voter_turnout_data.csv,OLS or difference in means. OLS with covariates also works in this case,table 3a,
-Social Pressure and Voter Turnout: Evidence from a Large-Scale Field Experiment,"
-This study aims to determine the extent to which social norms influence voter turnout. The authors conduct an randomized experiment to encourage voters to consider their civic duty while applying different levels of social pressure.
-
-Data Collection Process:
-
-* Field Experiment Setting: The experiment was conducted in Michigan before the August 2006 primary election.
-* Random Assignment: Households were randomly assigned to either a control group or one of four treatment groups.
-* Mailings: Treatment groups received one of four mailings 11 days before the primary election. The mailings aimed to emphasize civic duty and apply varying degrees of social pressure.
-* Data Acquisition: Voter turnout data was obtained from public records after the August 2006 election.
-
-Data Collected:
-
-* Treatment Group: Assignment to one of the four mailing treatments:
-* Civic Duty: Reminded recipients of their rights and responsibilities as citizens, urging them to vote. This group voted at a rate of 31.5%.
-* Hawthorne Effect: Informed recipients that their voting behavior would be studied using public records, introducing a mild form of social pressure. This increased turnout to 32.2%.
-* Self: Listed the recent voting record of each registered voter in the household, indicating who voted in past elections and implying that an updated chart would be mailed after the primary. Turnout climbed to 34.5% in this group.
-* Neighbors: Listed both the household's voting records and the voting records of nearby residents, suggesting that voting behavior would be publicized within the neighborhood. Turnout in this experimental group was 37.8%.
-
-Variables 
-sex: sex of the participant (male or female)
-g2000, g2002, g2004: whether or not the participant voted in the 2000, 2002, and 2004 Gubernatorial elections 
-p2000, p2004, p2004: whether or not the participant voted in the 2000, 2002, and 2004 primary elections 
-treatment: type of treatment; one of Civic Duty, Hawthorne, Neighbors, Self 
-cluster: the cluster to which the unit belongs 
-voted: whether or not the participant voted in the 2006 elections 
-hh_id: household ID 
-hh_size: household size ",Is the Self-treatment method effective in increasing voter turnout?,0.049,0.003,1,OLS,voter_turnout_data.csv,OLS or difference in means. OLS with covariates also works in this case,table 3a,
-Propensity Score Matching for methods for non-experimental causal studies," Data Source and Randomized Experiment: The data originates from the National Supported Work (NSW) Demonstration, which was a temporary employment program created to assist disadvantaged workers lacking basic job skills in entering the labor market. The NSW program randomly assigned qualified applicants into either a treatment group, which received the benefits of the NSW program, or a control group, which did not. Participants in the treatment group were guaranteed a job for a duration of 9 to 18 months. 
-
-Variables Measured:
-Demographic Variables: age, years of education, race (Black, Hispanic), marital status, high school degree status 
-Earnings Data: Real earnings in 1974, 1975 and 1978",Does participating in the NSW training program lead to an increase in earnings for 1978?,1794,633,1,OLS,lalonde_data.csv,I think there is an issue with the standard error here; OLS / difference in means,table 3(1),
-Propensity Score Matching for methods for non-experimental causal studies," Data Source and Randomized Experiment: The data originates from the National Supported Work (NSW) Demonstration, which was a temporary employment program created to assist disadvantaged workers lacking basic job skills in entering the labor market. The NSW program randomly assigned qualified applicants into either a treatment group, which received the benefits of the NSW program, or a control group, which did not. Participants in the treatment group were guaranteed a job for a duration of 9 to 18 months. 
-
-Variables Measured:
-Demographic Variables: age, years of education, race (Black, Hispanic), marital status, high school degree status 
-Earnings Data: Real earnings in 1974, 1975 and 1978",What is the effect of the training program on job earnings for 1978 when we also consider other factors ?,1672,638,1,OLS,lalonde_data.csv,My answers are very close; OLS includes covariates as well,table 3 (2),
-Propensity Score Matching for methods for non-experimental causal studies,"The study uses data from the National Supported Work (NSW) Demonstration, a federally-funded program in the mid-1970s. The NSW program provided work experience to individuals facing economic and social challenges. The data includes a subset to incorporate two years of pre-intervention earnings. Additionally, comparison groups from surveys, including Panel Study of Income Dynamics (PSID) and Westat’s Matched Current Population Survey-Social Security Administration File (CPS) are used. 
-
-Variables:
-
-* Pre-intervention variables: pre-intervention earnings, education, age, ethnicity, and marital status. Data were obtained from initial surveys and Social Security Administration records. The data includes real earnings from 1974 (RE74), 1975 (RE75), and 1978 (RE78).
-* Treatment indicator: whether the individual was part of the treatment group.
-* Outcome variable: post-intervention earnings in 1978.
-* Other variables include: whether the individual has a high school degree (nodegree), and whether the individual was unemployed in 1974 and 1975 (U74, U75).",Does participating in the NSW training program lead to an increase in earnings when we also factor in the PSID data?,2120,2335,0,PS,lalonde_data_psid.csv,"This is very unstable. One reason could be due to the logit model used in estimating propensity score. Post propensity score matching, do difference in means",table 3(7),
-Can immigrants counteract employer discrimination? A factorial field experiment reveals the immutability of ethnic hierarchies,"The study seeks to determine whether immigrants can reduce discrimination by acquiring citizenship or experience, as well as whether ethnic hierarchies influence employment prospects.
+Variables Measured
+treat: whether or not the applicant received the training (1 if received training, 0 otherwise)
+age: measured in years
+education: measured in years
+black: indicating race (1 if black, 0 otherwise)
+hispanic: indicating race (1 if Hispanic, 0 otherwise)
+married: indicating marital status (1 if married, 0 otherwise)
+nodegree: indicating high school diploma (1 if no degree, 0 otherwise)
+re74: real earnings in 1974
+re75: real earnings in 1975
+re78: real earnings in 1978
 
 
+",Does participating in the NSW training program lead to an increase in earnings for 1978?,1794,633,1,ols,treat,re78,,,,,,,,lalonde_data.csv,I think there is an issue with the standard error here; OLS / difference in means,table 3(1),,2002
+Propensity Score Matching for methods for non-experimental causal studies,"The data originates from the National Supported Work (NSW) Demonstration, which was a temporary employment program created to assist disadvantaged workers lacking basic job skills in entering the labor market. The NSW program randomly assigned qualified applicants into either a treatment group, which received the benefits of the NSW program, or a control group, which did not. Participants in the treatment group were guaranteed a job for a duration of 9 to 18 months. 
 
-Data Collection Process / Field Experiment:
+Variables Measured
+treat: whether or not the applicant received the training (1 if received training, 0 otherwise)
+age: measured in years
+education: measured in years
+black: indicating race (1 if black, 0 otherwise)
+hispanic: indicating race (1 if Hispanic, 0 otherwise)
+married: indicating marital status (1 if married, 0 otherwise)
+nodegree: indicating high school diploma (1 if no degree, 0 otherwise)
+re74: real earnings in 1974
+re75: real earnings in 1975
+re78: real earnings in 1978
 
-* Fictitious applications were randomly sent to restaurant and café jobs in Sweden's seven largest metropolitan regions.
-* The applications were from fictitious immigrants born in 1995 who came to Sweden as children.
-* Researchers varied the applicants' country of birth, gender, citizenship, work experience, and religious activity.
-* The study used a fractional factorial design to efficiently test the impact of a range of characteristics.
-* Positive responses, such as invitations to interview or requests for more information, were coded as 1, while other responses and non-responses were coded as 0.
+
+",What is the effect of the training program on job earnings for 1978 when we also consider other factors ?,1672,638,1,ols,treat,re78,"treat, age, education, black, hispanic, nodegree, re74, re75",,,,,,,lalonde_data.csv,My answers are very close; OLS includes covariates as well,table 3 (2),,2002
+Propensity Score Matching for methods for non-experimental causal studies,"The observational dataset merges information from two sources. The first is the National Supported Work (NSW) Demonstration, a job training program aimed at improving worker skills. Participants were randomly assigned to either a treatment group that received the training or a control group that did not. The second source is the Panel Study of Income Dynamics (PSID), a nationally representative observational survey of U.S. households. The PSID group did not take part in the NSW program but was selected based on similar background characteristics.
+
+age: Age in years
+education: Number of years of schooling
+black: Race indicator (1 if Black, 0 otherwise)
+hispanic: Ethnicity indicator (1 if Hispanic, 0 otherwise)
+married: Marital status (1 if married, 0 otherwise)
+nodegree: Education status (1 if no high school degree, 0 otherwise)
+re74: Earnings in 1974 (in U.S. dollars)
+re75: Earnings in 1975 (in U.S. dollars)
+re78: Earnings in 1978 (in U.S. dollars)
+u74: Employment status in 1974 (1 if unemployed, 0 otherwise)
+u75: Employment status in 1975 (1 if unemployed, 0 otherwise)
+treat: Treatment status (1 if assigned to the NSW program, 0 otherwise)
+",Does participating in the NSW training program lead to an increase in earnings?,1691,2209,0,matching,treat,re78,"treat, age, education, black, hispanic, nodegree, re74, re75, u74, u75",,,,,,,lalonde_data_psid.csv,"This is very unstable. One reason could be due to the logit model used in estimating propensity score. Post propensity score matching, do difference in means",table 3(7),,2002
+Can immigrants counteract employer discrimination? A factorial field experiment reveals the immutability of ethnic hierarchies,"The data comes from a randomized field experiment designed to assess whether a candidate’s background influences their likelihood of receiving a job interview or offer. Researchers submitted fictitious job applications to restaurants and cafés across Sweden at random. The applications varied in terms of country of birth, gender, citizenship status, work experience, and religious activity. A positive response was defined as a job offer, interview invitation, or follow-up inquiry, while a negative response included any other reply or no response at all.
 
 Variables
-
-namn: came of the candidate 
-stad: city 
-Citizen: binary variable indicating whether the candidate is a citizen or not
-religious: binary variable indicating whether the candidate is religious or not 
-experience: binary variable indicating previous work experience 
-sweden: binary variable indicating whether the candidate was born in Sweden or not 
-poland: binary variable indicating whether the candidate was born in Poland or not
-iraq: binary variable indicating whether the candidate was born in Iraq or not
-somalia: binary variable indicating whether the candidate was born in Somalia or not
-skilledjob: binary variable indicating whether the job is high-skilled or not
-woman: binary variable indicating whether the candidate is a woman or not 
-invited: whether the candidate received an invitation for an interview request 
-city1, city2, ....., city7: dummy variables for different cities 
-immigrant: dummy variable indicating whether the candidate is an immigrant or not. A candidate is an immigrant if they were not born in Sweden.  ",Does being born outside Sweden decrease my chances of getting a callback for an interview?,-0.089,0.03,1,OLS,vernby_2019.csv,"I have named two variables in the query to see if both are included in the regression. In the most naïve version, I suspect it will not include citizenship as the variable. Need to include covariates.",Table 2 (1),
-Can immigrants counteract employer discrimination? A factorial field experiment reveals the immutability of ethnic hierarchies,"The study seeks to determine whether immigrants can reduce discrimination by acquiring citizenship or experience, as well as whether ethnic hierarchies influence employment prospects.
-
-
-
-Data Collection Process / Field Experiment:
-
-* Fictitious applications were randomly sent to restaurant and café jobs in Sweden's seven largest metropolitan regions.
-* The applications were from fictitious immigrants born in 1995 who came to Sweden as children.
-* Researchers varied the applicants' country of birth, gender, citizenship, work experience, and religious activity.
-* The study used a fractional factorial design to efficiently test the impact of a range of characteristics.
-* Positive responses, such as invitations to interview or requests for more information, were coded as 1, while other responses and non-responses were coded as 0.
+name: Name of the candidate
+stad: City
+citizen: 1 if the candidate is a Swedish citizen, 0 otherwise
+religious: 1 if the candidate is religious, 0 otherwise
+experience: 1 if the candidate has work experience, 0 otherwise
+poland: 1 if the candidate was born in Poland, 0 otherwise
+iraq: 1 if the candidate was born in Iraq, 0 otherwise
+somalia: 1 if the candidate was born in Somalia, 0 otherwise
+skilledjob: 1 if the job is high-skilled, 0 otherwise
+woman: 1 if the candidate is a woman, 0 otherwise
+invited: 1 if the candidate received an interview or a job or a follow-up response, 0 otherwise
+city1, city2, cite3, city4, city5, city6, city7: Dummy variables for the seven cities
+immigrant: 1 if the candidate is an immigrant (not born in Sweden), 0 otherwise
+time: Proportion of the applicant's life spent living in Sweden (scaled between 0 and 1)",Does being an immigrant make it less likely to get an interview request?,-0.087,0.03,1,ols,immigrant,invited,"citizen, woman, religious, experience, skilledjob, time",,,,stad,,,vernby_2019.csv,,Table 2(2),,2019
+Can immigrants counteract employer discrimination? A factorial field experiment reveals the immutability of ethnic hierarchies,"The data comes from a randomized field experiment designed to assess whether a candidate’s background influences their likelihood of receiving a job interview or offer. Researchers submitted fictitious job applications to restaurants and cafés across Sweden at random. The applications varied in terms of country of birth, gender, citizenship status, work experience, and religious activity. A positive response was defined as a job offer, interview invitation, or follow-up inquiry, while a negative response included any other reply or no response at all.
 
 Variables
+name: Name of the candidate
+stad: City
+citizen: 1 if the candidate is a Swedish citizen, 0 otherwise
+religious: 1 if the candidate is religious, 0 otherwise
+experience: 1 if the candidate has work experience, 0 otherwise
+poland: 1 if the candidate was born in Poland, 0 otherwise
+iraq: 1 if the candidate was born in Iraq, 0 otherwise
+somalia: 1 if the candidate was born in Somalia, 0 otherwise
+skilledjob: 1 if the job is high-skilled, 0 otherwise
+woman: 1 if the candidate is a woman, 0 otherwise
+invited: 1 if the candidate received an interview or a job or a follow-up response, 0 otherwise
+city1, city2, cite3, city4, city5, city6, city7: Dummy variables for the seven cities
+immigrant: 1 if the candidate is an immigrant (not born in Sweden), 0 otherwise
+time: Proportion of the applicant's life spent living in Sweden (scaled between 0 and 1)","How does being born in Somalia, compared to other countries like Poland, or Iraq, affect a candidate’s chances of getting a job interview?",-0.146,0.031,1,ols,somalia,invited,"citizen, woman, religious, experience, skilledjob, time, poland, iraq",,,,,,,vernby_2019.csv,,Table 2(3),,2019
+Using geographic variation in college proximity to estimate the return to schooling,"The National Longitudinal Survey of Young Men (NLSYM) was conducted to collect data on demographics, education, and employment outcomes. Participants were tracked over time to study long-term patterns. The dataset used here comes from the 1976 wave of the survey.
 
-namn: came of the candidate 
-stad: city 
-Citizen: binary variable indicating whether the candidate is a citizen or not
-religious: binary variable indicating whether the candidate is religious or not 
-experience: binary variable indicating previous work experience 
-sweden: binary variable indicating whether the candidate was born in Sweden or not 
-poland: binary variable indicating whether the candidate was born in Poland or not
-iraq: binary variable indicating whether the candidate was born in Iraq or not
-somalia: binary variable indicating whether the candidate was born in Somalia or not
-skilledjob: binary variable indicating whether the job is high-skilled or not
-woman: binary variable indicating whether the candidate is a woman or not 
-invited: whether the candidate received an invitation for an interview request 
-city1, city2, ....., city7: dummy variables for different cities 
-immigrant: dummy variable indicating whether the candidate is an immigrant or not. A candidate is an immigrant if they were not born in Sweden.  ",Does being born outside Sweden make it more likely to get a callback while also factoring in other variables that could influence callbacks?,-0.087,0.03,1,OLS,vernby_2019.csv,,Table 2(2),
-Can immigrants counteract employer discrimination? A factorial field experiment reveals the immutability of ethnic hierarchies,"The study seeks to determine whether immigrants can reduce discrimination by acquiring citizenship or experience, as well as whether ethnic hierarchies influence employment prospects.
-
-
-
-Data Collection Process / Field Experiment:
-
-* Fictitious applications were randomly sent to restaurant and café jobs in Sweden's seven largest metropolitan regions.
-* The applications were from fictitious immigrants born in 1995 who came to Sweden as children.
-* Researchers varied the applicants' country of birth, gender, citizenship, work experience, and religious activity.
-* The study used a fractional factorial design to efficiently test the impact of a range of characteristics.
-* Positive responses, such as invitations to interview or requests for more information, were coded as 1, while other responses and non-responses were coded as 0.
-
-Variables
-
-namn: came of the candidate 
-stad: city 
-Citizen: binary variable indicating whether the candidate is a citizen or not
-religious: binary variable indicating whether the candidate is religious or not 
-experience: binary variable indicating previous work experience 
-sweden: binary variable indicating whether the candidate was born in Sweden or not 
-poland: binary variable indicating whether the candidate was born in Poland or not
-iraq: binary variable indicating whether the candidate was born in Iraq or not
-somalia: binary variable indicating whether the candidate was born in Somalia or not
-skilledjob: binary variable indicating whether the job is high-skilled or not
-woman: binary variable indicating whether the candidate is a woman or not 
-invited: whether the candidate received an invitation for an interview request 
-city1, city2, ....., city7: dummy variables for different cities 
-immigrant: dummy variable indicating whether the candidate is an immigrant or not. A candidate is an immigrant if they were not born in Sweden.  ","""How does being born in Somalia impact callback rates compared to birthplaces such as Poland or Iraq, when controlling for citizenship status?""",-0.146,0.031,1,OLS,vernby_2019.csv,,Table 2(3),
-Using geographic variation in college proximity to estimate the return to schooling,"The study aims to study the connection between education and earnings. The study uses data drawn from the National Longitudinal Survey of Young Men (NLSYM), which began in 1966 with 5525 men aged 14-24 and continued with follow-up surveys through 1981. The file contains 3613 observations on men in 1976 cross-section of NLS young men (original NLS cohort).
-
-Variables: The data includes various variables:
-* nearc2: Indicates whether the individual grew up near a 2-year college.
-* nearc4: Indicates whether the individual grew up near a 4-year college.
-* nearc4a: Indicates whether the individual grew up near a 4-year public college.
-* nearc4b: Indicates whether the individual grew up near a 4-year private college.
-* ed76: Education in 1976.
-* ed66: Education in 1966.
-* age76: Age in 1976.
-* Information on father's and mother's education.
-* weight: NLS weight for the 1976 cross-section.
-* Family structure variables such as whether the individual lived with both parents, a single mother, or a stepparent at age 14.
-* reg661-reg669: Dummy variables for region of residence in 1966.
-* south66: Indicates whether the individual lived in the South in 1966.
-* work76: Indicates whether the individual worked in 1976.
-* work78: Indicates whether the individual worked in 1978.
-* lwage76: Log wage in 1976 (outliers trimmed).
-* lwage78: Log wage in 1978 (outliers trimmed).
-* famed: Mom-dad education class.
-* black: Indicates whether the individual is Black.
-* Variables indicating residence in SMSA in different years.
-* wage76, wage78, wage80: Raw wage (cents per hour) in different years.
-* Variables indicating non-interview status in 1978 and 1980.
-* Variables indicating enrollment status in different years.
-* kww: The ""Knowledge of the World of Work"" score.
-* iq: A normed IQ score.
-* Marital status variables.
-* libcrd14: Indicates whether there was a library card in the home at age 14.
-
-Data Collection Process/Experiment:
-* The NLSYM began in 1966 with men aged 14-24 and included follow-up surveys through 1981.
-* The NLSYM sample contains a relatively high fraction of men from the Southern region and a high fraction of blacks.
-* In the baseline interview, individuals were asked about their family composition when they were age 14, as well as their parents' education levels.",What is the estimated effect of education on earnings?,0.132,0.049,1,IV,card_geographic.csv,It will be interesting to see if any covariates will be included. ,Table 3b,
-Using geographic variation in college proximity to estimate the return to schooling,"The study aims to examine the connection between education and earnings. The study uses data drawn from the National Longitudinal Survey of Young Men (NLSYM), which began in 1966 with 5525 men aged 14-24 and continued with follow-up surveys through 1981. The file contains 3613 observations on men in 1976 cross-section of NLS young men (original NLS cohort).
-
-Variables: The data includes various variables:
-* nearc2: Indicates whether the individual grew up near a 2-year college.
-* nearc4: Indicates whether the individual grew up near a 4-year college.
-* nearc4a: Indicates whether the individual grew up near a 4-year public college.
-* nearc4b: Indicates whether the individual grew up near a 4-year private college.
-* ed76: Education in 1976.
-* ed66: Education in 1966.
-* age76: Age in 1976.
-* Information on the father's and mother's education.
-* weight: NLS weight for the 1976 cross-section.
-* Family structure variables such as whether the individual lived with both parents, a single mother, or a stepparent at age 14.
-* reg661-reg669: Dummy variables for region of residence in 1966.
-* south66: Indicates whether the individual lived in the South in 1966.
-* work76: Indicates whether the individual worked in 1976.
-* work78: Indicates whether the individual worked in 1978.
-* lwage76: Log wage in 1976 (outliers trimmed).
-* lwage78: Log wage in 1978 (outliers trimmed).
-* famed: Mom-dad education class.
-* black: Indicates whether the individual is Black.
-* Variables indicating residence in SMSA in different years.
-* wage76, wage78, wage80: Raw wage (cents per hour) in different years.
-* Variables indicating non-interview status in 1978 and 1980.
-* Variables indicating enrollment status in different years.
-* kww: The ""Knowledge of the World of Work"" score.
-* iq: A normed IQ score.
-* Marital status variables.
-* libcrd14: Indicates whether there was a library card in the home at age 14.
-",What is the estimated effect of education on earnings if we consider proximity to 4 year college as a determinant of education?,0.132,0.049,1,IV,card_geographic.csv,This question is rephrased version of 16. We are giving hints about using proximity to schools as instrumental variables.,Table 2(1),
-Randomized experiments from non-random selection in U.S. House elections,"The study uses data on elections to the United States House of Representatives from 1946–1998, Historical election returns from the ICPSR study. Election returns from 1992–1998 were gathered from the United States House of Representatives Office of the Clerk’s Web Page.  The data were checked for internal consistency and corrected using published and official sources. Election returns from 1992–1998 were appended to these data from the United States House of Representatives Office of the Clerk’s Web Page. Missing values were imputed using state-year or state-decade average electoral outcomes.
-
-
-Variables:
-""demsharenext"": Democratic vote share in the next election. 
-""demshareprev"": Democratic vote shares in the previous election
-""demwinprev"": Indicator variable for whether Democrats are the incumbent party 
-difdemshare: difference in vote shares of Democrats 
-difdemshare2: difference in the square of the vote shares of Democrats 
-difdemshare3: difference in the cube of the vote shares of Democrats 
-difdemshare4: difference in the fourth power of the vote shares of Democrats
-rdifdemshare: difference in vote shares of Democrats to the right of the threshold
-rdifdemshare2: difference in the square of vote shares of Democrats to the right of the threshold
-rdifdemshare3: difference in the cube of the vote shares of Democrats to the right of the threshold
-rdifdemshare4: difference in the fourth power of vote shares of Democrats to the right of the threshold
-demofficeexp: Democrat political experience
-othelectexp: for opposition electoral experience. 
-use: whether to use the data
-right: indicating if the data point is above a threshold",Does winning an election in a given period influence the party's subsequent electoral success?,0.077,0.011,1,RDD,lee_2008.csv,The dataset I have used is different from the original source. It is pre-processed to make analysis easier.,,
-The Long-run Effect of Abortion on Sexually Transmitted Infections,"This data looks at the effect of abortion legalization on the incidence of gonorrhea among 15-19 year 19-year-olds, as a measure of risky behavior. The core of the data collection strategy is based on a quasi-experiment comparing ""early repeal states"" with ""Roe states"". Early repeal states are those that repealed their abortion ban or had it revoked judicially prior to the Roe v. Wade decision in 1973, specifically Alaska, California, Hawaii, New York, and Washington. Roe states are the other 45 states for which abortion was legalized after Roe v. Wade. 
+Variables include:
+lwage: log of wages
+educ: years of education
+exper: years of work experience
+black: 1 if the individual is Black, 0 otherwise
+south: 1 if the individual lives in a southern state, 0 otherwise
+married: 1 if married, 0 otherwise
+smsa: 1 if living in a metropolitan area, 0 otherwise
+nearc4: 1 if there is a four-year college in the county, 0 otherwise",What is the effect of education on earnings?,0.132,0.049,1,iv,,,,,,,,,,card_geographic.csv,It will be interesting to see if any covariates will be included. ,Table 3b,,1993
+Randomized experiments from non-random selection in U.S. House elections,"This dataset includes information on U.S. House of Representatives elections from 1946 to 1998. Most of the data come from the Historical Election Returns compiled by the ICPSR, with results from 1992 to 1998 obtained from the Office of the Clerk of the U.S. House of Representatives. Missing values were imputed using average electoral outcomes by state and year or by state and decade. The dataset includes both vote share data and candidate characteristics.
+demsharenext: Democratic vote share in the next election
+demshareprev: Democratic vote share in the previous election
+demwinprev: 1 if Democrats held the seat in the previous election, 0 otherwise
+difdemshare: Difference in vote share between the Democratic and Republican candidates
+difdemshare2 to difdemshare4: Squared, cubed, and fourth-power of the vote share difference
+rdifdemshare to rdifdemshare4: Transformed vote share differences for observations above a set threshold
+demofficeexp: Political experience of the Democratic candidate
+othelectexp: Electoral experience of the opposing candidate
+use: 1 if the observation is included in the analysis, 0 otherwise
+right: 1 if the Democratic candidate’s vote share is above the threshold, 0 otherwise",Does winning an election in a given period influence the party's subsequent electoral success?,0.077,0.011,1,rdd,,,,,,,,,,lee_2008.csv,The dataset I have used is different from the original source. It is pre-processed to make analysis easier.,,,2008
+The Long-run Effect of Abortion on Sexually Transmitted Infections,"This data looks at the effect of abortion legalization on the incidence of gonorrhea among 15–19-year-old females. The core idea is based on a quasi-experiment comparing early repeal states with Roe states. Early repeal states are those that repealed their abortion ban before the Roe v. Wade decision in 1973. Roe states are the states where abortion was legalized after Roe v. Wade.
 
 Variables:
 
@@ -343,8 +195,8 @@ lnr: Logged gonorrhea cases per 100,000 in 15–19 year olds
 younger: Indicator for being in the younger group
 fa: State-younger interaction
 pi: Parental involvement law in effect
-bf15: Indicator for Black females in the 15–19 age group",Is there a significant difference in the incidence of gonorrhea between early repeal and Roe states in 15-19-year-old Black females?,-1.36,0.412,1,Difference in Difference,abortion_bf.csv,,,
-The Long-run Effect of Abortion on Sexually Transmitted Infections,"This data looks at the effect of abortion legalization on the incidence of gonorrhea among 15-19 year 19-year-olds, as a measure of risky behavior. The core of the data collection strategy is based on a quasi-experiment comparing ""early repeal states"" with ""Roe states"". Early repeal states are those that repealed their abortion ban or had it revoked judicially prior to the Roe v. Wade decision in 1973, specifically Alaska, California, Hawaii, New York, and Washington. Roe states are the other 45 states for which abortion was legalized after Roe v. Wade. 
+bf15: Indicator for Black females in the 15–19 age group",Is there a difference in gonorrhea rates between early repeal and Roe states among Black females?,-1.36,0.412,1,did,repeal,lnr,"acc, ir, pi, alcohol, crack, poverty, income, ur",,year,,fip,,,abortion_bf15.csv,,,,2013
+The Long-run Effect of Abortion on Sexually Transmitted Infections,"This data looks at the effect of abortion legalization on the incidence of gonorrhea among 15–19-year-old males. The core idea is based on a quasi-experiment comparing early repeal states with Roe states. Early repeal states are those that repealed their abortion ban before the Roe v. Wade decision in 1973. Roe states are the states where abortion was legalized after Roe v. Wade.
 
 Variables:
 
@@ -369,68 +221,147 @@ lnr: Logged gonorrhea cases per 100,000 in 15–19 year olds
 younger: Indicator for being in the younger group
 fa: State-younger interaction
 pi: Parental involvement law in effect
-bf15: Indicator for Black females in the 15–19 age group",Did the legalization of abortion before Roe v. Wade lead to lower rates of sexually transmitted infections among Black male teenagers?,-1.8747,0.519,1,Difference in Difference,abortion_bm15.csv,,,
-Black Politicians Are More Intrinsically Motivated to Advance Blacks’ Interests: A Field Experiment Manipulating Political Incentives,"
-The black_politicians dataset contains data from Broockman (2013) on a field experiment in which fictional emails, purportedly from Black constituents, were sent to U.S. legislators. The experiment tested whether being ""out-of-district"" (i.e., not a potential voter) reduced the likelihood of a response. The hypothesis was that Black legislators might be more intrinsically motivated to respond to Black constituents, showing smaller effects of the out-of-district condition compared to non-Black legislators.
+bf15: Indicator for Black females in the 15–19 age group",Did abortion legalization before Roe v. Wade reduce gonorrhea rates among Black male teenagers in early-repeal states compared to other states?,-1.8747,0.519,1,did,repeal,lnr,"acc, ir, pi, alcohol, crack, poverty, income, ur",,year,,fip,,,abortion_bm15.csv,,,,2013
+Black Politicians Are More Intrinsically Motivated to Advance Blacks’ Interests: A Field Experiment Manipulating Political Incentives,"This study draws on data from a randomized field experiment in which fictional emails, appearing to come from Black constituents, were sent to legislators across the United States. The purpose was to test whether being outside a legislator’s district reduced the likelihood of receiving a response, and whether Black legislators were more likely to respond regardless of electoral incentives. The research focuses on differences in responsiveness based on the race of the legislator and the sender’s eligibility to vote.
+Variables include:
 
+leg_black: 1 if the legislator is Black, 0 otherwise
+treat_out: 1 if the email was from an out-of-district sender, 0 otherwise
+responded: 1 if the legislator responded to the email, 0 otherwise
+totalpop: Population of the legislator’s district
+medianhhincom: Median household income in the district
+black_medianhh: Median household income among Black residents in the district
+white_medianhh: Median household income among White residents in the district
+blackpercent: Percentage of the district’s population that is Black
+statessquireindex: State legislative professionalism index (Squire index)
+nonblacknonwhite: 1 if the legislator is neither Black nor White, 0 otherwise
+urbanpercent: Percentage of the district that is urban
+leg_senator: 1 if the legislator is a senator, 0 otherwise
+leg_democrat: 1 if the legislator is a Democrat, 0 otherwise
+south: 1 if the legislator represents a Southern state, 0 otherwise",How much differently do Black legislators respond to out of districts email?,0.128,0.052,1,ols,treat_out,responded,,,,,,leg_black,,broockman_intrinsic.csv,,,,2013
+Black Politicians Are More Intrinsically Motivated to Advance Blacks’ Interests: A Field Experiment Manipulating Political Incentives,"This study draws on data from a randomized field experiment in which fictional emails, appearing to come from Black constituents, were sent to legislators across the United States. The purpose was to test whether being outside a legislator’s district reduced the likelihood of receiving a response, and whether Black legislators were more likely to respond regardless of electoral incentives. The research focuses on differences in responsiveness based on the race of the legislator and the sender’s eligibility to vote.
+Variables include:
+
+leg_black: 1 if the legislator is Black, 0 otherwise
+treat_out: 1 if the email was from an out-of-district sender, 0 otherwise
+responded: 1 if the legislator responded to the email, 0 otherwise
+totalpop: Population of the legislator’s district
+medianhhincom: Median household income in the district
+black_medianhh: Median household income among Black residents in the district
+white_medianhh: Median household income among White residents in the district
+blackpercent: Percentage of the district’s population that is Black
+statessquireindex: State legislative professionalism index (Squire index)
+nonblacknonwhite: 1 if the legislator is neither Black nor White, 0 otherwise
+urbanpercent: Percentage of the district that is urban
+leg_senator: 1 if the legislator is a senator, 0 otherwise
+leg_democrat: 1 if the legislator is a Democrat, 0 otherwise
+south: 1 if the legislator represents a Southern state, 0 otherwise",Do legislators tend to respond to out-of-district emails?,-0.266,0.013,1,ols,treat_out,responded,,,,,,,,broockman_intrinsic.csv,,,,2013
+Black Politicians Are More Intrinsically Motivated to Advance Blacks’ Interests: A Field Experiment Manipulating Political Incentives,"This study draws on data from a randomized field experiment in which fictional emails, appearing to come from Black constituents, were sent to legislators across the United States. The purpose was to test whether being outside a legislator’s district reduced the likelihood of receiving a response, and whether Black legislators were more likely to respond regardless of electoral incentives. The research focuses on differences in responsiveness based on the race of the legislator and the sender’s eligibility to vote.
+Variables include:
+
+leg_black: 1 if the legislator is Black, 0 otherwise
+treat_out: 1 if the email was from an out-of-district sender, 0 otherwise
+responded: 1 if the legislator responded to the email, 0 otherwise
+totalpop: Population of the legislator’s district
+medianhhincom: Median household income in the district
+black_medianhh: Median household income among Black residents in the district
+white_medianhh: Median household income among White residents in the district
+blackpercent: Percentage of the district’s population that is Black
+statessquireindex: State legislative professionalism index (Squire index)
+nonblacknonwhite: 1 if the legislator is neither Black nor White, 0 otherwise
+urbanpercent: Percentage of the district that is urban
+leg_senator: 1 if the legislator is a senator, 0 otherwise
+leg_democrat: 1 if the legislator is a Democrat, 0 otherwise
+south: 1 if the legislator represents a Southern state, 0 otherwise",How much differently do Black legislators respond to emails compared to non-Black legislators if we account for the fact that they represent different types of districts than their white counterparts?,0.128,0.052,1,matching,treat_out,responded,"leg_democrat, leg_black, blackpercent, medianhhincom",,,,,,,broockman_intrinsic.csv,,,,2013
+Does Strengthening Self-Defense Law Deter Crime or Escalate Violence? Evidence from Castle Doctrine. ,"This dataset examines the impact of castle-doctrine statutes on violent crime rates in the United States. It combines state-level crime data from the FBI Uniform Crime Reports (UCR) Summary Files with information on the timing of castle-doctrine law implementation across states. The laws were adopted at different times, with 21 states enacting them between 2000 and 2010.
 Variables:
 
-leg_black: Legislator receiving the email is Black
-treat_out: Email is from an out-of-district sender
-responded: Legislator responded to the email
-totalpop: District population
-medianhhincom: District median household income
-black_medianhh: Median household income among Black residents
-white_medianhh: Median household income among White residents
-blackpercent: Percentage of the district population that is Black
-statessquireindex: State’s Squire index (a measure of legislative professionalism)
-nonblacknonwhite: Legislator is neither Black nor White
-urbanpercent: Percentage of the district that is urban
-leg_senator: Legislator is a senator
-leg_democrat: Legislator is a Democrat
-south: Legislator is from the Southern United States",How much differently do Black legislators respond to emails compared to non-Black legislators?,0.128,0.052,1,OLS,broockman_intrinsic.csv,,,
-Black Politicians Are More Intrinsically Motivated to Advance Blacks’ Interests: A Field Experiment Manipulating Political Incentives,"
-The black_politicians dataset contains data from Broockman (2013) on a field experiment in which fictional emails, purportedly from Black constituents, were sent to U.S. legislators. The experiment tested whether being ""out-of-district"" (i.e., not a potential voter) reduced the likelihood of a response. The hypothesis was that Black legislators might be more intrinsically motivated to respond to Black constituents, showing smaller effects of the out-of-district condition compared to non-Black legislators.
-
+year: Calendar year
+post: Indicator for post-treatment period
+sid: State ID
+robbery_gun_r: Region-quarter fixed effect (robbery with gun)
+jhcitizen_c: Justifiable homicides by private citizens
+jhpolice_c: Justifiable homicides by police officers
+homicide: Homicide rate per 100,000 state population
+robbery: Robbery rate per 100,000 state population
+assault: Aggravated assault rate per 100,000 state population
+burglary: Burglary rate per 100,000 state population
+larceny: Larceny rate per 100,000 state population
+motor: Motor vehicle theft rate per 100,000 state population
+murder: Murder rate per 100,000 state population
+l_homicide: Log of homicide rate
+l_robbery: Log of robbery rate
+l_assault: Log of aggravated assault rate
+l_burglary: Log of burglary rate
+l_larceny: Log of larceny rate
+l_motor: Log of motor vehicle theft rate
+l_murder: Log of murder rate
+unemployrt: State unemployment rate
+blackm_15_24: Percent of Black males aged 15 to 24
+whitem_15_24: Percent of White males aged 15 to 24
+blackm_25_44: Percent of Black males aged 25 to 44
+whitem_25_44: Percent of White males aged 25 to 44
+poverty: State poverty rate",Did the castle doctrine laws lead to a reduction in (log) homicide rates compared to states that did not adopt the law?,0.0877,0.067,1,did,cdl,l_homicide,,,,,,,,castle.csv,"The original paper uses weighted regression. I suspect the model will pick a simple regression. However, we need to add state and time fixed effects.  ",,,2012
+Does Strengthening Self-Defense Law Deter Crime or Escalate Violence? Evidence from Castle Doctrine. ,"This dataset examines the impact of castle-doctrine statutes on violent crime rates in the United States. It combines state-level crime data from the FBI Uniform Crime Reports (UCR) Summary Files with information on the timing of castle-doctrine law implementation across states. The laws were adopted at different times, with 21 states enacting them between 2000 and 2010.
 Variables:
 
-leg_black: Legislator receiving the email is Black
-treat_out: Email is from an out-of-district sender
-responded: Legislator responded to the email
-totalpop: District population
-medianhhincom: District median household income
-black_medianhh: Median household income among Black residents
-white_medianhh: Median household income among White residents
-blackpercent: Percentage of the district population that is Black
-statessquireindex: State’s Squire index (a measure of legislative professionalism)
-nonblacknonwhite: Legislator is neither Black nor White
-urbanpercent: Percentage of the district that is urban
-leg_senator: Legislator is a senator
-leg_democrat: Legislator is a Democrat
-south: Legislator is from the Southern United States",Do legislators tend to respond to out-of-district emails?,-0.266,0.013,1,OLS,broockman_intrinsic.csv,,,
-Black Politicians Are More Intrinsically Motivated to Advance Blacks’ Interests: A Field Experiment Manipulating Political Incentives,"
-The black_politicians dataset contains data from Broockman (2013) on a field experiment in which fictional emails, purportedly from Black constituents, were sent to U.S. legislators. The experiment tested whether being ""out-of-district"" (i.e., not a potential voter) reduced the likelihood of a response. The hypothesis was that Black legislators might be more intrinsically motivated to respond to Black constituents, showing smaller effects of the out-of-district condition compared to non-Black legislators.
-
+year: Calendar year
+post: Indicator for post-treatment period
+sid: State ID
+robbery_gun_r: Region-quarter fixed effect (robbery with gun)
+jhcitizen_c: Justifiable homicides by private citizens
+jhpolice_c: Justifiable homicides by police officers
+homicide: Homicide rate per 100,000 state population
+robbery: Robbery rate per 100,000 state population
+assault: Aggravated assault rate per 100,000 state population
+burglary: Burglary rate per 100,000 state population
+larceny: Larceny rate per 100,000 state population
+motor: Motor vehicle theft rate per 100,000 state population
+murder: Murder rate per 100,000 state population
+l_homicide: Log of homicide rate
+l_robbery: Log of robbery rate
+l_assault: Log of aggravated assault rate
+l_burglary: Log of burglary rate
+l_larceny: Log of larceny rate
+l_motor: Log of motor vehicle theft rate
+l_murder: Log of murder rate
+unemployrt: State unemployment rate
+blackm_15_24: Percent of Black males aged 15 to 24
+whitem_15_24: Percent of White males aged 15 to 24
+blackm_25_44: Percent of Black males aged 25 to 44
+whitem_25_44: Percent of White males aged 25 to 44
+poverty: State poverty rate",What is the effect of castle doctrine laws on (log) motor vehicle theft rates?,0.077,0.043,1,did,cdl,l_motor,,,year,,sid,,,castle.csv,Fixed effects version,,,2012
+Does Strengthening Self-Defense Law Deter Crime or Escalate Violence? Evidence from Castle Doctrine. ,"This dataset examines the impact of castle-doctrine statutes on violent crime rates in the United States. It combines state-level crime data from the FBI Uniform Crime Reports (UCR) Summary Files with information on the timing of castle-doctrine law implementation across states. The laws were adopted at different times, with 21 states enacting them between 2000 and 2010.
 Variables:
 
-leg_black: Legislator receiving the email is Black
-treat_out: Email is from an out-of-district sender
-responded: Legislator responded to the email
-totalpop: District population
-medianhhincom: District median household income
-black_medianhh: Median household income among Black residents
-white_medianhh: Median household income among White residents
-blackpercent: Percentage of the district population that is Black
-statessquireindex: State’s Squire index (a measure of legislative professionalism)
-nonblacknonwhite: Legislator is neither Black nor White
-urbanpercent: Percentage of the district that is urban
-leg_senator: Legislator is a senator
-leg_democrat: Legislator is a Democrat
-south: Legislator is from the Southern United States",How much differently do Black legislators respond to emails compared to non-Black legislators if we account for the fact that they represent different types of districts than their white counterparts?,0.161,0.046,1,Matching + regression,broockman_intrinsic.csv,,,
-Does Strengthening Self-Defense Law Deter Crime or Escalate Violence? Evidence from Castle Doctrine. ,"This dataset examines the impact of castle-doctrine (stand-your-ground) statutes on violent crime rates in the U.S. It combines state-level crime data from the FBI Uniform Crime Reports (UCR) Summary Files with policy implementation data across states. The time period of adoption varied by state, with 21 states enacting these laws between 2000 and 2010.
-
-
-Variables
+year: Calendar year
+post: Indicator for post-treatment period
+sid: State ID
+robbery_gun_r: Region-quarter fixed effect (robbery with gun)
+jhcitizen_c: Justifiable homicides by private citizens
+jhpolice_c: Justifiable homicides by police officers
+homicide: Homicide rate per 100,000 state population
+robbery: Robbery rate per 100,000 state population
+assault: Aggravated assault rate per 100,000 state population
+burglary: Burglary rate per 100,000 state population
+larceny: Larceny rate per 100,000 state population
+motor: Motor vehicle theft rate per 100,000 state population
+murder: Murder rate per 100,000 state population
+l_homicide: Log of homicide rate
+l_robbery: Log of robbery rate
+l_assault: Log of aggravated assault rate
+l_burglary: Log of burglary rate
+l_larceny: Log of larceny rate
+l_motor: Log of motor vehicle theft rate
+l_murder: Log of murder rate
+unemployrt: State unemployment rate
+blackm_15_24: Percent of Black males aged 15 to 24
+whitem_15_24: Percent of White males aged 15 to 24
+blackm_25_44: Percent of Black males aged 25 to 44
+whitem_25_44: Percent of White males aged 25 to 44
+poverty: State poverty rate",How do castle doctrine laws affect (log) larceny rates across states while accounting for population size across the states?,0.00747,0.024,0,did,cdl,l_larceny,,,year,,sid,,,castle.csv,Provinding hints to implement weighted regression,,,2012
+Does Strengthening Self-Defense Law Deter Crime or Escalate Violence? Evidence from Castle Doctrine. ,"This dataset examines the impact of castle-doctrine statutes on violent crime rates in the United States. It combines state-level crime data from the FBI Uniform Crime Reports (UCR) Summary Files with information on the timing of castle-doctrine law implementation across states. The laws were adopted at different times, with 21 states enacting them between 2000 and 2010.
+Variables:
 
 year: Calendar year
 post: Indicator for post-treatment period
@@ -445,149 +376,322 @@ burglary: Burglary rate per 100,000 state population
 larceny: Larceny rate per 100,000 state population
 motor: Motor vehicle theft rate per 100,000 state population
 murder: Murder rate per 100,000 state population
+l_homicide: Log of homicide rate
+l_robbery: Log of robbery rate
+l_assault: Log of aggravated assault rate
+l_burglary: Log of burglary rate
+l_larceny: Log of larceny rate
+l_motor: Log of motor vehicle theft rate
+l_murder: Log of murder rate
 unemployrt: State unemployment rate
-blackm_15_24: Percent of Black males aged 15–24
-whitem_15_24: Percent of White males aged 15–24
-blackm_25_44: Percent of Black males aged 25–44
-whitem_25_44: Percent of White males aged 25–44
-poverty: State poverty rate",Did the castle doctrine laws lead to a reduction in (log) homicide rates compared to states that did not adopt the law?,0.0877,0.067,1,Difference in Difference,castle.csv,"The original paper uses weighted regression. I suspect the model will pick a simple regression. However, we need to add state and time fixed effects.  ",,
-Does Strengthening Self-Defense Law Deter Crime or Escalate Violence? Evidence from Castle Doctrine. ,"This dataset examines the impact of castle-doctrine (stand-your-ground) statutes on violent crime rates in the U.S. It combines state-level crime data from the FBI Uniform Crime Reports (UCR) Summary Files with policy implementation data across states. The time period of adoption varied by state, with 21 states enacting these laws between 2000 and 2010.
-
-
-Variables
-
-year: Calendar year
-post: Indicator for post-treatment period
-sid: State ID
-robbery_gun_r: Region-quarter fixed effect (robbery with gun)
-jhcitizen_c: Justifiable homicides by private citizens
-jhpolice_c: Justifiable homicides by police officers
-homicide: Homicide rate per 100,000 state population
-robbery: Robbery rate per 100,000 state population
-assault: Aggravated assault rate per 100,000 state population
-burglary: Burglary rate per 100,000 state population
-larceny: Larceny rate per 100,000 state population
-motor: Motor vehicle theft rate per 100,000 state population
-murder: Murder rate per 100,000 state population
-unemployrt: State unemployment rate
-blackm_15_24: Percent of Black males aged 15–24
-whitem_15_24: Percent of White males aged 15–24
-blackm_25_44: Percent of Black males aged 25–44
-whitem_25_44: Percent of White males aged 25–44
-poverty: State poverty rate",What is the effect of castle doctrine laws on (log) motor vehicle theft rates?,0.0767,0.0413,1,Difference in Difference,castle.csv,Fixed effects version,,
-Does Strengthening Self-Defense Law Deter Crime or Escalate Violence? Evidence from Castle Doctrine. ,"This dataset examines the impact of castle-doctrine (stand-your-ground) statutes on violent crime rates in the U.S. It combines state-level crime data from the FBI Uniform Crime Reports (UCR) Summary Files with policy implementation data across states. The time period of adoption varied by state, with 21 states enacting these laws between 2000 and 2010.
-
-
-Variables
-
-year: Calendar year
-post: Indicator for post-treatment period
-sid: State ID
-robbery_gun_r: Region-quarter fixed effect (robbery with gun)
-jhcitizen_c: Justifiable homicides by private citizens
-jhpolice_c: Justifiable homicides by police officers
-homicide: Homicide rate per 100,000 state population
-robbery: Robbery rate per 100,000 state population
-assault: Aggravated assault rate per 100,000 state population
-burglary: Burglary rate per 100,000 state population
-larceny: Larceny rate per 100,000 state population
-motor: Motor vehicle theft rate per 100,000 state population
-murder: Murder rate per 100,000 state population
-unemployrt: State unemployment rate
-blackm_15_24: Percent of Black males aged 15–24
-whitem_15_24: Percent of White males aged 15–24
-blackm_25_44: Percent of Black males aged 25–44
-whitem_25_44: Percent of White males aged 25–44
-poverty: State poverty rate",How do castle doctrine laws affect (log) larceny rates across states while accounting for population size across the states?,0.003,0.0161,0,Difference in Difference,castle.csv,Provinding hints to implement weighted regression,,
-Does Strengthening Self-Defense Law Deter Crime or Escalate Violence? Evidence from Castle Doctrine. ,"This dataset examines the impact of castle-doctrine (stand-your-ground) statutes on violent crime rates in the U.S. It combines state-level crime data from the FBI Uniform Crime Reports (UCR) Summary Files with policy implementation data across states. The time period of adoption varied by state, with 21 states enacting these laws between 2000 and 2010.
-
-
-Variables
-
-year: Calendar year
-post: Indicator for post-treatment period
-sid: State ID
-robbery_gun_r: Region-quarter fixed effect (robbery with gun)
-jhcitizen_c: Justifiable homicides by private citizens
-jhpolice_c: Justifiable homicides by police officers
-homicide: Homicide rate per 100,000 state population
-robbery: Robbery rate per 100,000 state population
-assault: Aggravated assault rate per 100,000 state population
-burglary: Burglary rate per 100,000 state population
-larceny: Larceny rate per 100,000 state population
-motor: Motor vehicle theft rate per 100,000 state population
-murder: Murder rate per 100,000 state population
-unemployrt: State unemployment rate
-blackm_15_24: Percent of Black males aged 15–24
-whitem_15_24: Percent of White males aged 15–24
-blackm_25_44: Percent of Black males aged 25–44
-whitem_25_44: Percent of White males aged 25–44
-poverty: State poverty rate",What is the effect of castle doctrine laws on (log) burglary?,0.0572,0.0272,1,Difference in Difference,castle.csv,,,
+blackm_15_24: Percent of Black males aged 15 to 24
+whitem_15_24: Percent of White males aged 15 to 24
+blackm_25_44: Percent of Black males aged 25 to 44
+whitem_25_44: Percent of White males aged 25 to 44
+poverty: State poverty rate",What is the effect of castle doctrine laws on (log) burglary?,0.0572,0.0284,1,did,cdl,l_burglary,,,year,,sid,,,castle.csv,,,,2012
 Government Transfers and Political Support,"
 The study focuses on the Uruguayan Plan de Atención Nacional a la Emergencia Social (PANES), described as a large, temporary social relief program. PANES ran from April 2005 to December 2007. PANES included several components. The main part was a monthly cash transfer. Eligibility for the PANES program was determined using a predicted income score. This score was based on household socioeconomic characteristics collected during a baseline survey. Households were eligible only if their predicted income score fell below a predetermined threshold.
 
 
 Variables
 
-Income_Centered: Income measure, centered around program cutoff (negative value = eligible)
-Education: Household average years of education among those 16+
-Age: Household average age
-Participation: Participation in transfers
-Support: Measure of support for the government",Did receiving financial assistance from Uruguay's poverty alleviation program cause recipients to view the government more favorably?,0.093,0.046,1,Regression Discontinuity Design,gov_transfers.csv,The answers here are different from the ones in the paper. This is based off the code in the effect.,,
-Don't Take 'No' For An Answer: An Experiment With Actual Organ Donor Registrations,"The state of California enacted an active-choice phrasing for their organ donation sign-up question in Q32011. Data was collected on actual organ donation registration rates in California and other U.S. states over time. The dataset includes quarterly registration rate data from California and 26 other U.S. jurisdictions (25 states and Washington DC) that provided data for the period from Q4 2010 to Q1 2012.
+income_centered: Income measure, centered around program cutoff (negative value = eligible)
+education: Household average years of education among those 16+
+age: Household average age
+participation: Participation in transfers (1 = participated, 0= did not participate)
+support: Measure of support for the government",Did receiving financial assistance from Uruguay's poverty alleviation program cause recipients to view the government more favorably?,0.093,0.046,1,rdd,participation,support,,income_centered,,,,,,gov_transfers.csv,The answers here are different from the ones in the paper. This is based off the code in the effect.,,,2011
+Don't Take 'No' For An Answer: An Experiment With Actual Organ Donor Registrations,"The state of California enacted an active-choice phrasing for their organ donation sign-up question in Q32011. Data was collected on actual organ donation registration rates in California and other U.S. states over time. The dataset includes quarterly registration rate data from California and other states for the period from Q4 2010 to Q1 2012.
 
 Variables
 
-State: The state, where California is the Treated group
-Quarter: Quarter of observation, in ""Q""QYYYY format (Q42012 means 4th quarter of 2010)
-Rate: Organ donation rate
-Quarter_Num: Quarter of observation in numerical format. 1 = Quarter 4, 2010",Did changing California's organ donation registration from opt-in to active choice in July 2011 (3rd quarter) increase donation rates compared to states that kept their existing systems?,-0.0225,0.0066,1,Difference in Difference,organ_donations.csv,Added third quarter so that post variable is picked properly,Table 2,
-"The Demand for, and Impact of, Learning Hiv Status.","The study is based on a field experiment conducted in rural Malawi between May and August of 2004, as part of the Malawi Diffusion and Ideational Change Project (MDICP). The MDICP is an ongoing study in approximately 120 villages across three districts: Rumphi, Mchinji, and Balaka. The participants in this experiment were men and women who were part of the original MDICP sample (randomly selected from households in 1998, interviewed in 1998, 2001, and 2004) and an additional sample of young adults (ages 15–24) added in 2004. The experiment involved offering respondents a free door-to-door HIV test. Of the 3,185 respondents offered a test, 2,894 accepted (91 percent), forming the main sample of 2,812 individuals who also had basic covariate data and non-indeterminate results.
+state: The state, where California is the Treated group
+quarter: Quarter of observation, in ""Q""QYYYY format (Q42012 means 4th quarter of 2010)
+rate: Organ donation rate
+quarter_num: Quarter of observation in numerical format. 1 = Quarter 4, 2010",Did changing California's organ donation registration from opt-in to active choice in July 2011 (3rd quarter) increase donation rates compared to states that kept their existing systems?,-0.0225,0.0066,1,did,state,,,,quarter_num,,state,,,organ_donations.csv,Added third quarter so that post variable is picked properly,Table 2,,2014
+"The Demand for, and Impact of, Learning Hiv Status.","This dataset comes from a randomized field experiment conducted in rural Malawi between May and August 2004, as part of the Malawi Diffusion and Ideational Change Project (MDICP). The MDICP is a long-term study involving approximately 120 villages across three districts: Rumphi, Mchinji, and Balaka. As part of the program, respondents were offered a free HIV test administered at home. To encourage participants to collect their test results, they were randomly given vouchers of varying value, redeemable at nearby voluntary counseling and testing (VCT) centers. Voucher amounts were determined by drawing tokens from a bag. Researchers then recorded whether participants retrieved their results from the assigned VCT center.
+Variables:
 
-After samples were taken for the HIV test, respondents were given randomly assigned vouchers redeemable upon obtaining their results at a nearby VCT center. The voucher amounts were randomized by letting each respondent draw a token from a bag.  Attendance at centers to obtain results was also measured.
-
-
-The dataset includes the following model variables:
 site: Region of Malawi where the study was conducted (1 = Mchinji, 2 = Balaka, 3 = Rumphi)
-rumphi: Dummy indicator for Rumphi (1 if in Rumphi)
-balaka: Dummy indicator for Balaka (1 if in Balaka)
+rumphi: Indicator for living in Rumphi district
+balaka: Indicator for living in Balaka district
 villnum: Village ID
-survey2004: Indicator for completing the baseline survey in 2004 (1 = completed)
-got: Indicator if the respondent obtained HIV results (1 = learned HIV results)
-zone: Indicator of assigned VCT center/zone (values 1–16 for each VCT center)
-distvct: Distance (in km) from the randomly assigned VCT center
-tinc: Total value of the incentive in Malawi Kwacha
-Ti: Discrete incentive levels (e.g., 0; 10–50; 60–100; 110–200; 210–300 Malawi Kwacha)
-any: Indicator of receiving any positive-valued incentive
-under: Indicator for residing within 1.5 km of the assigned VCT center
-over: Indicator for residing over 1.5 km from the assigned VCT center
-simaverage: Average simulated distance from a VCT center (computed by randomly drawing household locations within a VCT zone)
-age: Reported age of the respondent in 2004
-male: Indicator if the respondent is male
-hiv2004: HIV test result at baseline (with -1 indicating an indeterminate result)",Does providing monetary incentives lead individuals to learn their HIV test results?,0.431,0.023,1,OLS,thornton_hiv.csv,,Table 4 (2),
- Do Voters Affect or Elect Policies: Evidence from the U.S. House,"The study investigates whether elected officials moderate their behavior based on narrowly divided electorates. If electing a candidate from a specific party in a close race leads to large policy shifts, it implies that the elected official pursues their own agenda. Conversely, small or null effects suggest policy moderation toward the center. The data primarily consists of roll-call voting records of U.S. House Representatives and election returns data. Roll-call voting behavior is measured using several indices, with the main one being the Americans for Democratic Action (ADA) voting score, which ranges from 0 to 100, with higher scores indicating a more liberal voting record.
+survey2004: Indicator for completing the 2004 baseline survey
+got: Indicator for whether the respondent obtained their HIV test result
+zone: Identifier for the VCT center assigned to the respondent
+distvct: Distance (in kilometers) to the assigned VCT center
+tinc: Total incentive value in Malawi Kwacha
+Ti: Discrete incentive level category (e.g., 0; 10–50; 60–100; 110–200; 210–300 Malawi Kwacha)
+any: Indicator for receiving a positive-valued incentive
+under: Indicator for living within 1.5 km of the assigned VCT center
+over: Indicator for living more than 1.5 km from the assigned VCT center
+simaverage: Simulated average distance to a VCT center (based on randomly drawn household locations)
+age: Respondent’s age in 2004
+male: Indicator for male respondents
+hiv2004: HIV test result in 2004 (−1 indicates indeterminate result)",Does providing monetary incentives lead individuals to obtain their HIV test results?,0.431,0.023,1,ols,any,got,"male, hiv2004, age, rumphi, balaka",,,,,,,thornton_hiv.csv,,Table 4 (2),,2008
+ Do Voters Affect or Elect Policies: Evidence from the U.S. House,"This dataset is used to study whether elected officials moderate their policy positions in response to closely contested elections. The goal is to test whether policy outcomes reflect the preferences of a nearly divided electorate (convergence) or the ideology of the winning candidate (divergence).
+Legislative behavior is measured using the Americans for Democratic Action (ADA) score. For each congressional session, the ADA selects a set of key roll-call votes and assigns each representative a score from 0 to 100. Higher scores indicate a more liberal voting record.
+The dataset includes the following variables:
+state: ICPSR state code identifying the state
+district: Congressional district number
+id: Unique election identifier
+year: Year of the election
+score: ADA voting score (higher values indicate more liberal voting)
+demvoteshare: Share of votes received by the Democratic candidate (between 0 and 1)
+democrat: Indicator equal to 1 if the Democrat won the election i.e secured more than 50 % of the vote
+lagdemvoteshare: Democratic vote share in the previous election (between 0 and 1)
+lagdemocrat: Indicator equal to 1 if the Democrat won the previous election i.e secured more than 50 % of the vote","In close congressional elections, does winning the election as a Democrat lead to more liberal legislative voting behavior?",46.778,1.735,1,rdd,,,,democrat,,,,,,close_elections.csv,The answers here are different from the ones in the paper. This is based off the code in causal mixtape. ,,,2004
+ Do Voters Affect or Elect Policies: Evidence from the U.S. House,"This dataset is used to study whether elected officials moderate their policy positions in response to closely contested elections. The goal is to test whether policy outcomes reflect the preferences of a nearly divided electorate (convergence) or the ideology of the winning candidate (divergence).
+Legislative behavior is measured using the Americans for Democratic Action (ADA) score. For each congressional session, the ADA selects a set of key roll-call votes and assigns each representative a score from 0 to 100. Higher scores indicate a more liberal voting record.
+The dataset includes the following variables:
+state: ICPSR state code identifying the state
+district: Congressional district number
+id: Unique election identifier
+year: Year of the election
+score: ADA voting score (higher values indicate more liberal voting)
+demvoteshare: Share of votes received by the Democratic candidate
+democrat: Indicator equal to 1 if the Democrat won the election i.e secured more than 50 % of the vote
+lagdemvoteshare: Democratic vote share in the previous election
+lagdemocrat: Indicator equal to 1 if the Democrat won the previous election i.e secured more than 50 % of the vote","If a Democrat won the previous congressional election in a district closely,  is it likely that a Democrat will win the current election in that same district?""",0.214,0.027,1,rdd,,,,lagdemocrat,,,,,,close_elections.csv,,,,2004
+The effects of rural electrification in India: An instrumental variable approach at the household level,"The dataset was collected to better understand the impacts of rural electrification at the household level, particularly in regions where electricity access was expanding but remained incomplete. The data come from a household survey conducted across 686 households in 120 habitations in Uttar Pradesh, India. According to state regulations, households must be located within 40 meters of a power pole to be eligible for a legal electricity connection. Using this rule, the study sampled households situated 20–35 meters from the nearest pole, which were eligible to get electricity from the given pole, and 45–60 meters from the pole, those that were ineligible. Houses in the 35–45 meter range are excluded to minimize measurement error. The survey targeted areas with a balanced mix of electrified and non-electrified households and collected detailed information on household demographics, expenditures, appliance ownership and use, and daily activities. 
 
-Variables:
+The variables are
+food_expenditure: total monthly household expenditure on food in rupees
+education_expenditure: total monthly household expenditure on education in rupees
+kerosene_expenditure: total monthly household expenditure on kerosene in rupees
+total_expenditure: total monthly household expenditure in rupees
+age: age of the head of the household 
+religion: 1= Hindu, 0=otherwise 
+distance: distance of the household from the electric grid
+treat: 1 if the household is connected to the grid, 0 if not connected to the grid
+forcing: 1 if the household is eligible to get connected to the grid (within 40 meters), 0 if the household is not eligible to get connected to the grid
+kerosene_lamps: 1 = household has kerosene lamp, 0 = no kerosene lamp
+num_kerosene_lamps: number of kerosene wick lamps and lanterns owned by the household
+kerosene_lamp_hours: number of hours kerosene lamps are used daily
+kerosene_other: liters of kerosene used for other household purposes
+lighting_hours: total daily hours of household light usage
+child_lighting: daily hours of lighting used by children for reading and studying
+adult_lighting: daily hours of lighting used by adults for reading and studying
+child_activity: number of hours children spend at home in a given day
+adult_activity: number of hours adults spend at home in a given day
+appliances: number of appliances owned by the household
+appliance_use: number of daily hours using appliances by the household
+satisfaction_reliability: satisfaction with the reliability of lighting
+satisfaction_cost: satisfaction with the cost of lighting
+satisfaction_safety: satisfaction with the safety of lighting
+satisfaction_brightness: satisfaction with the brightness of lighting
+satisfaction: overall satisfaction with lighting
+satisfaction_chng: change in satisfaction with lighting over the past five years
+elec_value: willingness to pay for adequate electricity
+income_increase: belief that electrification will increase household income
+business_interest: interest in starting a new business due to electrification
+satisfaction_business: belief that electrification supports business aspirations
+aspirations: mean value of five questions measuring general aspirations
+knowledge: battery of questions related to knowledge of politics and popular culture",Does access to electricity lead to an increase in total household expendititure?,4509.4,587.9,1,iv,treat,total_expenditure,"gender, birthplace, age, religion, caste",,,forcing,,,,electrification_data.csv,,,,2020
+The effects of rural electrification in India: An instrumental variable approach at the household level,"The dataset was collected to better understand the impacts of rural electrification at the household level, particularly in regions where electricity access was expanding but remained incomplete. The data come from a household survey conducted across 686 households in 120 habitations in Uttar Pradesh, India. According to state regulations, households must be located within 40 meters of a power pole to be eligible for a legal electricity connection. Using this rule, the study sampled households situated 20–35 meters from the nearest pole, which were eligible to get electricity from the given pole, and 45–60 meters from the pole, those that were ineligible. Houses in the 35–45 meter range are excluded to minimize measurement error. The survey targeted areas with a balanced mix of electrified and non-electrified households and collected detailed information on household demographics, expenditures, appliance ownership and use, and daily activities. 
 
-state: ICPSR state code
-district: District code
-id: Election ID
-score: ADA voting score (higher = more liberal)
-year: Year of election
-demvoteshare: Democratic share of the vote
-democrat: Democratic victory indicator
-lagdemocrat: Lagged Democratic victory indicator
-lagdemvoteshare: Lagged Democratic share of the vote","In close congressional elections, where the party's vote share is between 48 and 52 percent, does a politician's party affiliation determine how liberally they vote on legislation in the next period?",33.45,0.86,1,Regression Disconitnuity Design,close_elections.csv,The answers here are different from the ones in the paper. This is based off the code in causal mixtape. ,,
- Do Voters Affect or Elect Policies: Evidence from the U.S. House,"The study investigates whether elected officials moderate their behavior based on narrowly divided electorates. If electing a candidate from a specific party in a close race leads to large policy shifts, it implies that the elected official pursues their own agenda. Conversely, small or null effects suggest policy moderation toward the center. The data primarily consists of roll-call voting records of U.S. House Representatives and election returns data. Roll-call voting behavior is measured using several indices, with the main one being the Americans for Democratic Action (ADA) voting score, which ranges from 0 to 100, with higher scores indicating a more liberal voting record.
+The variables are
+food_expenditure: total monthly household expenditure on food in rupees
+education_expenditure: total monthly household expenditure on education in rupees
+kerosene_expenditure: total monthly household expenditure on kerosene in rupees
+total_expenditure: total monthly household expenditure in rupees
+age: age of the head of the household 
+religion: 1= Hindu, 0=otherwise 
+distance: distance of the household from the electric grid
+treat: 1 if the household is connected to the grid, 0 if not connected to the grid
+forcing: 1 if the household is eligible to get connected to the grid (within 40 meters), 0 if the household is not eligible to get connected to the grid
+kerosene_lamps: 1 = household has kerosene lamp, 0 = no kerosene lamp
+num_kerosene_lamps: number of kerosene wick lamps and lanterns owned by the household
+kerosene_lamp_hours: number of hours kerosene lamps are used daily
+kerosene_other: liters of kerosene used for other household purposes
+lighting_hours: total daily hours of household light usage
+child_lighting: daily hours of lighting used by children for reading and studying
+adult_lighting: daily hours of lighting used by adults for reading and studying
+child_activity: number of hours children spend at home in a given day
+adult_activity: number of hours adults spend at home in a given day
+appliances: number of appliances owned by the household
+appliance_use: number of daily hours using appliances by the household
+satisfaction_reliability: satisfaction with the reliability of lighting
+satisfaction_cost: satisfaction with the cost of lighting
+satisfaction_safety: satisfaction with the safety of lighting
+satisfaction_brightness: satisfaction with the brightness of lighting
+satisfaction: overall satisfaction with lighting
+satisfaction_chng: change in satisfaction with lighting over the past five years
+elec_value: willingness to pay for adequate electricity
+income_increase: belief that electrification will increase household income
+business_interest: interest in starting a new business due to electrification
+satisfaction_business: belief that electrification supports business aspirations
+aspirations: mean value of five questions measuring general aspirations
+knowledge: battery of questions related to knowledge of politics and popular culture",How does access to electric grids affect food expenditures for a household?,3023.26,485.87,1,iv,treat,food_expenditure,"gender, birthplace, age, religion, caste",,,forcing,,,,electrification_data.csv,,,,2020
+The effects of rural electrification in India: An instrumental variable approach at the household level,"The dataset was collected to better understand the impacts of rural electrification at the household level, particularly in regions where electricity access was expanding but remained incomplete. The data come from a household survey conducted across 686 households in 120 habitations in Uttar Pradesh, India. According to state regulations, households must be located within 40 meters of a power pole to be eligible for a legal electricity connection. Using this rule, the study sampled households situated 20–35 meters from the nearest pole, which were eligible to get electricity from the given pole, and 45–60 meters from the pole, those that were ineligible. Houses in the 35–45 meter range are excluded to minimize measurement error. The survey targeted areas with a balanced mix of electrified and non-electrified households and collected detailed information on household demographics, expenditures, appliance ownership and use, and daily activities. 
 
-Variables:
+The variables are
+food_expenditure: total monthly household expenditure on food in rupees
+education_expenditure: total monthly household expenditure on education in rupees
+kerosene_expenditure: total monthly household expenditure on kerosene in rupees
+total_expenditure: total monthly household expenditure in rupees
+age: age of the head of the household 
+religion: 1= Hindu, 0=otherwise 
+distance: distance of the household from the electric grid
+treat: 1 if the household is connected to the grid, 0 if not connected to the grid
+forcing: 1 if the household is eligible to get connected to the grid (within 40 meters), 0 if the household is not eligible to get connected to the grid
+kerosene_lamps: 1 = household has kerosene lamp, 0 = no kerosene lamp
+num_kerosene_lamps: number of kerosene wick lamps and lanterns owned by the household
+kerosene_lamp_hours: number of hours kerosene lamps are used daily
+kerosene_other: liters of kerosene used for other household purposes
+lighting_hours: total daily hours of household light usage
+child_lighting: daily hours of lighting used by children for reading and studying
+adult_lighting: daily hours of lighting used by adults for reading and studying
+child_activity: number of hours children spend at home in a given day
+adult_activity: number of hours adults spend at home in a given day
+appliances: number of appliances owned by the household
+appliance_use: number of daily hours using appliances by the household
+satisfaction_reliability: satisfaction with the reliability of lighting
+satisfaction_cost: satisfaction with the cost of lighting
+satisfaction_safety: satisfaction with the safety of lighting
+satisfaction_brightness: satisfaction with the brightness of lighting
+satisfaction: overall satisfaction with lighting
+satisfaction_chng: change in satisfaction with lighting over the past five years
+elec_value: willingness to pay for adequate electricity
+income_increase: belief that electrification will increase household income
+business_interest: interest in starting a new business due to electrification
+satisfaction_business: belief that electrification supports business aspirations
+aspirations: mean value of five questions measuring general aspirations
+knowledge: battery of questions related to knowledge of politics and popular culture",What is the effect of electrification on education expenses?,655,209.8,1,iv,treat,education_expenditure,"gender, birthplace, age, religion, caste",,,forcing,,,,electrification_data.csv,,,,2020
+The effects of rural electrification in India: An instrumental variable approach at the household level,"The dataset was collected to better understand the impacts of rural electrification at the household level, particularly in regions where electricity access was expanding but remained incomplete. The data come from a household survey conducted across 686 households in 120 habitations in Uttar Pradesh, India. According to state regulations, households must be located within 40 meters of a power pole to be eligible for a legal electricity connection. Using this rule, the study sampled households situated 20–35 meters from the nearest pole, which were eligible to get electricity from the given pole, and 45–60 meters from the pole, those that were ineligible. Houses in the 35–45 meter range are excluded to minimize measurement error. The survey targeted areas with a balanced mix of electrified and non-electrified households and collected detailed information on household demographics, expenditures, appliance ownership and use, and daily activities. 
 
-state: ICPSR state code
-district: District code
-id: Election ID
-score: ADA voting score (higher = more liberal)
-year: Year of election
-demvoteshare: Democratic share of the vote
-democrat: Democratic victory indicator
-lagdemocrat: Lagged Democratic victory indicator
-lagdemvoteshare: Lagged Democratic share of the vote","If a Democrat won the previous congressional election in a district closely, where voter share is between 0.48 and 0.52, how likely is it that a Democrat will win the current election in that same district?""",0.55,0.01,1,Regression Disconitnuity Design,close_elections.csv,,,
+The variables are
+food_expenditure: total monthly household expenditure on food in rupees
+education_expenditure: total monthly household expenditure on education in rupees
+kerosene_expenditure: total monthly household expenditure on kerosene in rupees
+total_expenditure: total monthly household expenditure in rupees
+age: age of the head of the household 
+religion: 1= Hindu, 0=otherwise 
+distance: distance of the household from the electric grid
+treat: 1 if the household is connected to the grid, 0 if not connected to the grid
+forcing: 1 if the household is eligible to get connected to the grid (within 40 meters), 0 if the household is not eligible to get connected to the grid
+kerosene_lamps: 1 = household has kerosene lamp, 0 = no kerosene lamp
+num_kerosene_lamps: number of kerosene wick lamps and lanterns owned by the household
+kerosene_lamp_hours: number of hours kerosene lamps are used daily
+kerosene_other: liters of kerosene used for other household purposes
+lighting_hours: total daily hours of household light usage
+child_lighting: daily hours of lighting used by children for reading and studying
+adult_lighting: daily hours of lighting used by adults for reading and studying
+child_activity: number of hours children spend at home in a given day
+adult_activity: number of hours adults spend at home in a given day
+appliances: number of appliances owned by the household
+appliance_use: number of daily hours using appliances by the household
+satisfaction_reliability: satisfaction with the reliability of lighting
+satisfaction_cost: satisfaction with the cost of lighting
+satisfaction_safety: satisfaction with the safety of lighting
+satisfaction_brightness: satisfaction with the brightness of lighting
+satisfaction: overall satisfaction with lighting
+satisfaction_chng: change in satisfaction with lighting over the past five years
+elec_value: willingness to pay for adequate electricity
+income_increase: belief that electrification will increase household income
+business_interest: interest in starting a new business due to electrification
+satisfaction_business: belief that electrification supports business aspirations
+aspirations: mean value of five questions measuring general aspirations
+knowledge: battery of questions related to knowledge of politics and popular culture",Does having access to electricity increase kerosene expenditures?,17.56,8.61,1,iv,treat,kerosene_expenditure,"gender, birthplace, age, religion, caste",,,forcing,,,,electrification_data.csv,,,,2020
+Minimum Wages and Employment:A Case Study of the Fast-Food Industry in New Jersey and Pennsylvania,"The dataset was collected to examine the effects of a minimum wage increase on fast food employment. It includes two survey waves from 410 fast food restaurants such as Burger King, KFC, Wendy’s, and Roy Rogers in New Jersey and Pennsylvania. The first wave took place just before the April 1992 wage increase, and the second occurred seven to eight months later. The survey gathered information on employment, wages, prices, store characteristics, and location. Data collection involved phone interviews. The fast food sector was selected for its high share of low-wage jobs, standardization, and compliance with wage laws.
+
+The variables are
+sheet: unique store identifier
+chain: chain identifier (1 = burger king, 2 = kfc, 3 = roy rogers, 4 = wendy’s)
+co_owned: 1 if the store is company-owned, 0 otherwise
+state: 1 if the store is in new jersey, 0 if in pennsylvania
+after: 1 if the data was collected after an increase in minimum wage, 0 otherwise 
+fte: number of full time employees
+southj: 1 if the store is in southern new jersey
+centralj: 1 if the store is in central new jersey
+northj: 1 if the store is in northern new jersey
+pa1: 1 if the store is in northeast suburbs of philadelphia
+pa2: 1 if the store is in easton or nearby areas in pennsylvania
+shore: 1 if the store is on the new jersey shore
+ncalls: number of callbacks before completing the first interview
+empft: number of full-time employees (first interview)
+emppt: number of part-time employees (first interview)
+nmgrs: number of managers or assistant managers (first interview)
+wage_st: starting wage in dollars per hour (first interview)
+inctime: months until usual first raise (first interview)
+firstinc: amount of usual first raise in dollars per hour (first interview)
+bonus: 1 if the store offers a cash bonus for new workers
+pctaff: percent of employees affected by the new minimum wage
+meals: code for meal benefits (0 = none, 1 = free, 2 = reduced price, 3 = both)
+open: hour the store opens (first interview)
+hrsopen: number of hours the store is open per day (first interview)
+psoda: price of a medium soda, including tax (first interview)
+pfry: price of small fries, including tax (first interview)
+pentree: price of an entrée including tax (first interview)
+nregs: number of cash registers in the store (first interview)
+nregs11: number of registers open at 11:00 am (first interview)
+type2: mode of second interview (1 = phone, 2 = personal)
+status2: status of second interview (0 = refused, 1 = answered, 2–5 = closed for various reasons)
+date2: date of second interview (mmddyy format)
+ncalls2: number of callbacks before completing the second interview
+empft2: number of full-time employees (second interview)
+emppt2: number of part-time employees (second interview)
+nmgrs2: number of managers or assistant managers (second interview)
+wage_st2: starting wage in dollars per hour (second interview)
+inctime2: months until usual first raise (second interview)
+firstin2: amount of usual first raise in dollars per hour (second interview)
+special2: 1 if the store has a special program for new workers (second interview)
+meals2: code for meal benefits (second interview; same coding as meals)
+open2r: hour the store opens (second interview)
+hrsopen2: number of hours the store is open per day (second interview)
+psoda2: price of a medium soda, including tax (second interview)
+pfry2: price of small fries, including tax (second interview)
+pentree2: price of an entrée including tax (second interview)
+nregs2: number of cash registers in the store (second interview)
+nregs112: number of registers open at 11:00 am (second interview)",Did an increase in minimum wage decrease employment?,2.75,1.69,0,did,state,fte,,,post,,state,,,,,,,1992
+,"The data aims to assess the influence of the political climate on drug approval times. It contains information on drug applications submitted for regulatory review to the FDA. Each row corresponds includes various characteristics about the drug, the condition it treats, and broader public and media attention surrounding the condition. Time from application to decision is measured in months. Thus, include information on whether the Senate had a democratic or republican majority. 
+
+Variable Definitions
+demsnmaj: indicates whether the Senate had a Democratic majority (1 = yes, 0 = no).
+hospdisc: number of hospital discharges related to the condition treated by the drug
+natreg: number of national advocacy groups related to the disease
+stafcder: number of regulatory staff in the Center for Drug Evaluation and Research
+prevgenx: percentage of previously approved drugs with the same mechanism of action.
+hhosleng: average length of hospital stays for the condition
+condavg3: average number of nightly television news stories about the condition over the previous three years
+orderent: order in which the drug entered the market relative to other drugs for the same condition
+vandavg3: average number of newspaper articles about the condition over the previous three years
+wpnoavg3: average number of network TV news stories on the condition over the previous three years
+lethal: indicates whether the condition is typically fatal (1 = yes, 0 = no).
+deathrt1: death rate associated with the condition, measured per 1,000 cases.
+hosp01: indicates whether the condition typically leads to hospitalization (1 = yes, 0 = no).
+femdiz01: indicates whether the condition primarily affects women (1 = yes, 0 = no).
+mandiz01: indicates whether the condition primarily affects men (1 = yes, 0 = no).
+peddiz01: indicates whether the condition primarily affects children (1 = yes, 0 = no).
+acutediz: indicates whether the condition is classified as acute (1 = yes, 0 = no).
+orphdum: indicates whether the drug has orphan drug designation (1 = yes, 0 = no).
+acttime: number of months between application submission and regulatory decision. For applications still under review, this value is right-censored.
+d: approval status of the drug (1 = approved, 0 = not approved).",Does having a Democratic senate majority speed up the approval times for new drugs?,-18.8,8,1,matching,demsnmaj,acttime,"orderent, prevgenx, lethal, deathrt1, hosp01, hospdisc, hhosleng, femdiz01, mandiz01, peddiz01, acutediz, orphdum, natreg, wpnoavg3, vandavg3, condavg3, stafcder, hospdisc",,,,,,,fda_carpenter.csv,original_paper uses MatchIt package in R. My answers are different from the paper,,,2007
+Markets: The Fulton Fish Market,"The dataset was collected from the Fulton Fish Market, a historic wholesale fish market in New York City. The purpose of the data collection was to examine the economic and institutional dynamics of how the market functioned. Fish were sold in bulk to a wide range of buyers, including restaurants, retail shops, and independent vendors. Transactions typically took place in the early morning hours, with prices and quantities influenced by factors such as day of the week, weather conditions, and supply levels.
+Sales were higher on Mondays, Thursdays, and Fridays, compared to  Tuesdays and Wednesdays. Sellers in the market set prices individually for each customer. The dataset focuses specifically on whiting, a commonly traded fish in the market. Price information was gathered directly through daily visits to the market and from reports provided by salesmen.
+
+Variables
+
+mon: 1 if the day is Monday, 0 otherwise 
+tu: 1 if the day is Tuesday, 0 otherwise
+wed:1 if the data is Wednesday, 0 otherwise  
+thu: 1 if the day is Thursday, 0 otherwise
+date: Date in Year Month Day format 
+stormy: whether or not the weather was stormy; 1 if stormy, 0 otherwise 
+mixed: 1 if the weather was mixed, 0 otherwise 
+p: logarithm of the price per pound 
+q: logarithm of the total quantity sold in pounds 
+rainy: 1 if the weather was rainy, 0 otherwise 
+cold: 1 if the weather was cold, 0 otherwise 
+wind: wind speed ",What is the effect of fish prices on quantity demanded?,-1.12,0.43,1,iv,q,p,"mon, tue, wed, thu",,,stormy,,,,fulton.csv,,,,2006
+Punishment and Deterrence: Evidence from Drunk Driving,"This dataset contains administrative records from the state of Washington related to driving under the influence (DUI) incidents. Washington State uniformly enforced a legal BAC limit of 0.08 for DUI offenses. The BAC values are obtained from tests conducted by the state police using breathalyzers. Drivers under the legal drinking age were excluded from the analysis, as they are subject to different legal standards. Besides BAC values, the dataset includes demographic information about the driver and recidivism, which indicates if the person was charged with a DUI offense again.
+date: date when the BAC test occurred.
+alcohol1: alcohol level from the first test.
+alcohol2: alcohol level from the second test.
+low_score: lower score between alcohol1 and alcohol2.
+male: indicator for the driver’s gender; 1 if male, 0 otherwise.
+white: indicator for the driver’s race; 1 if white, 0 otherwise.
+recidivism: indicator for whether the driver was stopped again for suspected DUI within a specified follow-up period; 1 if yes, 0 if no.
+acc: indicator for whether the original DUI stop involved a vehicle accident; 1 if yes, 0 if no.
+age: age of the driver at the time of the DUI stop.
+year: calendar year in which the DUI stop occurred.
+bac1: BAC value at the time of the test.","Does receiving a DUI conviction (BAC ≥ 0.08) reduce the likelihood of future drunk driving compared to those just below the legal limit?""",-0.0259,0.004,1,rdd,,recidivism,,bac,,,,,,hansen.csv,,,,2015
