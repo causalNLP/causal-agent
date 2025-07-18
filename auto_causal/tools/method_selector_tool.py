@@ -110,7 +110,9 @@ def method_selector_tool(
                  dataset_analysis=dataset_analysis_dict, 
                  variables=variables_dict,
                  is_rct=is_rct_flag if isinstance(is_rct_flag, bool) else False, # Handle None case
-                 llm=llm_instance # Rule-based also uses LLM for PSM/PSW recommendation
+                 llm=llm_instance, 
+                 dataset_description = dataset_description,
+                 original_query = original_query
             )
     except Exception as e:
         logger.error(f"Error during method selection execution: {e}", exc_info=True)

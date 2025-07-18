@@ -11,9 +11,137 @@ import pandas as pd
 import json
 from langchain_core.messages import HumanMessage
 from langchain_core.language_models import BaseChatModel
-
+from auto_causal.config import get_llm_client
+import numpy as np
 # Configure logging
 logger = logging.getLogger(__name__)
+
+CAUSAL_GRAPH_PROMPT = """
+You are an expert in causal inference. Your task is to construct a causal graph to help answer a user query.
+
+Here is the user query:
+{query}
+
+Dataset Description:
+{description}
+
+Here are the treatment and outcome variables:
+Treatment: {treatment}
+Outcome: {outcome}
+
+Here are the available variables in the dataset:
+{column_info}
+
+Based on the query, dataset description, and available variables, construct a causal graph that captures the relationships between the treatment, outcome, and other relevant variables.
+
+Use only variables present in the dataset. Do not invent or assume any variables. However, not all variables need to be included—only those that are relevant to the causal relationships should appear in the graph.
+
+Return the causal graph in DOT format. The DOT format should include:
+- Nodes for each included variable.
+- Directed edges representing causal relationships among variables.
+
+Also return the list of edges in the format "A -> B", where A and B are variable names.
+
+Here is an example of the DOT format:
+digraph G {{
+    A -> B;
+    B -> C;
+    A -> C;
+}}
+
+And the corresponding list of edges:
+["A -> B", "B -> C", "A -> C"]
+
+Return your response as a valid JSON object in the following format:
+{{ 
+  "causal_graph": "DOT_FORMAT_STRING",
+  "edges": ["EDGE_1", "EDGE_2", ...] 
+}}
+Do not wrap the response in triple backticks or formatting it as a code block.
+"""
+
+ESTIMAND_PROMPT = """
+what is the better estimand, ATE or ATT, to answer this query: {query}
+given the following information about the dataset
+Description: {dataset_description}
+Treatment Variable: {treat_var}
+Outcome Variable: {outcome_var}
+
+Only return the estimand name: ATT or ATE
+"""
+def _llm_choose_estimand(
+    query:str,
+    description:str,
+    treat_var:str,
+    outcome_var:str,
+    llm:BaseChatModel
+) -> str:
+    """Returns 'ATE' or 'ATT' (fallback ATE) using the user‑supplied prompt."""
+    prompt = ESTIMAND_PROMPT.format(
+        query=query,
+        dataset_description=description,
+        treat_var=treat_var,
+        outcome_var=outcome_var
+    )
+    reply = llm.invoke([HumanMessage(content=prompt)]).content.strip().upper()
+    return "ATT" if reply == "ATT" else "ATE"
+
+def _llm_build_causal_graph(
+    query:str,
+    description:str,
+    treatment:str,
+    outcome:str,
+    df:pd.DataFrame,
+    llm:BaseChatModel
+) -> Dict[str, Any]:
+    """Returns {"edges": [...], "dot": "..."} using the user-given prompt."""
+    column_info = ", ".join(df.columns.tolist())
+    prompt = CAUSAL_GRAPH_PROMPT.format(
+        query=query,
+        description=description,
+        treatment=treatment,
+        outcome=outcome,
+        column_info=column_info
+    )
+    resp = llm.invoke([HumanMessage(content=prompt)]).content
+    graph = json.loads(resp)                    # will raise if not valid JSON
+    return graph                                # keys: causal_graph, edges
+
+def _check_backdoor(edges, treatment, outcome, covariates):
+    """Very light-weight back-door test: every back-door path must be blocked by an observed covariate."""
+    # Build adjacency for quick look-ups
+    children = {}
+    parents  = {}
+    for e in edges:
+        a,b = [x.strip() for x in e.split("->")]
+        children.setdefault(a, set()).add(b)
+        parents .setdefault(b, set()).add(a)
+
+    # DFS all back-door paths T ← … → Y
+    stack = [(par, [treatment, par]) for par in parents.get(treatment, [])]
+    while stack:
+        node, path = stack.pop()
+        if node == outcome:
+            return False            # unblocked path found
+        for nxt in children.get(node, set()) | parents.get(node, set()):
+            if nxt not in path:
+                # path continues only if we haven’t conditioned on it
+                if nxt not in covariates:
+                    stack.append((nxt, path+[nxt]))
+    return True                     # every path blocked by covariate set
+
+def _check_frontdoor(edges, treatment, outcome):
+    """Looks for a single mediator M satisfying front-door heuristics."""
+    # T -> M, M -> Y, no T -> Y edge
+    ts, ys = [], []
+    for e in edges:
+        a,b = [x.strip() for x in e.split("->")]
+        if a==treatment: ts.append(b)
+        if b==outcome:   ys.append(a)
+    mediators = set(ts) & set(ys)
+    direct_TY = any((a.strip()==treatment and b.strip()==outcome) 
+                    for a,b in (map(str.strip,e.split("->")) for e in edges))
+    return bool(mediators) and not direct_TY
 
 # Define method names (ensure these match keys/names used elsewhere)
 BACKDOOR_ADJUSTMENT = "backdoor_adjustment"
@@ -26,7 +154,6 @@ INSTRUMENTAL_VARIABLE = "instrumental_variable"
 CORRELATION_ANALYSIS = "correlation_analysis" # Added for fallback
 PROPENSITY_SCORE_WEIGHTING = "propensity_score_weighting"
 GENERALIZED_PROPENSITY_SCORE = "generalized_propensity_score" # Added constant
-
 
 # Method Assumptions Mapping
 METHOD_ASSUMPTIONS = {
@@ -89,6 +216,84 @@ METHOD_ASSUMPTIONS = {
         "Treatment variable is continuous."
     ]
 }
+
+from textwrap import dedent
+
+def _llm_decide_observational_method(
+    analysis: Dict[str, Any],
+    variables: Dict[str, Any],
+    llm: BaseChatModel
+) -> str:
+    """
+    Ask the LLM to choose ONE label from
+      {IV, BACKDOOR_REGRESSION, MATCHING, IPW, FRONTDOOR}
+    after walking through the same nodes shown in the paper’s tree.
+    """
+    prompt = dedent(f"""
+    You are a senior econometrician.  Use the following *decision‑tree nodes*
+    to pick the single best causal estimator.
+
+    ───────────────────  DECISION NODES  ───────────────────
+    1. Is there a **valid instrument**? (relevance + exclusion + independence)
+       ➜ If YES  →   choose **IV**.
+    2. Is there a **valid back‑door adjustment set** (all confounders observed)?
+       ➜ If NO   →   go to node 4.
+       ➜ If YES  →   check node 3.
+    3. **Do covariates overlap** in treated vs. control groups?
+         • Good overlap → **BACKDOOR_REGRESSION** (e.g., OLS with covariates)
+         • Moderate     → **MATCHING**
+         • Poor         → **IPW**
+    4. Is the **front‑door criterion** satisfied?
+       ➜ If YES  →   **FRONTDOOR**
+       ➜ If NO   →   (no valid choice; default to MATCHING)
+
+    ───────────────────  CONTEXT  ───────────────────
+    Dataset diagnostics:
+    {json.dumps(analysis, indent=2)}
+
+    Variable summary:
+    {json.dumps(variables, indent=2)}
+
+    Allowed labels (return one exactly):
+      - IV
+      - BACKDOOR_REGRESSION
+      - MATCHING
+      - IPW
+      - FRONTDOOR
+
+    Think through each numbered node above, referencing the JSON keys
+    (e.g., `analysis["instrument_strength"]`, `analysis["overlap_quality"]`,
+    `analysis["frontdoor_criterion"]`).  On the **last line of your reply**
+    output only the chosen label, in UPPER‑CASE, with no extra text.
+    """).strip()
+
+    reply = llm.invoke([HumanMessage(content=prompt)]).content.strip().upper()
+    if reply in {"IV", "BACKDOOR_REGRESSION", "MATCHING", "IPW", "FRONTDOOR"}:
+        return reply
+    return "MATCHING"   
+
+def enrich_dataset_analysis_with_graph(
+    df, dataset_analysis, variables, llm, dataset_description, query
+):
+    graph = _llm_build_causal_graph(
+        query=query,
+        description=dataset_description,
+        treatment=variables["treatment_variable"],
+        outcome =variables["outcome_variable"],
+        df=df,
+        llm=llm
+    )
+    edges   = graph["edges"]
+    covars  = variables.get("covariates", [])
+    dataset_analysis["backdoor_condition"]   = _check_backdoor(
+        edges, variables["treatment_variable"], variables["outcome_variable"], covars
+    )
+    dataset_analysis["frontdoor_criterion"]  = _check_frontdoor(
+        edges, variables["treatment_variable"], variables["outcome_variable"]
+    )
+    dataset_analysis["causal_graph_edges"]   = edges
+    dataset_analysis["causal_graph_dot"]     = graph["causal_graph"]
+    return dataset_analysis
 
 class DecisionTreeEngine:
     """
@@ -330,197 +535,237 @@ Respond ONLY with the chosen method name (either "Propensity Score Matching" or 
         logger.error(f"Error during LLM call for PSM/PSW recommendation: {e}", exc_info=True)
         return default_method
 
-def select_method(dataset_analysis: Dict[str, Any], variables: Dict[str, Any], is_rct: bool = False, llm: Optional[BaseChatModel] = None) -> Dict[str, Any]:
+def decide_ps_method(
+    df: pd.DataFrame,
+    treat: str,
+    estimand: str = "ATE"
+) -> str:
     """
-    Apply decision tree to select appropriate causal method based on the UPDATED logic.
-    
-    Args:
-        dataset_analysis: Dataset analysis results from dataset_analyzer.
-                          Expected keys: 'temporal_structure' (bool).
-        variables: Identified variables from query_interpreter.
-                   Expected keys: 'treatment_variable', 'outcome_variable', 'covariates' (list),
-                                  'time_variable', 'group_variable', 'instrument_variable',
-                                  'running_variable', 'cutoff_value'.
-        is_rct: Boolean indicating if the data comes from a Randomized Controlled Trial.
-                (This should be determined upstream, e.g., by query_interpreter or metadata).
-        llm: Language model for recommendation
-        
-    Returns:
-        Dict with selected method, justification, and assumptions:
-            - selected_method: String indicating selected method name.
-            - method_justification: String explaining why this method was selected.
-            - method_assumptions: List of key assumptions for the selected method.
+    Decide propensity-score method based on standardized mean differences.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Your dataset, including the binary treatment column.
+    treat : str
+        Name of the binary treatment column (values 0 or 1).
+    estimand : str, {"ATE","ATT"}
+        Which estimand to check balance for.
+
+    Returns
+    -------
+    "IPW" or "Matching"
+        If average absolute SMD < 0.1 → IPW (inverse‑prob weighting),
+        else → Matching.
     """
-    logger.info("Starting causal method selection based on updated decision tree...")
-    logger.debug(f"Inputs: dataset_analysis={dataset_analysis}, variables={variables}, is_rct={is_rct}")
+    # split groups
+    df_t = df[df[treat] == 1]
+    df_c = df[df[treat] == 0]
+
+    # only numeric covariates
+    covariates = (
+        df
+        .drop(columns=[treat])
+        .select_dtypes(include=[np.number])
+        .columns
+        .tolist()
+    )
+
+    # preallocate
+    smd_ate = np.zeros(len(covariates))
+    smd_att = np.zeros(len(covariates))
+
+    for i, col in enumerate(covariates):
+        m_t, m_c = df_t[col].mean(), df_c[col].mean()
+        s_t, s_c = df_t[col].std(ddof=0), df_c[col].std(ddof=0)
+        pooled = np.sqrt((s_t**2 + s_c**2) / 2)
+
+        # avoid zero‑div errors
+        if pooled == 0 or s_t == 0:
+            smd_ate[i] = 0.0
+            smd_att[i] = 0.0
+        else:
+            smd_ate[i] = (m_t - m_c) / pooled
+            smd_att[i] = (m_t - m_c) / s_t
+
+    avg_ate = np.nanmean(np.abs(smd_ate))
+    avg_att = np.nanmean(np.abs(smd_att))
+
+    e = estimand.upper()
+    if e == "ATE":
+        return "IPW" if avg_ate < 0.1 else "Matching"
+    elif e == "ATT":
+        return "IPW" if avg_att < 0.1 else "Matching"
+    else:
+        raise ValueError("estimand must be 'ATE' or 'ATT'")
+
+def select_method(
+    dataset_analysis: Dict[str, Any],
+    variables: Dict[str, Any],
+    is_rct: bool = False,
+    llm: Optional[BaseChatModel] = None,
+    dataset_description: Optional[str] = None, 
+    original_query: Optional[str] = None
+) -> Dict[str, Any]:
+    logger.info("Starting causal method selection based on updated decision tree…")
+    logger.debug(f"Inputs → dataset_analysis keys: {list(dataset_analysis.keys())}, "
+                 f"variables: {variables}, is_rct: {is_rct}")
 
     covariates = variables.get("covariates", [])
-    treatment_variable_type = variables.get("treatment_variable_type", "unknown") # Get treatment type
-    logger.info(f"Received treatment_variable_type: {treatment_variable_type}")
+    treatment_variable_type = variables.get("treatment_variable_type", "unknown")
+    logger.info(f"Treatment variable type detected: '{treatment_variable_type}'")
 
-    # --- Initial Check: If no covariates identified, default differently based on RCT status ---
-    # UPDATE: Removed this initial check, handle covariate presence within RCT/Observational logic
-    # if not covariates:
-    #    logger.info("No covariates identified. Selecting method based on RCT status.")
-    #    method = DIFF_IN_MEANS if is_rct else CORRELATION_ANALYSIS # Or maybe Backdoor w/o covs?
-    #    justification = ("Data is from RCT with no covariates. Difference in Means is appropriate." if is_rct 
-    #                     else "No covariates identified for observational data. Correlation analysis is possible, but causal claims require strong assumptions.")
-    #    return {
-    #        "selected_method": method,
-    #        "method_justification": justification,
-    #        "method_assumptions": METHOD_ASSUMPTIONS.get(method, [])
-    #    }
-
-    # --- RCT Branch --- 
+    # ───────────────────────────── RCT BRANCH ─────────────────────────────
     if is_rct:
-        logger.info("Data identified as RCT.")
-        
-        # Check for Encouragement Design first in RCT
+        logger.info("Entering RCT branch.")
         instrument_var = variables.get("instrument_variable")
         treatment_var = variables.get("treatment_variable")
+
         if instrument_var and treatment_var and instrument_var != treatment_var:
-            logger.info(f"RCT context with Instrument ('{instrument_var}') differing from Treatment ('{treatment_var}'). Selecting IV for Encouragement Design.")
+            logger.info("RCT → Encouragement design detected. Choosing IV.")
             return {
                 "selected_method": INSTRUMENTAL_VARIABLE,
-                "method_justification": f"Data is from an RCT, but the identified instrument (encouragement) '{instrument_var}' differs from the treatment '{treatment_var}'. Selecting Instrumental Variable method for this Encouragement Design.",
+                "method_justification": (
+                    f"RCT with instrument '{instrument_var}' differing from treatment "
+                    f"'{treatment_var}'. Instrumental Variable method selected."
+                ),
                 "method_assumptions": METHOD_ASSUMPTIONS[INSTRUMENTAL_VARIABLE],
-                "alternatives": [] # Explicitly empty alternatives here
+                "alternatives": []
             }
-        
-        # Standard RCT logic (if not encouragement design)
+
         if covariates:
-            logger.info("RCT with covariates present. Selecting Linear Regression.")
+            logger.info("RCT → Covariates present. Choosing Linear Regression.")
             return {
                 "selected_method": LINEAR_REGRESSION,
-                "method_justification": "Data is from an RCT and covariates are provided. Linear regression with covariates is used to potentially increase precision.",
+                "method_justification": (
+                    "RCT with covariates supplied — using Linear Regression for precision."
+                ),
                 "method_assumptions": METHOD_ASSUMPTIONS[LINEAR_REGRESSION],
-                "alternatives": [] # Explicitly empty alternatives here
-            }
-        else:
-            logger.info("RCT with no covariates present. Selecting Difference in Means.")
-            return {
-                "selected_method": DIFF_IN_MEANS, 
-                "method_justification": "Data is from an RCT with no covariates specified. Simple Difference in Means is appropriate.",
-                "method_assumptions": METHOD_ASSUMPTIONS[DIFF_IN_MEANS],
-                "alternatives": [] # Explicitly empty alternatives here
+                "alternatives": []
             }
 
-    # --- Observational Branch --- 
-    else:
-        logger.info("Data identified as Observational (Non-RCT).")
-        alternatives = [] # Initialize alternatives list for observational path
-        
-        # # === NEW: Check for Continuous Treatment and GPS FIRST in Observational ===
-        # if treatment_variable_type == "continuous":
-        #     logger.info("Continuous treatment variable identified for observational data. Selecting Generalized Propensity Score.")
-        #     # Could add IV as an alternative if an instrument is also identified
-        #     if variables.get("instrument_variable"):
-        #         alternatives.append(INSTRUMENTAL_VARIABLE)
-        #     return {
-        #         "selected_method": GENERALIZED_PROPENSITY_SCORE,
-        #         "method_justification": "Observational data with a continuous treatment variable. Generalized Propensity Score (GPS) is selected to estimate the dose-response function, assuming unconfoundedness given covariates.",
-        #         "method_assumptions": METHOD_ASSUMPTIONS[GENERALIZED_PROPENSITY_SCORE],
-        #         "alternatives": alternatives
-        #     }
-        # # === END NEW GPS CHECK ===
+        logger.info("RCT → No covariates. Choosing Difference‑in‑Means.")
+        return {
+            "selected_method": DIFF_IN_MEANS,
+            "method_justification": "Pure RCT without covariates — Difference‑in‑Means selected.",
+            "method_assumptions": METHOD_ASSUMPTIONS[DIFF_IN_MEANS],
+            "alternatives": []
+        }
 
-        # Define variables needed multiple times
-        time_var = variables.get("time_variable")
-        # Using dataset_analysis key which might be more reliable? Check dataset_analyzer output structure.
-        has_temporal = dataset_analysis.get('temporal_structure', {}).get('has_temporal_structure', False) 
-        running_var = variables.get("running_variable")
-        cutoff_val = variables.get("cutoff_value")
-        instrument_var = variables.get("instrument_variable")
-        treatment_var = variables.get("treatment_variable") # Needed for IV encouragement check
-        
-        # --- Priority 1: Difference-in-Differences --- 
-        if has_temporal and time_var:
-            logger.info("Temporal structure found. Selecting Difference-in-Differences.")
-            # Check for IV as alternative
-            if instrument_var:
-                logger.info("Instrument variable also found, adding IV as alternative to DiD.")
-                alternatives.append(INSTRUMENTAL_VARIABLE)
+    # ─────────────────────── OBSERVATIONAL BRANCH ─────────────────────────
+    logger.info("Entering Observational (non‑RCT) branch.")
+    alternatives: List[str] = []
+
+    time_var          = variables.get("time_variable")
+    has_temporal      = dataset_analysis.get("temporal_structure", {}).get("has_temporal_structure", False)
+    running_var       = variables.get("running_variable")
+    cutoff_val        = variables.get("cutoff_value")
+    instrument_var    = variables.get("instrument_variable")
+    treatment_var     = variables.get("treatment_variable")
+    outcome_variable = variables.get("outcome_variable")
+    df = pd.read_csv(dataset_analysis['dataset_info']['file_path'])
+    dataset_analysis = enrich_dataset_analysis_with_graph(
+                df, dataset_analysis, variables, llm, dataset_description, original_query
+            )
+    logger.info("Updated backdoor and frontdoor conditions")
+    # ---------------------- Binary treatments ----------------------------
+    if treatment_variable_type == "binary":
+        logger.info("Binary treatment logic activated.")
+
+        if has_temporal:
+            logger.info("Temporal structure found → selecting Difference‑in‑Differences.")
             return {
                 "selected_method": DIFF_IN_DIFF,
-                "method_justification": f"Observational data with temporal structure identified (time variable: '{time_var}'). Difference-in-Differences is selected, assuming parallel trends holds (to be validated).",
+                "method_justification": (
+                    f"Temporal structure via '{time_var}'. Assuming parallel trends; using DiD."
+                ),
                 "method_assumptions": METHOD_ASSUMPTIONS[DIFF_IN_DIFF],
                 "alternatives": alternatives
             }
 
-        # --- Priority 2: Regression Discontinuity Design --- 
-        elif running_var and cutoff_val is not None:
-            logger.info("Running variable and cutoff found. Selecting Regression Discontinuity Design.")
-            # Could check for alternatives here too if needed (e.g., if IV also present)
+        if running_var:
+            logger.info(f"Running variable '{running_var}' with cutoff {cutoff_val} detected → RDD chosen.")
             return {
                 "selected_method": REGRESSION_DISCONTINUITY,
-                "method_justification": f"Observational data where treatment assignment appears determined by a running variable ('{running_var}') around a cutoff ({cutoff_val}). Regression Discontinuity Design is selected.",
+                "method_justification": (
+                    f"Running variable '{running_var}' around cutoff {cutoff_val}. "
+                    "Regression Discontinuity Design selected."
+                ),
                 "method_assumptions": METHOD_ASSUMPTIONS[REGRESSION_DISCONTINUITY],
-                "alternatives": alternatives # Pass empty list for now
+                "alternatives": alternatives
             }
-        
-        # --- Priority 3: Instrumental Variable (if no DiD, RDD, and no covariates for PSM/PSW) --- 
-        elif instrument_var:
-            justification = f"Observational data with a potential instrumental variable ('{instrument_var}') identified. Instrumental Variable Regression is selected, assuming the instrument is valid (to be validated)."
-            # Check for Encouragement Design
-            if treatment_var and instrument_var != treatment_var:
-                logger.info(f"Instrument ('{instrument_var}') differs from treatment ('{treatment_var}'). Identifying as Encouragement Design.")
-                justification = f"Observational data with treatment '{treatment_var}' potentially influenced by instrument (encouragement) '{instrument_var}'. Selecting Instrumental Variable method for this Encouragement Design, assuming instrument validity (to be validated)."
-            else:
-                 logger.info("Potential instrumental variable identified. Selecting Instrumental Variable Regression.")
-            
-            # Check for DiD as alternative (already checked DiD conditions above, but check vars again for consistency)
-            if has_temporal and time_var:
-                logger.info("Temporal structure also found, adding DiD as alternative to IV.")
-                alternatives.append(DIFF_IN_DIFF)
-                
+
+        if instrument_var:
+            logger.info(f"Instrument '{instrument_var}' available → choosing IV.")
             return {
                 "selected_method": INSTRUMENTAL_VARIABLE,
-                "method_justification": justification,
+                "method_justification": justification,  # <- unchanged per instruction
                 "method_assumptions": METHOD_ASSUMPTIONS[INSTRUMENTAL_VARIABLE],
                 "alternatives": alternatives
             }
 
-
-        # --- Priority 4: Propensity Score Methods (if covariates exist) --- 
-        elif covariates:
-            logger.info("Observed confounders present, no specific design (DiD, RDD) indicated. Considering PSM/PSW.")
-            
-            # Check for IV as alternative *before* selecting PSM/PSW
-            if instrument_var:
-                 logger.info("Instrument variable also found, adding IV as alternative to PSM/PSW.")
-                 alternatives.append(INSTRUMENTAL_VARIABLE)
-                 
-            # Use LLM to recommend PSM/PSW based on dataset characteristics.
-            metrics = dataset_analysis # Pass the whole analysis dict for now
-            recommended_ps_method_name = _recommend_ps_method(treatment_var, metrics, llm)
-    
-            if recommended_ps_method_name == PROPENSITY_SCORE_WEIGHTING:
-                logger.info("LLM recommended PSW based on dataset characteristics.")
-                selected_method = PROPENSITY_SCORE_WEIGHTING
-                justification = "Observational data with observed confounders. Propensity Score Weighting is selected (potentially based on LLM recommendation considering dataset characteristics like sample size, prevalence, or overlap)."
-            else: # Default to PSM
-                if recommended_ps_method_name != PROPENSITY_SCORE_MATCHING:
-                     logger.warning(f"LLM recommendation for PS method was unclear or failed ('{recommended_ps_method_name}'). Defaulting to PSM.")
-                else:
-                     logger.info("LLM recommended PSM based on dataset characteristics.")
-                selected_method = PROPENSITY_SCORE_MATCHING
-                justification = "Observational data with observed confounders. Propensity Score Matching is selected (potentially based on LLM recommendation considering dataset characteristics)."
-    
+        if covariates:
+            logger.info("Covariates present → assessing overlap for PS method (Matching/IPW).")
+            estimand = _llm_choose_estimand(
+                query=original_query,
+                description=dataset_description,
+                treat_var=treatment_var,
+                outcome_var=outcome_variable,
+                llm=llm
+            )
+            ps_choice = decide_ps_method(df, treatment_var, estimand=estimand)
+            chosen = (PROPENSITY_SCORE_MATCHING
+                      if ps_choice == "Matching"
+                      else PROPENSITY_SCORE_WEIGHTING)
+            logger.info(f"Propensity‑score decision: '{ps_choice}' → selected '{chosen}'.")
             return {
-                "selected_method": selected_method,
-                "method_justification": justification,
-                "method_assumptions": METHOD_ASSUMPTIONS[selected_method],
-                "alternatives": alternatives # Include IV if found
-             }
-             
+                "selected_method": chosen,
+                "method_justification": (
+                    "Covariates observed & back‑door open; PS method selected based on overlap."
+                ),
+                "method_assumptions": METHOD_ASSUMPTIONS[chosen],
+                "alternatives": []
+            }
 
-        # --- Fallback: Correlation Analysis (Observational, no specific design, no covariates for PSM/PSW, no IV) --- 
-        else:
-            logger.warning("Observational data with no specific design (DiD, RDD, IV) and no covariates identified for adjustment. Causal effect estimation is likely biased. Suggesting Correlation Analysis.")
+        if dataset_analysis.get("frontdoor_criterion"):
+            logger.info("Front‑door criterion satisfied → choosing Front‑Door estimator.")
             return {
-                 "selected_method": CORRELATION_ANALYSIS,
-                 "method_justification": "Observational data with no identified conditions for DiD, RDD, IV and no covariates for adjustment. Cannot estimate causal effect reliably. Correlation analysis is suggested, but results are not causal.",
-                 "method_assumptions": METHOD_ASSUMPTIONS[CORRELATION_ANALYSIS],
-                 "alternatives": alternatives # Likely empty
-             }
+                "selected_method": "frontdoor_estimator",
+                "method_justification": "Mediator meets front‑door conditions.",
+                "method_assumptions": METHOD_ASSUMPTIONS.get("frontdoor_estimator", []),
+                "alternatives": []
+            }
 
+    # ------------------ Continuous / Discrete treatments -----------------
+    else:
+        logger.info("Non‑binary (continuous/discrete) treatment logic activated.")
+
+        if instrument_var:
+            logger.info(f"Instrument '{instrument_var}' present → choosing IV.")
+            return {
+                "selected_method": INSTRUMENTAL_VARIABLE,
+                "method_justification": (
+                    f"Instrument '{instrument_var}' deemed valid for non‑binary treatment."
+                ),
+                "method_assumptions": METHOD_ASSUMPTIONS[INSTRUMENTAL_VARIABLE],
+                "alternatives": []
+            }
+
+        if dataset_analysis.get("frontdoor_criterion"):
+            logger.info("Front‑door criterion satisfied → choosing Front‑Door estimator.")
+            return {
+                "selected_method": "frontdoor_estimator",
+                "method_justification": "Mediator meets front‑door conditions.",
+                "method_assumptions": METHOD_ASSUMPTIONS.get("frontdoor_estimator", []),
+                "alternatives": []
+            }
+
+        logger.info("No IV or front‑door mediator; defaulting to OLS.")
+        return {
+            "selected_method": LINEAR_REGRESSION,
+            "method_justification": (
+                "Fallback for non‑binary treatment without IV/front‑door — OLS chosen."
+            ),
+            "method_assumptions": METHOD_ASSUMPTIONS[LINEAR_REGRESSION],
+            "alternatives": []
+        }
