@@ -176,24 +176,23 @@ def select_method(dataset_properties: Dict[str, Any]) -> Dict[str, Any]:
     justifications = {}
     assumptions = {}
 
-    if treatment_variable_type == "binary":
-        logger.info("Binary")
-        if has_temporal and time_var:
-            logger.info("Difference-in-Differences method selected due to temporal structure")
-            return {
+    #if treatment_variable_type == "binary":
+    logger.info("Binary")
+    if has_temporal and time_var:
+        logger.info("Difference-in-Differences method selected due to temporal structure")
+        return {
                 "selected_method": DIFF_IN_DIFF,
                 "method_justification": f"temporal structure via '{time_var}'. assuming parallel trends; using difference-in-differences",
                 "method_assumptions": METHOD_ASSUMPTIONS[DIFF_IN_DIFF],
-                "alternatives": []
-            }
-        if running_var and cutoff_val is not None:
-            logger.info(f"Regression Discontinuity Design method selected with running variable '{running_var}' and cutoff {cutoff_val}")
-            return {
-                "selected_method": REGRESSION_DISCONTINUITY,
+                "alternatives": []}
+    if running_var and cutoff_val is not None:
+        logger.info(f"Regression Discontinuity Design method selected with running variable '{running_var}' and cutoff {cutoff_val}")
+        return {"selected_method": REGRESSION_DISCONTINUITY,
                 "method_justification": f"running variable '{running_var}' around cutoff {cutoff_val}. regression discontinuity design selected",
                 "method_assumptions": METHOD_ASSUMPTIONS[REGRESSION_DISCONTINUITY],
                 "alternatives": []
-            }
+        }
+    if treatment_variable_type == "binary":
         if instrument_var:
             logger.info("Instrument var is selected, binary, {}".format(instrument_var))
             valid_methods.append(INSTRUMENTAL_VARIABLE)
