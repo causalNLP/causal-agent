@@ -186,6 +186,7 @@ def analyze_dataset(
         # Get boolean flags and essential lists
         has_temporal = temporal_structure_detailed.get("has_temporal_structure", False)
         is_panel = temporal_structure_detailed.get("is_panel_data", False)
+        logger.info(f"iv is {potential_instruments_detailed}")
         has_instruments = len(potential_instruments_detailed) > 0
         has_discontinuities = discontinuities_detailed.get("has_discontinuities", False)
         
@@ -195,7 +196,7 @@ def analyze_dataset(
             for inst_dict in potential_instruments_detailed 
             if isinstance(inst_dict, dict) and 'variable' in inst_dict
         ]
-
+        logger.info(f"iv is {potential_instrument_names}")
         # --- Final Output Dictionary (Highly Summarized) ---
         return {
             "dataset_info": dataset_info, # Keep basic info
@@ -720,7 +721,7 @@ Example:
                         valid_instruments.append(item)
                     
                     if valid_instruments:
-                        logger.info(f"LLM identified {len(valid_instruments)} potential instrumental variables")
+                        logger.info(f"LLM identified {len(valid_instruments)} potential instrumental variables {valid_instruments}")
                         return valid_instruments
                     else:
                         logger.warning("No valid instruments found by LLM, falling back to heuristic method")
