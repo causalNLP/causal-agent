@@ -10,7 +10,7 @@ from typing import Dict, List, Any, Optional, Union
 from langchain_core.tools import tool # Use langchain_core
 
 # Import component function and central LLM factory
-from auto_causal.components.decision_tree import select_method as rule_based_select_method # Rule-based
+from auto_causal.components.decision_tree import rule_based_select_method # Rule-based
 from auto_causal.components.decision_tree_llm import DecisionTreeLLMEngine # LLM-based
 from auto_causal.config import get_llm_client # Updated import path
 from auto_causal.components.state_manager import create_workflow_state_update
