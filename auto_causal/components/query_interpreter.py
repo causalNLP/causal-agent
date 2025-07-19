@@ -207,7 +207,9 @@ def interpret_query(
             # Check for IV
             prompt_iv = _create_identify_prompt("instrumental variable", query_text, dataset_description, columns, column_categories, treatment_variable, outcome_variable)
             iv_result = _call_llm_for_var(llm, prompt_iv, LLMIVars)
-            instrument_variable = None#iv_result.instrument_variable if iv_result else None
+            instrument_variable = iv_result.instrument_variable if iv_result else None
+            if instrument_variable == "NULL":
+                instrument_variable = None
             logger.info(f"LLM identified IV: {instrument_variable}")
 
             # Check for RDD

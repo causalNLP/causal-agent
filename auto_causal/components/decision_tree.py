@@ -682,8 +682,8 @@ def select_method(
                 "method_assumptions": METHOD_ASSUMPTIONS[DIFF_IN_DIFF],
                 "alternatives": alternatives
             }
-
-        if running_var:
+        logger.info(f"Running variable '{running_var}' with cutoff {cutoff_val} detected → RDD chosen.")
+        if running_var and cutoff_val is not None:
             logger.info(f"Running variable '{running_var}' with cutoff {cutoff_val} detected → RDD chosen.")
             return {
                 "selected_method": REGRESSION_DISCONTINUITY,
@@ -699,7 +699,9 @@ def select_method(
             logger.info(f"Instrument '{instrument_var}' available → choosing IV.")
             return {
                 "selected_method": INSTRUMENTAL_VARIABLE,
-                "method_justification": justification,  # <- unchanged per instruction
+                "method_justification": (
+                    f"Instrument '{instrument_var}' deemed valid for non‑binary treatment."
+                ),
                 "method_assumptions": METHOD_ASSUMPTIONS[INSTRUMENTAL_VARIABLE],
                 "alternatives": alternatives
             }
