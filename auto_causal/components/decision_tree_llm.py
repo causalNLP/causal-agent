@@ -73,11 +73,18 @@ class DecisionTreeLLMEngine:
         """
         self.verbose = verbose
 
-    def _construct_prompt(self, dataset_analysis: Dict[str, Any], variables: Dict[str, Any], is_rct: bool) -> str:
+    def _construct_prompt(self, dataset_analysis: Dict[str, Any], variables: Dict[str, Any], is_rct: bool, excluded_methods: Optional[List[str]] = None) -> str:
         """
         Constructs the detailed prompt for the LLM.
         """
-        methods_list_str = "\n".join([f"- {method}: {METHOD_DESCRIPTIONS_FOR_LLM[method]}" for method in ALL_METHODS if method in METHOD_DESCRIPTIONS_FOR_LLM])
+        # Filter out excluded methods
+        excluded_methods = excluded_methods or []
+        available_methods = [method for method in ALL_METHODS if method not in excluded_methods]
+        methods_list_str = "\n".join([f"- {method}: {METHOD_DESCRIPTIONS_FOR_LLM[method]}" for method in available_methods if method in METHOD_DESCRIPTIONS_FOR_LLM])
+
+        excluded_info = ""
+        if excluded_methods:
+            excluded_info = f"\nEXCLUDED METHODS (do not select these): {', '.join(excluded_methods)}\nReason: These methods failed validation in previous attempts.\n"
 
         prompt = f"""You are an expert in causal inference. Your task is to select the most appropriate causal inference method based on the provided dataset analysis and variable information.
 
@@ -87,7 +94,7 @@ Dataset Analysis:
 Identified Variables:
 {json.dumps(variables, indent=2)}
 
-Is the data from a Randomized Controlled Trial (RCT)? {'Yes' if is_rct else 'No'}
+Is the data from a Randomized Controlled Trial (RCT)? {'Yes' if is_rct else 'No'}{excluded_info}
 
 Available Causal Inference Methods and their descriptions:
 {methods_list_str}
@@ -100,7 +107,7 @@ Instructions:
 5. State the key assumptions for your *selected* method by referring to the general list of assumptions for all methods that will be provided to you separately (you don't need to list them here, just be aware that you need to select a method for which assumptions are known).
 
 Output your final decision as a JSON object with the following exact keys:
-- "selected_method": string (must be one of {', '.join(ALL_METHODS)})
+- "selected_method": string (must be one of {', '.join(available_methods)})
 - "method_justification": string (your detailed reasoning)
 - "alternative_methods": list of strings (alternative method names, can be empty)
 
@@ -115,7 +122,7 @@ Please provide only the JSON object in your response.
 """
         return prompt
 
-    def select_method_llm(self, dataset_analysis: Dict[str, Any], variables: Dict[str, Any], is_rct: bool = False, llm: Optional[BaseChatModel] = None) -> Dict[str, Any]:
+    def select_method_llm(self, dataset_analysis: Dict[str, Any], variables: Dict[str, Any], is_rct: bool = False, llm: Optional[BaseChatModel] = None, excluded_methods: Optional[List[str]] = None) -> Dict[str, Any]:
         """
         Apply LLM-based decision tree to select appropriate causal method.
 
@@ -124,6 +131,7 @@ Please provide only the JSON object in your response.
             variables: Identified variables from query_interpreter.
             is_rct: Boolean indicating if the data comes from an RCT.
             llm: Langchain BaseChatModel instance for making the call.
+            excluded_methods: Optional list of method names to exclude from selection.
 
         Returns:
             Dict with selected method, justification, and assumptions.
@@ -144,7 +152,7 @@ Please provide only the JSON object in your response.
                 "alternative_methods": []
             }
 
-        prompt = self._construct_prompt(dataset_analysis, variables, is_rct)
+        prompt = self._construct_prompt(dataset_analysis, variables, is_rct, excluded_methods)
         if self.verbose:
             logger.info("LLM Prompt for method selection:")
             logger.info(prompt)

@@ -30,11 +30,11 @@ from auto_causal.models import (
     LLMTreatmentReferenceLevel,
     LLMInteractionSuggestion, 
     LLMEstimand, 
-    LLMDIDCheck,
-    LLMDiDTemporalVars,
-    LLMDiDGroupVars,
-    LLMRDDCheck,
-    LLMRDDVarsExtended
+    # LLMDIDCheck,
+    # LLMDiDTemporalVars,
+    # LLMDiDGroupVars,
+    # LLMRDDCheck,
+    # LLMRDDVarsExtended
 )
 
 # Import the new prompt templates

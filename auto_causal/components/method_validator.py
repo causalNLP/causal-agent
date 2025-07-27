@@ -68,7 +68,7 @@ def validate_method(method_info: Dict[str, Any], dataset_analysis: Dict[str, Any
     elif method == "difference_in_differences":
         validate_difference_in_differences(validation_result, dataset_analysis, variables)
     
-    elif method == "regression_discontinuity":
+    elif method == "regression_discontinuity_design":
         validate_regression_discontinuity(validation_result, dataset_analysis, variables)
     
     elif method == "backdoor_adjustment":
@@ -82,21 +82,23 @@ def validate_method(method_info: Dict[str, Any], dataset_analysis: Dict[str, Any
     
     # Make sure assumptions are listed in the validation result
     validation_result["assumptions"] = assumptions
-    
+    print("--------------------------")
+    print("Validation result:", validation_result)
+    print("--------------------------")
     return validation_result
 
 
 def validate_propensity_score_matching(validation_result: Dict[str, Any], 
                                       dataset_analysis: Dict[str, Any],
                                       variables: Dict[str, Any]) -> None:
-    """
+    """ 
     Validate propensity score matching method requirements.
     
     Args:
         validation_result: Current validation result to update
         dataset_analysis: Dataset analysis results
         variables: Identified variables
-    """
+    """ 
     treatment = variables.get("treatment_variable")
     covariates = variables.get("covariates", [])
     
@@ -251,7 +253,7 @@ def validate_regression_discontinuity(validation_result: Dict[str, Any],
         validation_result: Current validation result to update
         dataset_analysis: Dataset analysis results
         variables: Identified variables
-    """
+    """ 
     running_variable = variables.get("running_variable")
     cutoff_value = variables.get("cutoff_value")
     
@@ -274,11 +276,11 @@ def validate_regression_discontinuity(validation_result: Dict[str, Any],
     has_discontinuity = discontinuities.get("has_discontinuities", False)
     
     if not has_discontinuity:
+        validation_result["valid"] = False
         validation_result["concerns"].append(
             "No clear discontinuity detected at the threshold, which is necessary for this method"
         )
-        validation_result["alternative_suggestions"].append("regression_adjustment")
-
+        validation_result["alternative_suggestions"].append("regression_adjustment") 
 
 def validate_backdoor_adjustment(validation_result: Dict[str, Any], 
                                dataset_analysis: Dict[str, Any],

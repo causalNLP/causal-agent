@@ -36,7 +36,7 @@ def format_output(
         
     Returns:
         Dict with formatted output fields ready for presentation.
-    """
+    """ 
     # Extract numerical results
     effect_estimate = results.get("effect_estimate")
     confidence_interval = results.get("confidence_interval")

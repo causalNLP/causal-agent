@@ -91,48 +91,12 @@ METHOD_ASSUMPTIONS = {
 }
 
 
-def select_method(dataset_properties: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Selects the most appropriate causal inference method using decision tree logic.
-    The logic is the following:
-    If RCT:
-        If instrument_var and instrument_var != treatment:
-             this is an RCT encouragement design -> Instrumental Variable
-        If covariates:
-            Pure RCT with covariates -> OLS for precision
-        Else:
-            Pure RCT without covariates -> Difference-in-Means
-    If Observational:
-        If treatment_variable_type is binary:
-            If has_temporal and time_var:
-                Difference-in-Differences
-            If running_var:
-                Regression Discontinuity
-            If instrument_var:
-                Instrumental Variable
-            If propensity score method is IPW:
-                Propensity Score Weighting
-            Else:
-                Propensity Score Matching
-            If frontdoor criterion:
-                Front-door Adjustment
-        Else:
-            If instrument_var:
-                Instrumental Variable
-            If frontdoor criterion:
-                Front-door Adjustment
-            Else:
-                Linear Regression (fallback for non-binary treatment)
-    Args:
-        dataset_properties (Dict[str, Any]): Dictionary containing dataset properties such as treatment variable
-    
-    Returns:
-        Dict[str, Any]: Dictionary containing the selected method, justification, assumptions, and alternatives.
-    """
-    
+def select_method(dataset_properties: Dict[str, Any], excluded_methods: Optional[List[str]] = None) -> Dict[str, Any]:
+    excluded_methods = set(excluded_methods or [])
+    logger.info(f"Excluded methods: {sorted(excluded_methods)}")
+
     treatment = dataset_properties.get("treatment_variable")
     outcome = dataset_properties.get("outcome_variable")
-
     if not treatment or not outcome:
         raise ValueError("Both treatment and outcome variables must be specified")
 
@@ -147,110 +111,154 @@ def select_method(dataset_properties: Dict[str, Any]) -> Dict[str, Any]:
     covariates = dataset_properties.get("covariates", [])
     treatment_variable_type = dataset_properties.get("treatment_variable_type", "binary")
 
+    # Helpers to collect candidates
+    candidates = []  # list of (method, priority_index)
+    justifications: Dict[str, str] = {}
+    assumptions: Dict[str, List[str]] = {}
+
+    def add(method: str, justification: str, prio_order: List[str]):
+        if method in justifications:  # already added
+            return
+        justifications[method] = justification
+        assumptions[method] = METHOD_ASSUMPTIONS[method]
+        # priority index from provided order (fallback large if not present)
+        try:
+            idx = prio_order.index(method)
+        except ValueError:
+            idx = 10**6
+        candidates.append((method, idx))
+
+    # ----- Build candidate set (no returns here) -----
+
+    # RCT branch
     if is_rct:
-       
-        if instrument_var and instrument_var != treatment:
-            logger.info(f"Encouragement design detected with instrument '{instrument_var}' differing from treatment '{treatment}'")
-            return {
-                "selected_method": INSTRUMENTAL_VARIABLE,
-                "method_justification": f"rct with instrument '{instrument_var}' differing from treatment '{treatment}'. instrumental variable method selected as this is encouragement design",
-                "method_assumptions": METHOD_ASSUMPTIONS[INSTRUMENTAL_VARIABLE],
-                "alternatives": []
-            }
         logger.info("Dataset is from a randomized controlled trial (RCT)")
+        rct_priority = [INSTRUMENTAL_VARIABLE, LINEAR_REGRESSION, DIFF_IN_MEANS]
+
+        if instrument_var and instrument_var != treatment:
+            add(INSTRUMENTAL_VARIABLE,
+                f"RCT encouragement: instrument '{instrument_var}' differs from treatment '{treatment}'.",
+                rct_priority)
+
         if covariates:
-            return {
-                "selected_method": LINEAR_REGRESSION,
-                "method_justification": "rct with covariates supplied—using linear regression for precision",
-                "method_assumptions": METHOD_ASSUMPTIONS[LINEAR_REGRESSION],
-                "alternatives": []
-            }
-        return {
-            "selected_method": DIFF_IN_MEANS,
-            "method_justification": "pure rct without covariates—difference-in-means selected",
-            "method_assumptions": METHOD_ASSUMPTIONS[DIFF_IN_MEANS],
-            "alternatives": []
-        }
+            add(LINEAR_REGRESSION,
+                "RCT with covariates—use OLS for precision.",
+                rct_priority)
+        else:
+            add(DIFF_IN_MEANS,
+                "Pure RCT without covariates—difference-in-means.",
+                rct_priority)
 
-    valid_methods = []
-    justifications = {}
-    assumptions = {}
+    # Observational branch
+    obs_priority_binary = [
+        INSTRUMENTAL_VARIABLE,
+        PROPENSITY_SCORE_MATCHING,
+        PROPENSITY_SCORE_WEIGHTING,
+        FRONTDOOR_ADJUSTMENT,
+        LINEAR_REGRESSION,
+    ]
+    obs_priority_nonbinary = [
+        INSTRUMENTAL_VARIABLE,
+        FRONTDOOR_ADJUSTMENT,
+        LINEAR_REGRESSION,
+    ]
 
-    #if treatment_variable_type == "binary":
-    logger.info("Binary")
+    # Common early structural signals first (still only add as candidates)
     if has_temporal and time_var:
-        logger.info("Difference-in-Differences method selected due to temporal structure")
-        return {
-                "selected_method": DIFF_IN_DIFF,
-                "method_justification": f"temporal structure via '{time_var}'. assuming parallel trends; using difference-in-differences",
-                "method_assumptions": METHOD_ASSUMPTIONS[DIFF_IN_DIFF],
-                "alternatives": []}
+        add(DIFF_IN_DIFF,
+            f"Temporal structure via '{time_var}'—consider Difference-in-Differences (assumes parallel trends).",
+            [DIFF_IN_DIFF])  # highest among itself
+
     if running_var and cutoff_val is not None:
-        logger.info(f"Regression Discontinuity Design method selected with running variable '{running_var}' and cutoff {cutoff_val}")
-        return {"selected_method": REGRESSION_DISCONTINUITY,
-                "method_justification": f"running variable '{running_var}' around cutoff {cutoff_val}. regression discontinuity design selected",
-                "method_assumptions": METHOD_ASSUMPTIONS[REGRESSION_DISCONTINUITY],
-                "alternatives": []
-        }
+        add(REGRESSION_DISCONTINUITY,
+            f"Running variable '{running_var}' with cutoff {cutoff_val}—consider RDD.",
+            [REGRESSION_DISCONTINUITY])
+
+    # Binary vs non-binary pathways
     if treatment_variable_type == "binary":
         if instrument_var:
-            logger.info("Instrument var is selected, binary, {}".format(instrument_var))
-            valid_methods.append(INSTRUMENTAL_VARIABLE)
-            justifications[INSTRUMENTAL_VARIABLE] = f"instrumental variable '{instrument_var}' available"
-            assumptions[INSTRUMENTAL_VARIABLE] = METHOD_ASSUMPTIONS[INSTRUMENTAL_VARIABLE]
+            add(INSTRUMENTAL_VARIABLE,
+                f"Instrumental variable '{instrument_var}' available.",
+                obs_priority_binary)
 
-        # Default to matching if overlap not provided
-        if covariate_overlap_result is not None:
-            ps_method = PROPENSITY_SCORE_WEIGHTING if covariate_overlap_result < 0.1 else PROPENSITY_SCORE_MATCHING
-        else:
-            ps_method = PROPENSITY_SCORE_MATCHING
-
-        valid_methods.append(ps_method)
-        justifications[ps_method] = "covariates observed & back-door open; ps method selected based on overlap"
-        assumptions[ps_method] = METHOD_ASSUMPTIONS[ps_method]
+        # Propensity score methods only if covariates exist
+        if covariates:
+            if covariate_overlap_result is not None:
+                ps_method = (PROPENSITY_SCORE_WEIGHTING
+                             if covariate_overlap_result < 0.1
+                             else PROPENSITY_SCORE_MATCHING)
+            else:
+                ps_method = PROPENSITY_SCORE_MATCHING
+            add(ps_method,
+                "Covariates observed; PS method chosen based on overlap.",
+                obs_priority_binary)
 
         if frontdoor:
-            valid_methods.append(FRONTDOOR_ADJUSTMENT)
-            justifications[FRONTDOOR_ADJUSTMENT] = "front-door criterion satisfied"
-            assumptions[FRONTDOOR_ADJUSTMENT] = METHOD_ASSUMPTIONS[FRONTDOOR_ADJUSTMENT]
-        valid_methods.append(LINEAR_REGRESSION)
+            add(FRONTDOOR_ADJUSTMENT,
+                "Front-door criterion satisfied.",
+                obs_priority_binary)
 
-        priority = [INSTRUMENTAL_VARIABLE, PROPENSITY_SCORE_MATCHING, PROPENSITY_SCORE_WEIGHTING, FRONTDOOR_ADJUSTMENT, LINEAR_REGRESSION]
+        add(LINEAR_REGRESSION,
+            "OLS as a fallback specification.",
+            obs_priority_binary)
 
     else:
-        logger.info("Non-binary treatment variable detected,{}".format(treatment_variable_type))
+        logger.info(f"Non-binary treatment variable detected: {treatment_variable_type}")
         if instrument_var:
-            logger.info(f"Instrumental Variable method selected with instrument {instrument_var}".format(instrument_var))
-            valid_methods.append(INSTRUMENTAL_VARIABLE)
-            justifications[INSTRUMENTAL_VARIABLE] = f"instrument '{instrument_var}' deemed valid for non-binary treatment"
-            assumptions[INSTRUMENTAL_VARIABLE] = METHOD_ASSUMPTIONS[INSTRUMENTAL_VARIABLE]
+            add(INSTRUMENTAL_VARIABLE,
+                f"Instrument '{instrument_var}' candidate for non-binary treatment.",
+                obs_priority_nonbinary)
         if frontdoor:
-            valid_methods.append(FRONTDOOR_ADJUSTMENT)
-            justifications[FRONTDOOR_ADJUSTMENT] = "front-door criterion satisfied"
-            assumptions[FRONTDOOR_ADJUSTMENT] = METHOD_ASSUMPTIONS[FRONTDOOR_ADJUSTMENT]
+            add(FRONTDOOR_ADJUSTMENT,
+                "Front-door criterion satisfied.",
+                obs_priority_nonbinary)
+        add(LINEAR_REGRESSION,
+            "Fallback for non-binary treatment without stronger identification.",
+            obs_priority_nonbinary)
 
-        valid_methods.append(LINEAR_REGRESSION)
-        justifications[LINEAR_REGRESSION] = "fallback for non-binary treatment without iv/front-door—OLS chosen"
-        assumptions[LINEAR_REGRESSION] = METHOD_ASSUMPTIONS[LINEAR_REGRESSION]
+    # ----- Centralized exclusion handling -----
+    # Remove excluded
+    filtered = [(m, p) for (m, p) in candidates if m not in excluded_methods]
 
-        priority = [INSTRUMENTAL_VARIABLE, FRONTDOOR_ADJUSTMENT, LINEAR_REGRESSION]
-    
-    candidate_methods = [m for m in priority if m in valid_methods]
-    selected_method  = candidate_methods[0]
-    alternatives = [m for m in candidate_methods if m != selected_method]
+    # If nothing survives, attempt a safe fallback not excluded
+    if not filtered:
+        logger.warning(f"All candidates excluded. Candidates were: {[m for m,_ in candidates]}. Excluded: {sorted(excluded_methods)}")
+        fallback_order = [
+            LINEAR_REGRESSION,
+            DIFF_IN_MEANS,
+            PROPENSITY_SCORE_MATCHING,
+            PROPENSITY_SCORE_WEIGHTING,
+            DIFF_IN_DIFF,
+            REGRESSION_DISCONTINUITY,
+            INSTRUMENTAL_VARIABLE,
+            FRONTDOOR_ADJUSTMENT,
+        ]
+        fallback = next((m for m in fallback_order if m in justifications and m not in excluded_methods), None)
+        if not fallback:
+            # truly nothing left; raise with context
+            raise RuntimeError("No viable method remains after exclusions.")
+        selected_method = fallback
+        alternatives = []
+        justifications[selected_method] = justifications.get(selected_method, "Fallback after exclusions.")
+    else:
+        # Pick by smallest priority index, then stable by insertion
+        filtered.sort(key=lambda x: x[1])
+        selected_method = filtered[0][0]
+        alternatives = [m for (m, _) in filtered[1:] if m != selected_method]
 
-    logger.info(f"Selected method: {selected_method} alternatives: {alternatives}")
-    logger.info(f"Valid methods: {valid_methods}, priorities: {priority}")
+    logger.info(f"Selected method: {selected_method}; alternatives: {alternatives}")
 
     return {
         "selected_method": selected_method,
         "method_justification": justifications[selected_method],
         "method_assumptions": assumptions[selected_method],
-        "alternatives": alternatives
+        "alternatives": alternatives,
+        "excluded_methods": sorted(excluded_methods),
     }
 
 
-def rule_based_select_method(dataset_analysis, variables, is_rct, llm, dataset_description, original_query):
+
+def rule_based_select_method(dataset_analysis, variables, is_rct, llm, dataset_description, original_query, excluded_methods=None):
     """
     Wrapped function to select causal method based on dataset properties and query 
 
@@ -260,6 +268,8 @@ def rule_based_select_method(dataset_analysis, variables, is_rct, llm, dataset_d
       is_rct (bool): whether the dataset is from a randomized controlled trial
       llm (BaseChatModel): language model instance for generating prompts
       dataset_description (str): description of the dataset
+      original_query (str): the original user query
+      excluded_methods (List[str], optional): list of methods to exclude from selection
     """
 
     logger.info("Running rule-based method selection")
@@ -277,7 +287,7 @@ def rule_based_select_method(dataset_analysis, variables, is_rct, llm, dataset_d
     properties["is_rct"] = is_rct
     logger.info(f"Dataset properties for method selection: {properties}")
 
-    return select_method(properties)
+    return select_method(properties, excluded_methods)
 
 
 

@@ -351,7 +351,8 @@ def run_causal_analysis(query: str, dataset_path: str,
         method_selector_output = method_selector_tool.func(variables=query_interpreter_output,
             dataset_analysis=dataset_analysis_result,
             dataset_description=input_parsing_result["dataset_description"],
-            original_query = input_parsing_result["original_query"])
+            original_query = input_parsing_result["original_query"],
+            excluded_methods=None)
         method_info = MethodInfo(
             **method_selector_output['method_info']
         )
@@ -363,6 +364,9 @@ def run_causal_analysis(query: str, dataset_path: str,
             original_query = input_parsing_result["original_query"]
         )
         method_validator_output = method_validator_tool.func(method_validator_input)
+        print('-------------------------------')
+        print(method_validator_output)
+        print('-------------------------------')
         method_executor_input = MethodExecutorInput(
             **method_validator_output
         )
@@ -377,7 +381,7 @@ def run_causal_analysis(query: str, dataset_path: str,
         # result = output_formatter_tool.func(query=explainer_output['query'],method=explainer_output['method'],results=explainer_output['results'],explanation=explainer_output['explanation'],dataset_analysis = explainer_output["dataset_analysis"], dataset_description=explainer_output["dataset_description"])
         # AgentExecutor returns dict. Extract the final output dictionary.
         result = explainer_output
-        result['results']['results']["method_used"] = method_info.selected_method
+        result['results']['results']["method_used"] = method_validator_output['method']
         logger.info(result)
         logger.info("Causal analysis run finished.")
         
