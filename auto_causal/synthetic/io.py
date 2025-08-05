@@ -1,6 +1,6 @@
 ## This file contains the functions that uses the classes in generator.py to generate the synthetic data
 
-from .generator import PSMGenerator, PSWGenerator, IVGenerator, RDDGenerator, RCTGenerator, DiDGenerator, MultiTreatRCTGenerator
+from .generator import PSMGenerator, PSWGenerator, IVGenerator, RDDGenerator, RCTGenerator, DiDGenerator, MultiTreatRCTGenerator, FrontDoorGenerator
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -199,6 +199,76 @@ def generate_multi_rct_data(base_mean, base_cov, dset_size, max_n_treat, max_con
         metadata_dict[name] = data_dict
         gen.save_data(data_save_loc, name)
     export_info(metadata_dict, metadata_save_loc, "multi_rct")
+
+
+def generate_frontdoor_data(base_mean, base_cov, dset_size, max_cont, max_bin, min_obs, max_obs,
+                             data_save_loc, metadata_save_loc, n_obs=None):
+    """
+    Generates front-door data
+
+    Args:
+        base_mean (np.ndarray): Base mean vector for the covariates
+        base_cov (np.ndarray): Base covariance matrix for the covariates
+        dset_size (int): Number of datasets to generate
+        max_cont (int): Max number of continuous covariates
+        max_bin (int): Max number of binary covariates
+        min_obs (int): Minimum number of observations
+        max_obs (int): Maximum number of observations
+        data_save_loc (str): Folder to save generated CSV files
+        metadata_save_loc (str): Folder to save metadata JSON
+        n_obs (int or None): Fixed number of observations (if provided)
+    """
+
+    logger = logging.getLogger("frontdoor_data_logger")
+    logger.info("Generating Front-Door synthetic data")
+    metadata_dict = {}
+    base_seed = 311 
+
+    for i in range(dset_size):
+        logger.info(f"Iteration: {i}")
+        seed = (i + 1) * base_seed
+
+        params = config_hyperparameters(seed, base_mean, base_cov, max_cont, max_bin, n_obs,
+                                        max_obs, min_obs)
+
+        logger.info("n_observations: {}, n_continuous: {}, n_binary: {}".format(
+            params['obs'], params['continuous'], params['binary']))
+        logger.info("true_effect: {}".format(params['tau']))
+
+        mean_vec = params['mean']
+        cov_mat = params['covar']
+
+        gen = FrontDoorGenerator(
+            n_observations=params['obs'],
+            n_continuous_covars=params['continuous'],
+            n_binary_covars=params['binary'],
+            mean=mean_vec,
+            covar=cov_mat,
+            true_effect=params['tau'],
+            seed=seed
+        )
+
+        data = gen.generate_data()
+        test_result = gen.test_data()
+        logger.info("Test result: {}\n".format(test_result))
+
+        # Save CSV
+        filename = f"frontdoor_data_{i}.csv"
+        gen.save_data(data_save_loc, filename)
+
+        # Metadata
+        data_dict = {
+            "true_effect": params['tau'],
+            "observation": params['obs'],
+            "continuous": params['continuous'],
+            "binary": params['binary'],
+            "type": "frontdoor"
+        }
+        metadata_dict[filename] = data_dict
+
+    # Save metadata JSON
+    export_info(metadata_dict, metadata_save_loc, "frontdoor")
+
 
 
 def generate_canonical_did_data(base_mean, base_cov, dset_size, max_cont, max_bin, min_obs, max_obs,

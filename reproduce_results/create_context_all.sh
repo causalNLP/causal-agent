@@ -12,6 +12,9 @@ bash reproduce_results/create_context/create_context_rct.sh
 echo "Generating context for Multi-RCT Data"
 bash reproduce_results/create_context/create_context_multi_rct.sh
 
+echo "Generating context for Front_Door Data"
+bash reproduce_results/create_context/create_context_front_door.sh
+
 echo "Generating context for Observational Data"
 bash reproduce_results/create_context/create_context_observational.sh
 
