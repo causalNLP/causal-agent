@@ -106,5 +106,7 @@ def dataset_analyzer_tool(dataset_path: str,
         workflow_state=workflow_update.get('workflow_state', {})
     )
 
+    # print(output)
+
     logger.info("dataset_analyzer_tool finished successfully.")
-    return output 
+    return output

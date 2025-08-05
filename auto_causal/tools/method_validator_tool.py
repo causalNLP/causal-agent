@@ -11,6 +11,7 @@ import logging
 
 from auto_causal.components.method_validator import validate_method
 from auto_causal.components.state_manager import create_workflow_state_update
+from auto_causal.components.decision_tree import rule_based_select_method
 
 # Import shared models from central location
 from auto_causal.models import (
@@ -23,6 +24,29 @@ from auto_causal.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+def extract_properties_from_inputs(inputs: MethodValidatorInput) -> Dict[str, Any]:
+    """
+    Helper function to extract dataset properties from MethodValidatorInput
+    for use with the decision tree.
+    """
+    variables_dict = inputs.variables.model_dump()
+    dataset_analysis_dict = inputs.dataset_analysis.model_dump()
+    
+    return {
+        "treatment_variable": variables_dict.get("treatment_variable"),
+        "outcome_variable": variables_dict.get("outcome_variable"),
+        "instrument_variable": variables_dict.get("instrument_variable"),
+        "covariates": variables_dict.get("covariates", []),
+        "time_variable": variables_dict.get("time_variable"),
+        "running_variable": variables_dict.get("running_variable"),
+        "treatment_variable_type": variables_dict.get("treatment_variable_type", "binary"),
+        "has_temporal_structure": dataset_analysis_dict.get("temporal_structure", {}).get("has_temporal_structure", False),
+        "frontdoor_criterion": variables_dict.get("frontdoor_criterion", False),
+        "cutoff_value": variables_dict.get("cutoff_value"),
+        "covariate_overlap_score": variables_dict.get("covariate_overlap_result", 0),
+        "is_rct": variables_dict.get("is_rct", False)
+    }
 
 # --- Removed local Pydantic definitions --- 
 # class Variables(BaseModel): ...
@@ -73,8 +97,52 @@ def method_validator_tool(inputs: MethodValidatorInput) -> Dict[str, Any]: # Use
 
     # Determine if assumptions are valid based on component output
     assumptions_valid = validation_results.get("valid", False) 
-    failed_assumptions = validation_results.get("failed_assumptions", [])
-    recommended_method = validation_results.get("recommended_method", method_info_dict.get("selected_method"))
+    failed_assumptions = validation_results.get("concerns", [])
+    original_method = method_info_dict.get("selected_method")
+    recommended_method = validation_results.get("recommended_method", original_method)
+    
+    # If validation failed, attempt to backtrack through decision tree
+    if not assumptions_valid and failed_assumptions:
+        logger.info(f"Method {original_method} failed validation due to: {failed_assumptions}")
+        logger.info("Attempting to backtrack and select alternative method...")
+        
+        try:
+            # Extract properties for decision tree
+            dataset_props = extract_properties_from_inputs(inputs)
+            
+            # Get LLM instance (may be None)
+            from auto_causal.config import get_llm_client
+            try:
+                llm_instance = get_llm_client()
+            except Exception as e:
+                logger.warning(f"Failed to get LLM instance: {e}")
+                llm_instance = None
+            
+            # Re-run decision tree with failed method excluded
+            excluded_methods = [original_method]
+            new_selection = rule_based_select_method(
+                dataset_analysis=inputs.dataset_analysis.model_dump(),
+                variables=inputs.variables.model_dump(),
+                is_rct=inputs.variables.is_rct or False,
+                llm=llm_instance,
+                dataset_description=inputs.dataset_description,
+                original_query=inputs.original_query,
+                excluded_methods=excluded_methods
+            )
+            
+            recommended_method = new_selection.get("selected_method", original_method)
+            logger.info(f"Backtracking selected new method: {recommended_method}")
+            
+            # Update validation results to include backtracking info
+            validation_results["backtrack_attempted"] = True
+            validation_results["backtrack_method"] = recommended_method
+            validation_results["excluded_methods"] = excluded_methods
+            
+        except Exception as e:
+            logger.error(f"Backtracking failed: {e}")
+            validation_results["backtrack_attempted"] = True
+            validation_results["backtrack_error"] = str(e)
+            # Keep original recommended method
     
     # Prepare output dictionary for the next tool (method_executor)
     result = {

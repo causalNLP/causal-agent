@@ -10,7 +10,7 @@ from typing import Dict, List, Any, Optional, Union
 from langchain_core.tools import tool # Use langchain_core
 
 # Import component function and central LLM factory
-from auto_causal.components.decision_tree import select_method as rule_based_select_method # Rule-based
+from auto_causal.components.decision_tree import rule_based_select_method # Rule-based
 from auto_causal.components.decision_tree_llm import DecisionTreeLLMEngine # LLM-based
 from auto_causal.config import get_llm_client # Updated import path
 from auto_causal.components.state_manager import create_workflow_state_update
@@ -30,7 +30,8 @@ def method_selector_tool(
     variables: Variables, 
     dataset_analysis: DatasetAnalysis, 
     dataset_description: Optional[str] = None, 
-    original_query: Optional[str] = None
+    original_query: Optional[str] = None,
+    excluded_methods: Optional[List[str]] = None
 ) -> Dict[str, Any]:
     """
     Select the most appropriate causal inference method based on structured input.
@@ -42,6 +43,7 @@ def method_selector_tool(
         dataset_analysis: Pydantic model containing results of dataset analysis.
         dataset_description: Optional textual description of the dataset.
         original_query: Optional original user query string.
+        excluded_methods: Optional list of method names to exclude from selection.
         
     Returns:
         Dictionary with method selection details, context for next step, and workflow state.
@@ -101,7 +103,8 @@ def method_selector_tool(
                 dataset_analysis=dataset_analysis_dict,
                 variables=variables_dict,
                 is_rct=is_rct_flag if isinstance(is_rct_flag, bool) else False,
-                llm=llm_instance
+                llm=llm_instance,
+                excluded_methods=excluded_methods
             )
         else:
             logger.info("Using Rule-based Decision Tree Engine for method selection.")
@@ -110,7 +113,10 @@ def method_selector_tool(
                  dataset_analysis=dataset_analysis_dict, 
                  variables=variables_dict,
                  is_rct=is_rct_flag if isinstance(is_rct_flag, bool) else False, # Handle None case
-                 llm=llm_instance # Rule-based also uses LLM for PSM/PSW recommendation
+                 llm=llm_instance, 
+                 dataset_description = dataset_description,
+                 original_query = original_query,
+                 excluded_methods = excluded_methods
             )
     except Exception as e:
         logger.error(f"Error during method selection execution: {e}", exc_info=True)

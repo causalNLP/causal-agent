@@ -9,10 +9,15 @@ from typing import Optional
 from langchain_core.language_models import BaseChatModel
 from langchain_openai import ChatOpenAI # Default
 from langchain_anthropic import ChatAnthropic # Example
+from langchain_google_genai import ChatGoogleGenerativeAI
 # Add other providers if needed, e.g.:
 # from langchain_community.chat_models import ChatOllama 
 from dotenv import load_dotenv
-
+from langchain_core.globals import set_llm_cache
+from langchain_community.cache import SQLiteCache
+from langchain_deepseek import ChatDeepSeek
+# Create a disk-backed SQLite cache:
+set_llm_cache(SQLiteCache(database_path="langchain_cache.db"))
 # Import Together provider
 from langchain_together import ChatTogether
 
@@ -34,14 +39,17 @@ def get_llm_client(provider: Optional[str] = None, model_name: Optional[str] = N
     # Default model depends on provider
     default_models = {
         "openai": "gpt-4o-mini",
-        "anthropic": "claude-3-haiku-20240307",
-        "together": "Qwen/Qwen2.5-72B-Instruct-Turbo"  # Default Together model
+        "anthropic": "claude-3-5-sonnet-latest",
+        "together": "deepseek-ai/DeepSeek-V3",  # Default Together model
+        "gemini" : "gemini-2.5-flash",
+        "deepseek" : "deepseek-chat"
     }
     
     model_name = model_name or os.getenv("LLM_MODEL", default_models.get(provider, default_models["openai"]))
     
     api_key = None
-    kwargs.setdefault("temperature", 0) # Default temperature if not provided
+    if model_name not in ['o3-mini', 'o3', 'o4-mini']:
+        kwargs.setdefault("temperature", 0) # Default temperature if not provided
 
     logger.info(f"Initializing LLM client: Provider='{provider}', Model='{model_name}'")
 
@@ -56,13 +64,25 @@ def get_llm_client(provider: Optional[str] = None, model_name: Optional[str] = N
             api_key = os.getenv("ANTHROPIC_API_KEY")
             if not api_key:
                 raise ValueError("ANTHROPIC_API_KEY not found in environment.")
-            return ChatAnthropic(model=model_name, api_key=api_key, **kwargs)
+            return ChatAnthropic(model=model_name, api_key=api_key, **kwargs, streaming=False)
         
         elif provider == "together":
             api_key = os.getenv("TOGETHER_API_KEY")
             if not api_key:
                 raise ValueError("TOGETHER_API_KEY not found in environment.")
             return ChatTogether(model=model_name, api_key=api_key, **kwargs)
+
+        elif provider == "gemini":
+            api_key = os.getenv("GEMINI_API_KEY")
+            if not api_key:
+                raise ValueError("GEMINI_API_KEY not found in environment.")
+            return ChatGoogleGenerativeAI(model=model_name, **kwargs, function_calling="auto")
+
+        elif provider == "deepseek":
+            api_key = os.getenv("DEEPSEEK_API_KEY")
+            if not api_key:
+                raise ValueError("DEEPSEEK_API_KEY not found in environment.")
+            return ChatDeepSeek(model=model_name, **kwargs)
             
         # Example for Ollama (ensure langchain_community is installed)
         # elif provider == "ollama":
