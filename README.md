@@ -23,14 +23,14 @@ All datasets used to evaluate CAIA and the baseline models are available in the 
 ## Run 
 To run the program, one can run
 ```python
-python main/run_agent.py -f ${CSV_PATH} -d ${DATA_FOLDER} -t ${DATA_CATEGORY} -o ${OUTPUT_FOLDER} -l ${LLM_NAME}
+python script_name.py --csv_path path/to/meta.csv --data_folder path/to/data --output_folder path/to/output --llm_name gpt-4
 ```
-**Args**
-* `CSV_PATH`: A csv file containing the queries, the dataset description, name of the data file
-* `DATA_FOLDER`: Path to the folder containing the data
-* `DATA_CATEGORY`: The name of the dataset collection (real, qrdata, synthetic, or other name)
-* `OUTPUT_FOLDER`: Folder where the output is saved
-* `LLM_NAME`: Name of the LLM
+Args:
+* csv_path (str): Path to the CSV file containing the queries, dataset descriptions, and data file names.
+* data_folder (str): Path to the folder containing the data CSV files.
+* output_folder (str): Folder where the output JSON results will be saved.
+* llm_name (str): Name of the LLM to be used (e.g., 'gpt-4', 'claude-3', etc.).
+
   
 A specific example, 
 ```python

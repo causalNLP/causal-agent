@@ -14,6 +14,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Run batch causal analysis.")
     parser.add_argument("--csv_path", type=str, required=True, help="CSV file with queries, descriptions, and file names.")
     parser.add_argument("--data_folder", type=str, required=True, help="Folder containing data CSVs.")
+    parser.add_argument("--data_category", type=str, required=True, help="Dataset category (e.g., real, qrdata, synthetic).")
     parser.add_argument("--output_folder", type=str, required=True, help="Folder to save output.")
     parser.add_argument("--llm_name", type=str, required=True, help="Name of the LLM used.")
     return parser.parse_args()
