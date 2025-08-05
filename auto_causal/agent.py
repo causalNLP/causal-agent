@@ -319,12 +319,6 @@ def run_causal_analysis(query: str, dataset_path: str,
         # Construct input, including description if available
         # IMPORTANT: Agent now expects 'input' and potentially 'chat_history'
         # The input needs to contain all initial info the first tool might need.
-        initial_input_dict = {
-            "query": query,
-            "dataset_path": dataset_path,
-            "dataset_description": dataset_description
-        }
-        # Maybe format this into a single input string if the prompt expects {input}
         input_text = f"My question is: {query}\n"
         input_text += f"The dataset is located at: {dataset_path}\n"
         if dataset_description:
@@ -345,9 +339,6 @@ def run_causal_analysis(query: str, dataset_path: str,
     )
 
         query_interpreter_output = query_interpreter_tool.func(query_info=query_info, dataset_analysis=dataset_analysis_result, dataset_description=input_parsing_result["dataset_description"], original_query = input_parsing_result["original_query"]).variables
-        print('-------------------------------')
-        print(query_interpreter_output)
-        print('-------------------------------')
         method_selector_output = method_selector_tool.func(variables=query_interpreter_output,
             dataset_analysis=dataset_analysis_result,
             dataset_description=input_parsing_result["dataset_description"],
@@ -364,9 +355,6 @@ def run_causal_analysis(query: str, dataset_path: str,
             original_query = input_parsing_result["original_query"]
         )
         method_validator_output = method_validator_tool.func(method_validator_input)
-        print('-------------------------------')
-        print(method_validator_output)
-        print('-------------------------------')
         method_executor_input = MethodExecutorInput(
             **method_validator_output
         )
@@ -378,8 +366,6 @@ def run_causal_analysis(query: str, dataset_path: str,
             dataset_analysis=dataset_analysis_result,
             dataset_description=input_parsing_result["dataset_description"],
             original_query = input_parsing_result["original_query"])
-        # result = output_formatter_tool.func(query=explainer_output['query'],method=explainer_output['method'],results=explainer_output['results'],explanation=explainer_output['explanation'],dataset_analysis = explainer_output["dataset_analysis"], dataset_description=explainer_output["dataset_description"])
-        # AgentExecutor returns dict. Extract the final output dictionary.
         result = explainer_output
         result['results']['results']["method_used"] = method_validator_output['method']
         logger.info(result)

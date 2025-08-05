@@ -13,11 +13,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 # Add other providers if needed, e.g.:
 # from langchain_community.chat_models import ChatOllama 
 from dotenv import load_dotenv
-from langchain_core.globals import set_llm_cache
-from langchain_community.cache import SQLiteCache
 from langchain_deepseek import ChatDeepSeek
 # Create a disk-backed SQLite cache:
-set_llm_cache(SQLiteCache(database_path="langchain_cache.db"))
 # Import Together provider
 from langchain_together import ChatTogether
 

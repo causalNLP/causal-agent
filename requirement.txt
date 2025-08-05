@@ -30,6 +30,8 @@ langchain-core==0.3.66
 langchain-openai==0.3.9
 langchain-text-splitters==0.3.8
 langchain-together==0.3.0
+langchain-google-genai
+langchain-deepseek
 langchainhub==0.1.21
 langsmith==0.4.1
 lightgbm==4.6.0
