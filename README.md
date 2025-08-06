@@ -177,7 +177,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 **Core Contributors**: Vishal Verma, Sawal Acharya, Devansh Bhardwaj
 
-**Other Contributors**:  Zhijin Jin, Ana Hagihat, Samuel Simko
+**Other Contributors**:  Zhijing Jin, Ana Hagihat, Samuel Simko
 
 ---
 
