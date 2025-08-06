@@ -10,6 +10,7 @@ Large Language Models
   <a href="">"Coming Soon"<b>[Arxiv(coming soon)]</b></a>
 </p> -->
 
+*Note* : This repository is a work in progress and will be updated with additional annotations or files.
 
 ## 1. Introduction
 
@@ -84,16 +85,18 @@ We assess CAIS on:
 - **Mean Relative Error (MRE)** – Average relative error between CAIS’s estimated causal effect and the reference value.
 
 
-<h1 align="center">
-<div style="text-align: center;">
-    <img src="blob/main/asset/CAIS-MRE.png" width="990" alt="CAIS" />
-</div>
-</h1>
-
-<div style="text-align: center;">
-    <img src="blob/main/asset/CAIS-msa.png" width="990" alt="CAIS" />
-</div>
-</h1>
+<p align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="blob/main/asset/CAIS-MRE.png" width="450" alt="CAIS MRE"/>
+      </td>
+      <td align="center">
+        <img src="blob/main/asset/CAIS-msa.png" width="450" alt="CAIS MSA"/>
+      </td>
+    </tr>
+  </table>
+</p>
 
 
 ---
