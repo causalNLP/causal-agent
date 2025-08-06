@@ -1,6 +1,0 @@
-
-{"query_number": 1, "natural_language_query": "\"Did students' grades improve after participating in the after-school program?\"", "dataset_path": "benchmark/synthetic_data/did_canonical_data_0.csv", "answer": "5.089956982132045"}
-
-{"type": "analysis_result", "data": {"query": "My question is: \"Did students' grades improve after participating in the after-school program?\"", "confidence_interval": [4.638891906917874, 5.236804836093893], "causal_effect": 4.937848371505884, "method_used": "Difference-in-Differences", "standard_error": 0.15253161126742099}}
-
-{"query_number": 2, "natural_language_query": "\"Did the administration of the new vaccine improve the overall health of patients?\"", "dataset_path": "benchmark/synthetic_data/did_canonical_data_1.csv", "answer": "1.3208427907169762"}
