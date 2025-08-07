@@ -26,7 +26,7 @@ def run_cais(desc, question, df):
 def parse_args():
 
     parser = argparse.ArgumentParser(description="Run batch causal analysis.")
-    parser.add_argument("-f", "--csv_path", type=str, required=True, 
+    parser.add_argument("-m", "--metadata_path", type=str, required=True, 
                         help="Path to the CSV file with queries, descriptions, and file names etc")
     parser.add_argument("-d", "--data_dir", type=str, required=True, 
                         help="Path to the folder containing the data  in CSV format")
@@ -40,18 +40,18 @@ def parse_args():
 def main():
 
     args = parse_args()
-    csv_path = args.csv_path
+    metadata_path = args.metadata_path
     data_dir = args.data_dir
     output_dir = args.output_dir
     output_name = args.output_name
     os.environ["LLM_MODEL"] = args.llm_name
     print("[main] Starting batch processing…")
 
-    if not os.path.exists(csv_path):
-        logging.error(f"Meta file not found: {csv_path}")
+    if not os.path.exists(metadata_path):
+        logging.error(f"Meta file not found: {metadata_path}")
         return
 
-    meta_df = pd.read_csv(csv_path)
+    meta_df = pd.read_csv(metadata_path)
     print(f"[main] Loaded metadata CSV with {len(meta_df)} rows.")
 
     results: Dict[int, Dict[str, Any]] = {}
