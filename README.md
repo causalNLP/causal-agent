@@ -10,9 +10,13 @@ Large Language Models
   <a href="">"Coming Soon"<b>[Arxiv(coming soon)]</b></a>
 </p> -->
 
-*Note* : This repository is a work in progress and will be updated with additional annotations or files.
+**Causal AI Scientist (CAIS)** is an LLM-powered tool for generating data-driven answers to natural language causal queries. It takes a natural language query (for example, "Does participating in a job training program lead to higher income?"), an accompanying dataset, and the corresponding description as inputs. CAIS then frames a suitable causal estimation problem by selecting appropriate treatment and outcome variables. It finds the suitable method for causal effect estimation, implements it, runs diagnostic tests, and finally interprets the numerical results in the context of the original query.
 
-## 1. Introduction
+This repo includes instructions on both using the tool to perform causal analysis on a dataset of interest and reproducing results from our paper.
+
+**Note** : This repository is a work in progress and will be updated with additional instructions and files.
+
+<!-- ## 1. Introduction
 
 Causal effect estimation is central to evidence-based decision-making across domains like social sciences, healthcare, and economics. However, it requires specialized expertise to select the right inference method, identify valid variables, and validate results.  
 
@@ -97,13 +101,9 @@ We assess CAIS on:
     </tr>
   </table>
 </p>
-
-
----
+--> 
 
 ## Getting Started
-
-
 
 #### 🔧 Environment Installation
 
@@ -118,23 +118,22 @@ We assess CAIS on:
 cp .env.example .env
 ```
 
-**Step 2: Create Python 3.10 Environment**
+**Step 2: Create Python 3.10 environment**
 ```bash
 # Create a new conda environment with Python 3.10
-conda create -n causal-copilot python=3.10
-conda activate causal-copilot
+conda create -n auto_causal python=3.10
+conda activate auto_causal
 pip install -r requirement.txt
 ```
-**OR**
 
-**Step3: Run Setup Script**
+**Step3: Setup auto_causal library**
 ```bash
 pip install -e .
 ```
 
 ## Dataset Information 
 
-All datasets used to evaluate CAIA and the baseline models are available in the data/ directory. Specifically:
+All datasets used to evaluate CAIs and the baseline models are available in the data/ directory. Specifically:
 
 * `all_data`: Folder containing all CSV files from the QRData and real-world study collections.
 * `synthetic_data`: Folder containing all CSV files corresponding to synthetic datasets.
@@ -143,24 +142,36 @@ All datasets used to evaluate CAIA and the baseline models are available in the 
 * `synthetic_info.csv`: Metadata for the synthetic datasets.
 
 ## Run 
-To run the program, one can run
+To execute CAIS, run
 ```python
-python main/run_cais.py --csv_path path/to/meta.csv --data_folder path/to/data --output_folder path/to/output --llm_name gpt-4
+python main/run_cais.py \
+    --metadata_path {path_to_metadata} \
+    --data_dir {path_to_data_folder} \
+    --output_dir {output_folder} \
+    --output_name {output_filename} \
+    --llm_name {llm_name}
 ```
 Args:
-* csv_path (str): Path to the CSV file containing the queries, dataset descriptions, and data file names.
-* data_folder (str): Path to the folder containing the data CSV files.
-* output_folder (str): Folder where the output JSON results will be saved.
-* llm_name (str): Name of the LLM to be used (e.g., 'gpt-4', 'claude-3', etc.).
 
+* metadata_path (str): Path to the CSV file containing the queries, dataset descriptions, and data file names
+* data_dir (str): Path to the folder containing the data in CSV format
+* output_dir (str): Path to the folder where the output JSON results will be saved
+* output_name (str): Name of the JSON file where the outputs will be saved
+* llm_name (str): Name of the LLM to be used (e.g., 'gpt-4', 'claude-3', etc.)
   
 A specific example, 
 ```python
-python main/run_agent.py -f data/test.csv -d data/all_data -t test -o output -l gpt-4o-mini 
+python main/run_cais.py \
+    --metadata_path "data/qr_info.csv" \
+    --data_dir "data/all_data" \
+    --output_dir "output" \
+    --output_name "results_qr_4o" \
+    --llm_name "gpt-4o-mini"
 ```
 
 
-``
+## Reproducing paper results
+**Will be updated soon**
 
 **⚠️ Important Notes:**
 - Keep your `.env` file secure and never commit it to version control
@@ -171,7 +182,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 
 
-## Contributors
+<!--## Contributors
 
 
 
@@ -184,4 +195,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 ## Contact
 
 For additional information, questions, or feedback, please contact ours **[Vishal Verma](vishalv@andrew.cmu.edu)**, **[Sawal Acharya](sawal386@stanford.edu)**, **[Devansh Bhardwaj](bhardwajdevansh398@gmail.com)**. We welcome contributions! Come and join us now!
-
+-->
