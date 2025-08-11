@@ -150,6 +150,7 @@ python main/run_cais.py \
     --output_dir {output_folder} \
     --output_name {output_filename} \
     --llm_name {llm_name}
+    --llm_provider {llm_provider}
 ```
 Args:
 
@@ -158,15 +159,17 @@ Args:
 * output_dir (str): Path to the folder where the output JSON results will be saved
 * output_name (str): Name of the JSON file where the outputs will be saved
 * llm_name (str): Name of the LLM to be used (e.g., 'gpt-4', 'claude-3', etc.)
+* llm_provider (str): Name of the LLM service provider (e.g., 'openai', 'anthropic', 'together', etc.)
   
 A specific example, 
 ```python
-python main/run_cais.py \
+python run_cais.py \
     --metadata_path "data/qr_info.csv" \
     --data_dir "data/all_data" \
     --output_dir "output" \
     --output_name "results_qr_4o" \
-    --llm_name "gpt-4o-mini"
+    --llm_name "gpt-4o-mini" \
+    --llm_provider "openai"
 ```
 
 
