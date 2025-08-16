@@ -1,0 +1,95 @@
+**Propensity score matching**:
+
+When to use: Use propensity score weighting to estimate the Average Treatment Effect (ATE) when you suspect observed confounders are influencing both the treatment and the outcome. The goal is to address the sampling bias in treated and control groups that arises from the relationship between the confounders and the treatment
+
+Explanation: This method attempts to create a pseudo-population where the treatment assignment is independent of the observed confounders By weighting the outcomes by the inverse of the propensity score, you give more weight to units that are "unusual" given their characteristics (e.g., someone with characteristics that usually predict not receiving the treatment, but who did receive it)
+
+Example Use Case: Imagine you want to study the effect of a new job training program (treatment) on individuals' income (outcome) However, individuals who enroll in the program might be more motivated or have specific skills that also influence their income (confounders). Propensity score weighting can be used to adjust for these pre-existing differences by weighting individuals based on their likelihood of participating in the training program, given their motivation and skills.
+
+**propensity_score_matching_treatment_to_control**:
+
+When to use: Employ propensity score matching treatment-to-control to estimate the Average Treatment Effect on the Treated (ATT) when you specifically want to assess the impact of a treatment on those who actually received it, and you have observed confounders. This method is useful when you want to compare treated units with similar control units based on propensity scores
+
+Explanation: This method aims to create comparable groups by matching each treated unit to one or more control units with similar propensity scores.The treatment effect is then estimated by comparing the outcomes of the treated units with those of their matched controls. The objective is to estimate how the treatment specifically affects those who received it
+
+Use Case Example: Suppose you want to study the effect of a college mentoring program (treatment) on the graduation rates of students. However, students who participate in the mentoring program might differ from those who don't in several ways (e.g., motivation, academic preparation). Propensity score matching can be used to match each student in the mentoring program with a similar student who did not participate (based on factors like grades, test scores, and family income) and then compare the graduation rates of the two groups. This helps estimate the effect of the mentoring program specifically on the students who participated in it.
+
+** Linear regression **
+
+When to Use: Linear regression can be used to estimate the average treatment effect (ATE) when you assume the relationship between the treatment, confounders, and outcome is linear. It's a special case of outcome model adjustment and is applicable when the identification conditions for confounder adjustment are met.
+
+Explanation: When the conditional expected outcome Q(A, X) = E[Y |A, X] is assumed to be a linear function of both the treatment (A) and the covariates (X), linear regression can be employed.
+
+** Instrumental variable** (TSLS)
+
+When to use: Employ instrumental variable (IV) strategies when you want to identify causal effects in the presence of unobserved confounders. This approach is valuable when you have a variable (the instrument) that affects the treatment but influences the outcome only through its effect on the treatment
+
+Explanation: IV strategies are used when adjustment-based methods cannot be applied because not all confounders are observed. The key is to find an instrumental variable (Z) that meets three conditions
+1.Instrument Relevance: The instrument must actually affect the treatment
+2.Instrument Unconfoundedness: Any backdoor path between the instrument and the outcome must be blocked by observed covariates
+3.Exclusion Restriction: The instrument affects the outcome only through its effect on the treatment
+
+The strategy involves determining the causal effect of the instrument on the outcome, the causal effect of the instrument on the treatment, and then combining these into an estimate of the causal effect of the treatment on the outcome.
+
+
+Use Case Example: Imagine you want to study the effect of taking a drug (A) on a health outcome (Y), but whether a study participant takes the drug can be confounded with Y. For example, sicker people may be more likely to take their medication but have worse outcomes. In this case, the assignment of treatments to patients can be randomized and viewed as an instrument (Z). The random assignment satisfies relevance, unconfoundedness, and plausibly satisfies the exclusion restriction because telling (or not telling) a patient to take a drug has no effect on their health outcome except through influencing whether or not they actually take the drug.
+
+** Matching **
+When to use: Use matching when you want to estimate the average treatment effect (ATE) and you have a set of observed confounding variables. Matching is particularly useful when you can assume that there are no unobserved confounders and you want to create comparable groups of treated and untreated participants.
+Explanation:
+Matching is an adjustment technique that aims to make the treated and untreated groups as similar as possible in terms of observed confounding variables. The idea is to match each treated unit to one or more untreated units that have similar values on the confounding covariates
+The matching estimator computes the average difference in outcomes between the treated units and their matched control units. If the matching is performed on the full set of common causes, then the difference in outcomes is an estimate of the treatment effect. Matching can be understood as a particular kind of outcome model adjustment, where you estimate the conditional expected outcome as a sample mean over units with the same covariate value. The effectiveness of matching depends on the quality of the model for the conditional expected outcome. In situations where better models are possible (e.g., a machine-learning model that fits the data well), you might expect to get a more accurate estimate by using the conditional expected outcome predictor directly
+
+Use Case Example: Suppose you want to study the effect of a tutoring program (treatment) on the academic performance of students (outcome). However, students who participate in the tutoring program may differ from those who do not in terms of motivation, academic preparation, and other factors. Matching can be used to match each student in the tutoring program to a similar student who did not participate (based on factors such as grades, test scores, and family income) and then compare the academic performance of the two groups. This helps to estimate the effect of the tutoring program.
+
+** Difference in Differences **
+
+
+When to use: Use Difference in Differences when you want to estimate the average treatment effect on the treated (ATT) using panel data (i.e., data observed at multiple time points), especially when there might be unobserved unit-specific and time-specific effects. This method is appropriate when you have a group that receives a treatment and a control group that does not, and you observe both groups before and after the treatment.
+
+
+Explanation: DiD relies on observing each unit at multiple time points. It involves comparing the change in outcomes over time for the treated group to the change in outcomes for the control group
+The key assumption is parallel trends, which means that in the absence of treatment, the trend over time would be the same in both groups. A weaker version of this assumption, conditional parallel trends, requires this to hold only after adjusting for covariates. The causal estimand is the average treatment effect on the units that received the treatment (ATT), formalized using the do-calculus to account for potential confounding. The method addresses the issue where treated and untreated units might be systematically different in unobserved ways that affect the outcome. All the estimation tools developed for adjustment can be used
+
+Use Case Example: Consider the example of studying the effect of raising the minimum wage on employment. One can collect employment data from fast food restaurants in New Jersey (treated, where the minimum wage was raised) and Pennsylvania (control, where the minimum wage remained constant) before and after the policy change. By comparing the change in employment in New Jersey to the change in employment in Pennsylvania, one can estimate the effect of the minimum wage hike on employment in the restaurants affected by it.
+
+**Regression Discontinuity Designs**
+
+When to use: Use regression discontinuity designs when there is a sharp, arbitrary non-linearity in treatment assignment. This means that eligibility for a treatment or intervention is determined by whether a unit's value on some continuous variable (the "running variable" or "assignment variable") falls above or below a specific threshold
+
+Explanation: Regression discontinuity designs exploit the arbitrary nature of the threshold to estimate the causal effect of the treatment. By comparing units just below and just above the threshold, one can isolate the effect of the treatment, as these units are likely to be very similar in all other respects.
+
+
+Example: Eligibility for some aid programs is determined by whether an individual has income below or above a fixed amount. The effect of the treatment can be studied by comparing units just below and just above this threshold.
+
+** Matching Treatment to Control **
+
+When to use: Use this method when you want to estimate the average treatment effect on the treated (ATT) and have a set of observed confounding variables. This is especially useful when members of the population are unlikely to receive treatment, but the treated units had a reasonably high probability of receiving the control. It is also helpful when sampling control units from the general population, but treatment units self-selected into treatment from a smaller subpopulation
+
+Explanation: Matching is an adjustment technique designed to create comparable groups of treated and untreated participants based on observed confounding variables
+
+The goal is to find, for each treated unit, one or more untreated units that have similar values on the confounding covariates. By averaging only over the treated datapoints, ATT solves the obstacle of determining the treatment effect for control units where no similar unit took treatment.
+In essence, matching amounts to a particular choice of model for estimating the conditional expected outcome as a sample mean over units with the same covariate value.
+
+
+Use Case Example:
+In a study of a new drug, many members of the general population are very unlikely to receive the treatment, but the treated units had a reasonably high probability of receiving the control.
+If control units are sampled from the general population, but the treatment units all self-selected into treatment from a smaller subpopulation, ATT omits units from the average.
+The nuisance functions are estimated the same way, and then averages over all datapoints are replaced by averages over the treated datapoints only.
+
+
+Linear Regression / Difference in Means.
+When to use: Use linear regression or difference in means when you want to estimate the association between two variables and you are willing to make strong assumptions about the underlying data generating process. Specifically, this approach is most applicable when:
+You assume the identification conditions for confounder adjustment are met.
+You can confidently assume a linear relationship between the treatment and the outcome, as well as between the covariates and the outcome.
+You want a simple and interpretable method for estimating the treatment effect, especially when dealing with linear parametric assumptions
+
+Explanation:
+This method involves fitting a linear regression model to the data and reporting the regression coefficient associated with the treatment variable.
+The estimator for the average treatment effect reduces to the estimator for the regression coefficient
+It calculates the difference in means between the treated and untreated groups without adjusting for confounding. It integrates over the distinct conditional distributions of confounders X, depending on the value of A. The conditional expected outcome is modeled as a linear function of both the treatment and all the covariates.
+
+
+Use Case Example:
+Estimating the effect of a drug (treatment) on blood pressure (outcome), assuming a linear relationship between drug dosage and blood pressure change, and that any confounding variables are adequately accounted for in the linear model.
+
