@@ -8,6 +8,9 @@ ipykernel
 pyzmq
 requests
 python-dotenv
+backoff
+together
+tqdm
 statsmodels==0.14.4
 seaborn==0.13.2
 shap==0.43.0
@@ -43,8 +46,9 @@ Jinja2==3.1.6
 jiter==0.9.0
 joblib==1.4.2
 jsonpatch==1.33
-dowhy==0.12
-econml==0.15.1
+## Moved to baselines/docker_dependencies.txt for containerized code execution
+# dowhy
+# econml
 matplotlib==3.10.1
 langchain==0.3.26
 

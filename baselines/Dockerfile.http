@@ -1,0 +1,22 @@
+FROM python:3.10
+
+WORKDIR /app
+
+# Install IPython and Jupyter dependencies
+RUN pip install --no-cache-dir ipython jupyter_client jupyter_core pyzmq ipykernel
+
+# Install domain-specific packages
+COPY docker_dependencies.txt /app/
+RUN pip install --no-cache-dir -r docker_dependencies.txt
+
+# Create a directory for connection files
+RUN mkdir -p /tmp/kernel
+
+# Copy HTTP server script
+COPY kernel_http.py /app/
+
+# Expose the HTTP port
+EXPOSE 8888
+
+# Set entrypoint to run the HTTP server with kernel support
+ENTRYPOINT ["python", "/app/kernel_http.py", "--kernel"] 
