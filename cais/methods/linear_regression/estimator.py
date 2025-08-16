@@ -17,9 +17,9 @@ from langchain_core.messages import HumanMessage
 from langchain_core.exceptions import OutputParserException
 
 
-from auto_causal.models import LLMIdentifiedRelevantParams
-from auto_causal.prompts.regression_prompts import STATSMODELS_PARAMS_IDENTIFICATION_PROMPT_TEMPLATE
-from auto_causal.config import get_llm_client
+from cais.models import LLMIdentifiedRelevantParams
+from cais.prompts.regression_prompts import STATSMODELS_PARAMS_IDENTIFICATION_PROMPT_TEMPLATE
+from cais.config import get_llm_client
 
 # Placeholder for potential future LLM assistance integration
 # from .llm_assist import interpret_lr_results, suggest_lr_covariates
@@ -222,7 +222,7 @@ def estimate_effect(
                     param_conf_ints_high_list = nan_list_ci
 
                 # Placeholder for the new prompt template tailored for this extraction task
-                # MOVED TO causalscientist/auto_causal/prompts/regression_prompts.py
+                # MOVED TO causalscientist/cais/prompts/regression_prompts.py
 
                 is_multilevel_case_for_prompt = bool(treatment_reference_level and is_still_categorical_in_df and not is_binary_encoded)
                 reference_level_for_prompt_str = str(treatment_reference_level) if is_multilevel_case_for_prompt else "N/A"

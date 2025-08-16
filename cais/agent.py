@@ -1,5 +1,5 @@
 """
-LangChain agent for the auto_causal module.
+LangChain agent for the cais module.
 
 This module configures a LangChain agent with specialized tools for causal inference,
 allowing for an interactive approach to analyzing datasets and applying appropriate
@@ -26,15 +26,15 @@ from langchain_core.language_models import BaseChatModel
 from langchain_anthropic.chat_models import convert_to_anthropic_tool
 import os
 # Import actual tools from the tools directory
-from auto_causal.tools.input_parser_tool import input_parser_tool
-from auto_causal.tools.dataset_analyzer_tool import dataset_analyzer_tool
-from auto_causal.tools.query_interpreter_tool import query_interpreter_tool
-from auto_causal.tools.method_selector_tool import method_selector_tool
-from auto_causal.tools.method_validator_tool import method_validator_tool
-from auto_causal.tools.method_executor_tool import method_executor_tool
-from auto_causal.tools.explanation_generator_tool import explanation_generator_tool
-from auto_causal.tools.output_formatter_tool import output_formatter_tool
-#from auto_causal.prompts import SYSTEM_PROMPT # Assuming SYSTEM_PROMPT is defined here or imported
+from cais.tools.input_parser_tool import input_parser_tool
+from cais.tools.dataset_analyzer_tool import dataset_analyzer_tool
+from cais.tools.query_interpreter_tool import query_interpreter_tool
+from cais.tools.method_selector_tool import method_selector_tool
+from cais.tools.method_validator_tool import method_validator_tool
+from cais.tools.method_executor_tool import method_executor_tool
+from cais.tools.explanation_generator_tool import explanation_generator_tool
+from cais.tools.output_formatter_tool import output_formatter_tool
+#from cais.prompts import SYSTEM_PROMPT # Assuming SYSTEM_PROMPT is defined here or imported
 from langchain_core.output_parsers import StrOutputParser
 # Import the centralized factory function
 from .config import get_llm_client 
@@ -51,7 +51,7 @@ from langchain.agents import AgentOutputParser
 from langchain.agents.agent import AgentAction, AgentFinish, OutputParserException
 import re
 from typing import Union, List
-from auto_causal.models import *
+from cais.models import *
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException

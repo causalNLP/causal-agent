@@ -14,9 +14,9 @@ import json # Ensure json is imported
 # Add import for @tool decorator
 from langchain.tools import tool
 
-from auto_causal.components import output_formatter
+from cais.components import output_formatter
 # Import the Pydantic model returned by the component
-from auto_causal.models import FormattedOutput
+from cais.models import FormattedOutput
 
 # --- REVERT: Remove Pydantic Model Definitions --- 
 # class Variables(BaseModel): 

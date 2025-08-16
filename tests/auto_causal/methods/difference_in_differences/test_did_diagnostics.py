@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 import numpy as np
-from auto_causal.methods.difference_in_differences.diagnostics import validate_parallel_trends
+from cais.methods.difference_in_differences.diagnostics import validate_parallel_trends
 
 # Fixture (can reuse from estimator tests if needed, or define simpler one)
 @pytest.fixture

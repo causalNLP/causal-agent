@@ -10,9 +10,9 @@ import re
 from typing import Dict, Any, Optional
 from langchain_core.tools import tool
 
-from auto_causal.components.input_parser import parse_input
-from auto_causal.config import get_llm_client
-from auto_causal.components.state_manager import create_workflow_state_update
+from cais.components.input_parser import parse_input
+from cais.config import get_llm_client
+from cais.components.state_manager import create_workflow_state_update
 import json
 logger = logging.getLogger(__name__)
 

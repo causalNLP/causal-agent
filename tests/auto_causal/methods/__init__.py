@@ -1,1 +1,1 @@
-# Tests for auto_causal methods 
+# Tests for cais methods 

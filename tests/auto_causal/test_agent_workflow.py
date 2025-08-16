@@ -9,7 +9,7 @@ from langchain_core.messages import AIMessage
 # from langchain_core.tools import ToolCall
 
 # Assume run_causal_analysis is the main entry point
-from auto_causal.agent import run_causal_analysis 
+from cais.agent import run_causal_analysis 
 
 # Helper to create a dummy dataset file for tests
 def create_dummy_csv(path='dummy_e2e_test_data.csv'):
@@ -38,7 +38,7 @@ class TestAgentWorkflow(unittest.TestCase):
         del os.environ["OPENAI_API_KEY"]
 
     # Patch the LLM call to avoid actual API calls during this basic test
-    @patch('auto_causal.agent.ChatOpenAI') 
+    @patch('cais.agent.ChatOpenAI') 
     def test_agent_invocation(self, mock_chat_openai):
         '''Test if the agent runs without critical errors using dummy data.'''
         # Configure the mock LLM to return an AIMessage
@@ -82,7 +82,7 @@ class TestAgentWorkflow(unittest.TestCase):
             # For this test, let's assume the mocked AIMessage is enough to prevent the immediate crash.
             
             # Re-patching the AgentExecutor might be better for a simple invocation test.
-            with patch('auto_causal.agent.AgentExecutor.invoke') as mock_agent_invoke:
+            with patch('cais.agent.AgentExecutor.invoke') as mock_agent_invoke:
                 mock_agent_invoke.return_value = {"output": "Agent invoked successfully (mocked)"}
                 
                 result = run_causal_analysis(query, dataset_path)

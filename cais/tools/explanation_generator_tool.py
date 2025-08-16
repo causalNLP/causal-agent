@@ -9,18 +9,13 @@ from typing import Dict, Any, Optional, List, Union
 from langchain.tools import tool
 import logging
 
-from auto_causal.components.explanation_generator import generate_explanation
-from auto_causal.components.state_manager import create_workflow_state_update
-from auto_causal.config import get_llm_client
+from cais.components.explanation_generator import generate_explanation
+from cais.components.state_manager import create_workflow_state_update
+from cais.config import get_llm_client
 
 # Import shared models from central location
-from auto_causal.models import (
-    Variables, 
-    TemporalStructure, # Needed indirectly by DatasetAnalysis
-    DatasetInfo,       # Needed indirectly by DatasetAnalysis
-    DatasetAnalysis,
-    MethodInfo,
-    ExplainerInput # Keep for type hinting arguments
+from cais.models import (
+    ExplainerInput, MethodInfo, Variables, DatasetAnalysis
 )
 
 logger = logging.getLogger(__name__)

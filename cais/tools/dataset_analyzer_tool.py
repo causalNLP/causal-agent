@@ -10,15 +10,15 @@ from typing import Dict, Any, Optional
 from langchain.tools import tool
 import logging
 
-from auto_causal.components.dataset_analyzer import analyze_dataset
-from auto_causal.components.state_manager import create_workflow_state_update
+from cais.components.dataset_analyzer import analyze_dataset
+from cais.components.state_manager import create_workflow_state_update
 from langchain_core.language_models import BaseChatModel
 
-from auto_causal.config import get_llm_client
+from cais.config import get_llm_client
 
 # Import the required Pydantic models
-from auto_causal.models import DatasetAnalysis, DatasetAnalyzerOutput
-from auto_causal import models
+from cais.models import DatasetAnalysis, DatasetAnalyzerOutput
+from cais import models
 
 logger = logging.getLogger(__name__)
 

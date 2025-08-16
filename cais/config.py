@@ -1,4 +1,4 @@
-# auto_causal/config.py
+# cais/config.py
 """Central configuration for AutoCausal, including LLM client setup."""
 
 import os

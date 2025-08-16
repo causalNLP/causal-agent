@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from unittest.mock import patch, MagicMock
-from auto_causal.methods.regression_discontinuity.estimator import estimate_effect
+from cais.methods.regression_discontinuity.estimator import estimate_effect
 
 # --- Fixtures ---
 
@@ -48,7 +48,7 @@ def mock_causal_model():
     mock_model_instance.estimate_effect.return_value = mock_estimate
     
     # Patch the CausalModel class in the estimator module
-    with patch('auto_causal.methods.regression_discontinuity.estimator.CausalModel') as MockCM:
+    with patch('cais.methods.regression_discontinuity.estimator.CausalModel') as MockCM:
         MockCM.return_value = mock_model_instance
         yield MockCM, mock_model_instance
 
@@ -61,8 +61,8 @@ def test_estimate_effect_missing_args(sample_rdd_data):
     with pytest.raises(ValueError, match="Missing required RDD arguments"):
         estimate_effect(sample_rdd_data, 'treatment_indicator', 'outcome', running_variable='running_var', cutoff=None)
 
-@patch('auto_causal.methods.regression_discontinuity.estimator.run_rdd_diagnostics')
-@patch('auto_causal.methods.regression_discontinuity.estimator.interpret_rdd_results')
+@patch('cais.methods.regression_discontinuity.estimator.run_rdd_diagnostics')
+@patch('cais.methods.regression_discontinuity.estimator.interpret_rdd_results')
 def test_estimate_effect_dowhy_success(mock_interpret, mock_diagnostics, mock_causal_model, sample_rdd_data):
     """Test successful estimation using the mocked DoWhy path."""
     MockCM, mock_model_instance = mock_causal_model
@@ -98,8 +98,8 @@ def test_estimate_effect_dowhy_success(mock_interpret, mock_diagnostics, mock_ca
     mock_diagnostics.assert_called_once()
     mock_interpret.assert_called_once()
 
-@patch('auto_causal.methods.regression_discontinuity.estimator.run_rdd_diagnostics')
-@patch('auto_causal.methods.regression_discontinuity.estimator.interpret_rdd_results')
+@patch('cais.methods.regression_discontinuity.estimator.run_rdd_diagnostics')
+@patch('cais.methods.regression_discontinuity.estimator.interpret_rdd_results')
 def test_estimate_effect_fallback_success(mock_interpret, mock_diagnostics, sample_rdd_data):
     """Test successful estimation using the fallback linear interaction method."""
     mock_diagnostics.return_value = {"status": "Success", "details": {"covariate_balance": "Checked"}}
@@ -130,8 +130,8 @@ def test_estimate_effect_fallback_success(mock_interpret, mock_diagnostics, samp
     mock_diagnostics.assert_called_once()
     mock_interpret.assert_called_once()
 
-@patch('auto_causal.methods.regression_discontinuity.estimator.estimate_effect_dowhy')
-@patch('auto_causal.methods.regression_discontinuity.estimator.estimate_effect_fallback')
+@patch('cais.methods.regression_discontinuity.estimator.estimate_effect_dowhy')
+@patch('cais.methods.regression_discontinuity.estimator.estimate_effect_fallback')
 def test_estimate_effect_dowhy_fails_fallback_succeeds(mock_fallback, mock_dowhy, sample_rdd_data):
     """Test that fallback is used when DoWhy fails."""
     mock_dowhy.side_effect = Exception("DoWhy broke")
@@ -148,8 +148,8 @@ def test_estimate_effect_dowhy_fails_fallback_succeeds(mock_fallback, mock_dowhy
     }
     
     # Need to also patch diagnostics and interpretation as they run after estimation
-    with patch('auto_causal.methods.regression_discontinuity.estimator.run_rdd_diagnostics'), \
-         patch('auto_causal.methods.regression_discontinuity.estimator.interpret_rdd_results'):
+    with patch('cais.methods.regression_discontinuity.estimator.run_rdd_diagnostics'), \
+         patch('cais.methods.regression_discontinuity.estimator.interpret_rdd_results'):
         
         results = estimate_effect(
             sample_rdd_data, 
@@ -168,8 +168,8 @@ def test_estimate_effect_dowhy_fails_fallback_succeeds(mock_fallback, mock_dowhy
     assert 'dowhy_error_info' in results # Check that DoWhy error was recorded
     assert "DoWhy broke" in results['dowhy_error_info']
 
-@patch('auto_causal.methods.regression_discontinuity.estimator.estimate_effect_dowhy')
-@patch('auto_causal.methods.regression_discontinuity.estimator.estimate_effect_fallback')
+@patch('cais.methods.regression_discontinuity.estimator.estimate_effect_dowhy')
+@patch('cais.methods.regression_discontinuity.estimator.estimate_effect_fallback')
 def test_estimate_effect_both_fail(mock_fallback, mock_dowhy, sample_rdd_data):
     """Test that an error is raised if both DoWhy and fallback fail."""
     mock_dowhy.side_effect = Exception("DoWhy broke")

@@ -6,7 +6,7 @@ import logging
 import pandas as pd
 import numpy as np
 from typing import Dict, List, Optional, Any, Tuple
-from auto_causal.config import get_llm_client # IMPORT LLM Client Factory
+from cais.config import get_llm_client # IMPORT LLM Client Factory
 
 # DoWhy imports (Commented out for simplification)
 # from dowhy import CausalModel

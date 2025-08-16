@@ -1,8 +1,8 @@
 """
-Causal inference methods for the auto_causal module.
+Causal inference methods for the cais module.
 
 This package contains implementations of various causal inference methods
-that can be selected and applied by the auto_causal pipeline.
+that can be selected and applied by the cais pipeline.
 """
 
 from .causal_method import CausalMethod

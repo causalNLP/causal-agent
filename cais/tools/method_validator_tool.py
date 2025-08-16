@@ -9,12 +9,12 @@ from typing import Dict, Any, Optional, List, Union
 from langchain.tools import tool
 import logging
 
-from auto_causal.components.method_validator import validate_method
-from auto_causal.components.state_manager import create_workflow_state_update
-from auto_causal.components.decision_tree import rule_based_select_method
+from cais.components.method_validator import validate_method
+from cais.components.state_manager import create_workflow_state_update
+from cais.components.decision_tree import rule_based_select_method
 
 # Import shared models from central location
-from auto_causal.models import (
+from cais.models import (
     Variables, 
     TemporalStructure, # Needed indirectly by DatasetAnalysis
     DatasetInfo,       # Needed indirectly by DatasetAnalysis
@@ -111,7 +111,7 @@ def method_validator_tool(inputs: MethodValidatorInput) -> Dict[str, Any]: # Use
             dataset_props = extract_properties_from_inputs(inputs)
             
             # Get LLM instance (may be None)
-            from auto_causal.config import get_llm_client
+            from cais.config import get_llm_client
             try:
                 llm_instance = get_llm_client()
             except Exception as e:

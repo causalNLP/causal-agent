@@ -4,13 +4,13 @@ import numpy as np
 import statsmodels.api as sm
 
 # Assuming the causalscientist package is installed or PYTHONPATH is set correctly
-from auto_causal.methods.generalized_propensity_score.estimator import (
+from cais.methods.generalized_propensity_score.estimator import (
     _estimate_gps_values, 
     _estimate_outcome_model, 
     _generate_dose_response_function,
     estimate_effect_gps
 )
-from auto_causal.methods.generalized_propensity_score.diagnostics import assess_gps_balance
+from cais.methods.generalized_propensity_score.diagnostics import assess_gps_balance
 
 class TestGeneralizedPropensityScore(unittest.TestCase):
 

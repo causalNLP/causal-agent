@@ -11,13 +11,13 @@ import traceback # For error logging
 import logging # Add logging
 
 # Import the mapping and potentially preprocessing utils
-from auto_causal.methods import METHOD_MAPPING
-from auto_causal.methods.utils import preprocess_data # Assuming preprocess exists
-from auto_causal.components.state_manager import create_workflow_state_update
-from auto_causal.config import get_llm_client # IMPORT LLM Client Factory
+from cais.methods import METHOD_MAPPING
+from cais.methods.utils import preprocess_data # Assuming preprocess exists
+from cais.components.state_manager import create_workflow_state_update
+from cais.config import get_llm_client # IMPORT LLM Client Factory
 
 # Import shared models from central location
-from auto_causal.models import (
+from cais.models import (
     Variables, 
     TemporalStructure, # Needed indirectly by DatasetAnalysis
     DatasetInfo,       # Needed indirectly by DatasetAnalysis

@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 import numpy as np
-from auto_causal.methods.linear_regression.estimator import estimate_effect
+from cais.methods.linear_regression.estimator import estimate_effect
 
 class TestLinearRegressionEstimator(unittest.TestCase):
 

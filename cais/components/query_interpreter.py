@@ -10,7 +10,7 @@ from typing import Dict, List, Any, Optional, Union, Tuple
 import pandas as pd
 import logging
 import numpy as np
-from auto_causal.config import get_llm_client
+from cais.config import get_llm_client
 # Import LLM and message types
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
@@ -21,7 +21,7 @@ from dowhy import CausalModel
 import json
 
 # Import shared Pydantic models from the central location
-from auto_causal.models import (
+from cais.models import (
     LLMSelectedVariable,
     LLMSelectedCovariates,
     LLMIVars,
@@ -38,7 +38,7 @@ from auto_causal.models import (
 )
 
 # Import the new prompt templates
-from auto_causal.prompts.method_identification_prompts import (
+from cais.prompts.method_identification_prompts import (
     IV_IDENTIFICATION_PROMPT_TEMPLATE,
     RDD_IDENTIFICATION_PROMPT_TEMPLATE,
     RCT_IDENTIFICATION_PROMPT_TEMPLATE,
@@ -56,7 +56,7 @@ from auto_causal.prompts.method_identification_prompts import (
 # from ..models import ... 
 
 # --- Pydantic models for LLM structured output --- 
-# REMOVED - Now defined in causalscientist/auto_causal/models.py
+# REMOVED - Now defined in causalscientist/cais/models.py
 # class LLMSelectedVariable(BaseModel): ...
 # class LLMSelectedCovariates(BaseModel): ...
 # class LLMIVars(BaseModel): ...

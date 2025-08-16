@@ -4,7 +4,7 @@ import numpy as np
 from unittest.mock import patch, MagicMock
 
 # Import the function to test
-from auto_causal.methods.propensity_score import weighting as ps_weighting
+from cais.methods.propensity_score import weighting as ps_weighting
 
 # Reuse the synthetic data generation function from matching tests
 # (or redefine if weighting requires different data characteristics)
@@ -61,10 +61,10 @@ class TestPropensityScoreWeighting:
         estimated_effect = results['effect_estimate']
         assert abs(estimated_effect - true_effect) < 1.0 # Adjust tolerance
 
-    @patch('auto_causal.methods.propensity_score.weighting.get_llm_parameters')
-    @patch('auto_causal.methods.propensity_score.weighting.determine_optimal_weight_type')
-    @patch('auto_causal.methods.propensity_score.weighting.determine_optimal_trim_threshold')
-    @patch('auto_causal.methods.propensity_score.weighting.select_propensity_model')
+    @patch('cais.methods.propensity_score.weighting.get_llm_parameters')
+    @patch('cais.methods.propensity_score.weighting.determine_optimal_weight_type')
+    @patch('cais.methods.propensity_score.weighting.determine_optimal_trim_threshold')
+    @patch('cais.methods.propensity_score.weighting.select_propensity_model')
     def test_llm_parameter_usage(self, mock_select_model, mock_determine_trim, mock_determine_weight, mock_get_llm_params):
         """Test that LLM helper functions are called and their results are potentially used."""
         df = generate_synthetic_psm_data(n_samples=100, seed=789) # Smaller sample

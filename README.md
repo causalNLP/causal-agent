@@ -121,12 +121,12 @@ cp .env.example .env
 **Step 2: Create Python 3.10 environment**
 ```bash
 # Create a new conda environment with Python 3.10
-conda create -n auto_causal python=3.10
-conda activate auto_causal
+conda create -n cais python=3.10
+conda activate cais
 pip install -r requirement.txt
 ```
 
-**Step3: Setup auto_causal library**
+**Step3: Setup cais library**
 ```bash
 pip install -e .
 ```

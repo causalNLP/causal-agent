@@ -4,7 +4,7 @@ import numpy as np
 from unittest.mock import patch, MagicMock
 
 # Import the function to test
-from auto_causal.methods.propensity_score.matching import estimate_effect
+from cais.methods.propensity_score.matching import estimate_effect
 
 class TestPropensityScoreMatching(unittest.TestCase):
 
@@ -20,11 +20,11 @@ class TestPropensityScoreMatching(unittest.TestCase):
         self.outcome = 'outcome'
         self.covariates = ['covariate1', 'covariate2']
 
-    @patch('auto_causal.methods.propensity_score.matching.get_llm_parameters')
-    @patch('auto_causal.methods.propensity_score.matching.determine_optimal_caliper')
-    @patch('auto_causal.methods.propensity_score.matching.select_propensity_model')
-    @patch('auto_causal.methods.propensity_score.matching.estimate_propensity_scores')
-    @patch('auto_causal.methods.propensity_score.matching.assess_balance')
+    @patch('cais.methods.propensity_score.matching.get_llm_parameters')
+    @patch('cais.methods.propensity_score.matching.determine_optimal_caliper')
+    @patch('cais.methods.propensity_score.matching.select_propensity_model')
+    @patch('cais.methods.propensity_score.matching.estimate_propensity_scores')
+    @patch('cais.methods.propensity_score.matching.assess_balance')
     def test_estimate_effect_structure_and_types(self, mock_assess_balance, mock_estimate_ps, 
                                                  mock_select_model, mock_determine_caliper, mock_get_llm_params):
         '''Test the basic structure and types of the estimate_effect output.'''

@@ -1,7 +1,7 @@
 import pytest
 
 # Import the function to test and constants
-from auto_causal.components.decision_tree import (
+from cais.components.decision_tree import (
     select_method,
     METHOD_ASSUMPTIONS, # Import assumptions map
     REGRESSION_ADJUSTMENT, LINEAR_REGRESSION, LINEAR_REGRESSION_COV,

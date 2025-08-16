@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 from typing import List 
 
-##TODO: later add logs 
+
 
 
 def create_json(csv_file_loc:str, output_folder:str, output_file_name:str, 

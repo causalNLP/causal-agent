@@ -1,18 +1,18 @@
 """
 Auto Causal components package.
 
-This package contains the core components for the auto_causal module,
-each handling a specific part of the causal inference workflow.
+This package contains the core components for the cais module,
+each handling a specific part of the causal inference workflow.s
 """
 
-from auto_causal.components.input_parser import parse_input
-from auto_causal.components.dataset_analyzer import analyze_dataset
-from auto_causal.components.query_interpreter import interpret_query
-from auto_causal.components.decision_tree import select_method
-from auto_causal.components.method_validator import validate_method
-from auto_causal.components.explanation_generator import generate_explanation
-from auto_causal.components.output_formatter import format_output
-from auto_causal.components.state_manager import create_workflow_state_update
+from cais.components.input_parser import parse_input
+from cais.components.dataset_analyzer import analyze_dataset
+from cais.components.query_interpreter import interpret_query
+from cais.components.decision_tree import select_method
+from cais.components.method_validator import validate_method
+from cais.components.explanation_generator import generate_explanation
+from cais.components.output_formatter import format_output
+from cais.components.state_manager import create_workflow_state_update
 
 __all__ = [
     "parse_input",

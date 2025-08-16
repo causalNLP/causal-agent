@@ -1,5 +1,5 @@
 import unittest
-from auto_causal.components.state_manager import create_workflow_state_update
+from cais.components.state_manager import create_workflow_state_update
 
 class TestStateManagerUtils(unittest.TestCase):
 

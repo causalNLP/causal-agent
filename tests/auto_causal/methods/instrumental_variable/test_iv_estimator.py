@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 import numpy as np
-from auto_causal.methods.instrumental_variable.estimator import estimate_effect, build_iv_graph_gml
+from cais.methods.instrumental_variable.estimator import estimate_effect, build_iv_graph_gml
 
 # Consistent random state for reproducibility
 SEED = 42

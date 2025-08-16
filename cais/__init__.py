@@ -8,7 +8,7 @@ through a pipeline that selects and applies appropriate causal methods.
 __version__ = "0.1.0"
 
 # Import components
-from auto_causal.components import (
+from cais.components import (
     parse_input,
     analyze_dataset,
     interpret_query,
@@ -19,7 +19,7 @@ from auto_causal.components import (
 )
 
 # Import tools
-from auto_causal.tools import (
+from cais.tools import (
     input_parser_tool,
     dataset_analyzer_tool,
     query_interpreter_tool,

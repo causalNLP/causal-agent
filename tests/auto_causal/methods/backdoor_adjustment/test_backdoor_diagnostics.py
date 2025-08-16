@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
-from auto_causal.methods.backdoor_adjustment.diagnostics import run_backdoor_diagnostics
+from cais.methods.backdoor_adjustment.diagnostics import run_backdoor_diagnostics
 
 # --- Fixture for confounded data ---
 @pytest.fixture

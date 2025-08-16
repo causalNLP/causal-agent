@@ -3,7 +3,7 @@ import os
 import sys
 import re # For parsing results
 
-from auto_causal.agent import run_causal_analysis
+from cais.agent import run_causal_analysis
 
 class TestE2EIV(unittest.TestCase):
     

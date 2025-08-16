@@ -10,7 +10,7 @@ from langchain.chat_models.base import BaseChatModel
 from statsmodels.regression.linear_model import RegressionResultsWrapper
 
 # Import shared LLM helpers
-from auto_causal.utils.llm_helpers import call_llm_with_json_output
+from cais.utils.llm_helpers import call_llm_with_json_output
 
 logger = logging.getLogger(__name__)
 

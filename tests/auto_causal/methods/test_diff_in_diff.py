@@ -4,7 +4,7 @@ import numpy as np
 from unittest.mock import patch, MagicMock
 
 # Import the function to test
-from auto_causal.methods.diff_in_diff import estimate_effect
+from cais.methods.diff_in_diff import estimate_effect
 
 class TestDifferenceInDifferences(unittest.TestCase):
 
@@ -25,12 +25,12 @@ class TestDifferenceInDifferences(unittest.TestCase):
         self.group_var = 'unit'
 
     # Mock all helper/validation functions within diff_in_diff.py
-    @patch('auto_causal.methods.diff_in_diff.identify_time_variable')
-    @patch('auto_causal.methods.diff_in_diff.identify_treatment_group')
-    @patch('auto_causal.methods.diff_in_diff.determine_treatment_period')
-    @patch('auto_causal.methods.diff_in_diff.validate_parallel_trends')
+    @patch('cais.methods.diff_in_diff.identify_time_variable')
+    @patch('cais.methods.diff_in_diff.identify_treatment_group')
+    @patch('cais.methods.diff_in_diff.determine_treatment_period')
+    @patch('cais.methods.diff_in_diff.validate_parallel_trends')
     # Mock estimate_did_model to avoid actual regression, return mock results
-    @patch('auto_causal.methods.diff_in_diff.estimate_did_model')
+    @patch('cais.methods.diff_in_diff.estimate_did_model')
     def test_estimate_effect_structure_and_types(self, mock_estimate_model, mock_validate_trends, 
                                                  mock_determine_period, mock_identify_group, mock_identify_time):
         '''Test the basic structure and types of the DiD estimate_effect output.'''

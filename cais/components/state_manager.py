@@ -1,8 +1,8 @@
 """
-State management utilities for the auto_causal workflow.
+State management utilities for the cais workflow.
 
 This module provides utility functions to create standardized state updates
-for passing between tools in the auto_causal agent workflow.
+for passing between tools in the cais agent workflow.
 """
 
 from typing import Dict, Any, Optional

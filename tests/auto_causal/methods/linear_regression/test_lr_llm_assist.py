@@ -1,13 +1,13 @@
 import pytest
 from unittest.mock import MagicMock, patch
 import pandas as pd
-from auto_causal.methods.linear_regression.llm_assist import (
+from cais.methods.linear_regression.llm_assist import (
     suggest_lr_covariates,
     interpret_lr_results
 )
 
 # Patch target for the helper function where it's used
-LLM_ASSIST_MODULE = "auto_causal.methods.linear_regression.llm_assist"
+LLM_ASSIST_MODULE = "cais.methods.linear_regression.llm_assist"
 
 @pytest.fixture
 def mock_llm():

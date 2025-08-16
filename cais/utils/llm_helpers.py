@@ -1,5 +1,5 @@
 """
-Utility functions for LLM interactions within the auto_causal module.
+Utility functions for LLM interactions within the cais module.
 """
 
 from typing import Dict, Any, Optional, List

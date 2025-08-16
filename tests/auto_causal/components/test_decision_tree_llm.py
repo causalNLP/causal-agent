@@ -5,8 +5,8 @@ import json
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, AIMessage
 
-from auto_causal.components.decision_tree_llm import DecisionTreeLLMEngine
-from auto_causal.components.decision_tree import (
+from cais.components.decision_tree_llm import DecisionTreeLLMEngine
+from cais.components.decision_tree import (
     METHOD_ASSUMPTIONS,
     CORRELATION_ANALYSIS,
     DIFF_IN_DIFF,

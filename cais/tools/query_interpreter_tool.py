@@ -11,7 +11,7 @@ from typing import Dict, List, Any, Optional, Union # Keep Any, Dict for workflo
 import logging
 
 # Import shared Pydantic models from the central location
-from auto_causal.models import (
+from cais.models import (
     TemporalStructure,
     DatasetInfo,
     DatasetAnalysis,
@@ -33,8 +33,8 @@ from auto_causal.models import (
 logger = logging.getLogger(__name__)
 
 from langchain.tools import tool
-from auto_causal.components.query_interpreter import interpret_query
-from auto_causal.components.state_manager import create_workflow_state_update
+from cais.components.query_interpreter import interpret_query
+from cais.components.state_manager import create_workflow_state_update
 
 
 @tool()

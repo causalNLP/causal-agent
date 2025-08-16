@@ -7,7 +7,7 @@ import pandas as pd
 from dotenv import load_dotenv
 
 # Import the main entry point
-from auto_causal.agent import run_causal_analysis
+from cais.agent import run_causal_analysis
 
 # Ensure necessary environment variables are set for LLM calls (e.g., OPENAI_API_KEY)
 # Load from .env file if present

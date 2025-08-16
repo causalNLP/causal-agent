@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Any
 # import seaborn as sns
 
 # Import utility for standardized differences if needed
-from auto_causal.methods.utils import calculate_standardized_differences
+from cais.methods.utils import calculate_standardized_differences
 
 def assess_balance(df_original: pd.DataFrame, df_matched_or_weighted: pd.DataFrame, 
                    treatment: str, covariates: List[str], 

@@ -1,24 +1,16 @@
 """
-Auto Causal tools package.
-
-This package contains the tool wrappers for the auto_causal LangChain agent,
-each providing an interface to a specific component.
+This package contains the tool wrappers for the cais LangChain agent,
+providing standardized interfaces for various components.
 """
 
-from auto_causal.tools.input_parser_tool import input_parser_tool
-from auto_causal.tools.dataset_analyzer_tool import dataset_analyzer_tool
-from auto_causal.tools.query_interpreter_tool import query_interpreter_tool
-from auto_causal.tools.method_selector_tool import method_selector_tool
-from auto_causal.tools.method_validator_tool import method_validator_tool
-from auto_causal.tools.method_executor_tool import method_executor_tool
-from auto_causal.tools.explanation_generator_tool import explanation_generator_tool
-from auto_causal.tools.output_formatter_tool import output_formatter_tool
-
-# Removed imports for DataAnalyzer, DecisionTreeEngine, MethodImplementer
-# These are components, not tools, or have been removed.
-# from causalscientist.auto_causal.tools.data_analyzer import DataAnalyzer
-# from causalscientist.auto_causal.tools.decision_tree import DecisionTreeEngine
-# from causalscientist.auto_causal.tools.method_implementer import MethodImplementer
+from cais.tools.input_parser_tool import input_parser_tool
+from cais.tools.dataset_analyzer_tool import dataset_analyzer_tool
+from cais.tools.query_interpreter_tool import query_interpreter_tool
+from cais.tools.method_selector_tool import method_selector_tool
+from cais.tools.method_validator_tool import method_validator_tool
+from cais.tools.method_executor_tool import method_executor_tool
+from cais.tools.explanation_generator_tool import explanation_generator_tool
+from cais.tools.output_formatter_tool import output_formatter_tool
 
 __all__ = [
     "input_parser_tool",
@@ -28,5 +20,5 @@ __all__ = [
     "method_validator_tool",
     "method_executor_tool",
     "explanation_generator_tool",
-    "output_formatter_tool"
+    "output_formatter_tool",
 ]

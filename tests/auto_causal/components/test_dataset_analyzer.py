@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 # Import the function to test
-from auto_causal.components.dataset_analyzer import analyze_dataset
+from cais.components.dataset_analyzer import analyze_dataset
 
 # Helper to create dummy dataset files
 def create_dummy_csv_for_analysis(path, data_dict):

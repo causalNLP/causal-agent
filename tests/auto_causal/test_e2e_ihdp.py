@@ -7,7 +7,7 @@ import pandas as pd
 from dotenv import load_dotenv
 
 # Import the main entry point
-from auto_causal.agent import run_causal_analysis
+from cais.agent import run_causal_analysis
 
 # Ensure necessary environment variables are set for LLM calls (e.g., OPENAI_API_KEY)
 # Load from .env file if present
@@ -28,7 +28,7 @@ class TestE2EIHDP(unittest.TestCase):
         # __file__ is the path to the current file
         # os.path.dirname gets the directory containing the file
         # os.path.abspath ensures it's an absolute path
-        # Go up 2 levels (tests/auto_causal/ -> tests/ -> causalscientist/) then into data/
+        # Go up 2 levels (tests/cais/ -> tests/ -> causalscientist/) then into data/
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
         cls.dataset_path = os.path.join(base_dir, "data", "qrdata", "ihdp_1.csv")
         # cls.dataset_path = "data/qrdata/ihdp_1.csv" # Old relative path

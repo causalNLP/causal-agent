@@ -5,10 +5,10 @@ import statsmodels.formula.api as smf
 from unittest.mock import patch, MagicMock
 
 # Module containing the function to test
-ESTIMATOR_MODULE = "auto_causal.methods.difference_in_differences.estimator"
+ESTIMATOR_MODULE = "cais.methods.difference_in_differences.estimator"
 
 # Import the function to test AFTER defining the module path
-from auto_causal.methods.difference_in_differences.estimator import estimate_effect
+from cais.methods.difference_in_differences.estimator import estimate_effect
 
 # --- Fixtures ---
 

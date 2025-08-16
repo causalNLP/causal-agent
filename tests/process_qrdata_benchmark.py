@@ -2,10 +2,10 @@ import csv
 import json
 import os
 import time
-from auto_causal.agent import run_causal_analysis
-import auto_causal.components.output_formatter as cs_output_formatter
+from cais.agent import run_causal_analysis
+import cais.components.output_formatter as cs_output_formatter
 # Remove the direct import of cs_method_executor if it causes issues, we'll use importlib
-# import auto_causal.tools.method_executor_tool as cs_method_executor
+# import cais.tools.method_executor_tool as cs_method_executor
 import importlib # Import importlib
 
 # --- Configuration ---
@@ -52,7 +52,7 @@ def main():
     
     # Set the log file path for the method_executor_tool module using importlib
     try:
-        method_executor_module_name = "auto_causal.tools.method_executor_tool"
+        method_executor_module_name = "cais.tools.method_executor_tool"
         cs_method_executor_module = importlib.import_module(method_executor_module_name)
         cs_method_executor_module.CURRENT_OUTPUT_LOG_FILE = OUTPUT_LOG_FILE
         print(f"[INFO] Successfully set CURRENT_OUTPUT_LOG_FILE for {method_executor_module_name} to: {OUTPUT_LOG_FILE}")
