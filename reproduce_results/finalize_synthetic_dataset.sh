@@ -23,3 +23,6 @@ for METHOD in rct multi_rct did_canonical did_twfe iv iv_encouragement rdd obser
         -od "$OUTPUT_DATA_FOLDER"
 done
 
+COMBINED="${BASE_FOLDER}/data_info/combined_data_info.csv"
+rm -f "$COMBINED"
+awk 'FNR==1 && NR!=1 { next } 1' "${BASE_FOLDER}/data_info/"*.csv > "$COMBINED"
