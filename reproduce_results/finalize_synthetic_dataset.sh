@@ -7,7 +7,7 @@
 #
 source reproduce_results/settings.sh
 
-for METHOD in rct multi_rct did_canonical did_twfe iv iv_encouragement rdd observational; do
+for METHOD in rct frontdoor multi_rct did_canonical did_twfe iv iv_encouragement rdd observational; do
     METADATA_FOLDER="${BASE_FOLDER}/${METHOD}/metadata/${METHOD}.json"
     INPUT_DATA_FOLDER="${BASE_FOLDER}/${METHOD}/data"
     OUTPUT_PATH="${BASE_FOLDER}/data_info"
