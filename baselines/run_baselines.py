@@ -18,7 +18,7 @@ from baselines import (
     CausalQueryVeridicalFormat,
     SequentialCausalThinking,
 )
-from baselines.queries import ProgramOfThoughtsFormat, ReActFormat
+from baselines.query_formats import ProgramOfThoughtsFormat, ReActFormat
 
 
 def main(args):
@@ -81,7 +81,7 @@ def main(args):
         raise ValueError(f"Invalid query format: {args.query_format}")
 
     # Initialize the scientist with persistent mode if requested
-    scientist = causalscientist.CausalScientist(
+    scientist = causalscientist.CAISBaseline(
         chatbot, 
         persistent=args.persistent, 
         session_timeout=args.session_timeout

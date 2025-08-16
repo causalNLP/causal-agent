@@ -7,5 +7,15 @@ from .chatbot import (
     OpenAIAPIChatbot,
     TogetherAPIChatbot,
 )
-from .scientist import CausalScientist
-from .queries import QueryFormat, CausalQueryFormat, CausalQueryVeridicalFormat, SequentialCausalThinking, ProgramOfThoughtsFormat, ReActFormat
+from .cais_baseline import CAISBaseline
+
+# Backward compatibility alias
+CausalScientist = CAISBaseline
+from .query_formats import (
+    QueryFormat,
+    CausalQueryFormat,
+    CausalQueryVeridicalFormat,
+    SequentialCausalThinking,
+    ProgramOfThoughtsFormat,
+    ReActFormat,
+)

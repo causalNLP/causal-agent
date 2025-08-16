@@ -26,7 +26,7 @@ class CausalQueryFormat(QueryFormat):
         if include_method_explanation:
             # Load prompt file relative to this module's directory
             from pathlib import Path
-            prompt_path = Path(__file__).resolve().parent / "prompt.txt"
+            prompt_path = Path(__file__).resolve().parent / "method_explanations.txt"
             with open(prompt_path) as file:
                 method_explanation = file.read()
         else:

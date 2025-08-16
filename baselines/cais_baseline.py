@@ -3,7 +3,7 @@ import re
 import json
 
 from .chatbot import Chatbot
-from .queries import QueryFormat, CausalQueryFormat,SequentialCausalThinking
+from .query_formats import QueryFormat, CausalQueryFormat,SequentialCausalThinking
 from .coderunner import CodeRunner
 
 from typing import Optional
@@ -28,7 +28,7 @@ def find_code(reply, language="python"):
     return code
 
 
-class CausalScientist:
+class CAISBaseline:
     """A conversational chatbot that has access to a dataset"""
 
     def __init__(self, chatbot: Chatbot, safe_exec=True, persistent=False, session_timeout=3600, max_retries=5) -> None:
