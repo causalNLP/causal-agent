@@ -4,10 +4,10 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any, Optional, List
 import logging
-import statsmodels.formula.api as smf # Import statsmodels
-from patsy import PatsyError # To catch formula errors
+import statsmodels.formula.api as smf 
+from patsy import PatsyError
 
-# Import helper function from estimator -> Change to utils
+
 from .utils import create_post_indicator
 
 logger = logging.getLogger(__name__)

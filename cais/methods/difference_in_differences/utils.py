@@ -25,14 +25,8 @@ def create_post_indicator(df: pd.DataFrame, time_var: str, treatment_period_star
                 logger.info(f"Time variable '{time_var}' is numeric. Comparing with treatment_period_start: {treatment_period_start}")
                 return (time_var_series >= treatment_period_start).astype(int)
         else:
-            # Non-numeric and not boolean, will likely fall into TypeError for datetime conversion
-            # This else block might not be strictly necessary if TypeError is caught below
-            # but added for logical completeness before attempting datetime conversion.
-            pass # Let it fall through to TypeError if not numeric here
+             pass # Let it fall through to TypeError if not numeric here
 
-        # If we reached here, it means it wasn't numeric or bool, try direct comparison which will likely raise TypeError
-        # and be caught by the except block for datetime conversion if applicable.
-        # This line is kept to ensure non-numeric non-datetime-like strings also trigger the except.
         return (df[time_var] >= treatment_period_start).astype(int)
 
     except TypeError:

@@ -13,11 +13,10 @@ from cais.components.method_validator import validate_method
 from cais.components.state_manager import create_workflow_state_update
 from cais.components.decision_tree import rule_based_select_method
 
-# Import shared models from central location
 from cais.models import (
     Variables, 
-    TemporalStructure, # Needed indirectly by DatasetAnalysis
-    DatasetInfo,       # Needed indirectly by DatasetAnalysis
+    TemporalStructure, 
+    DatasetInfo,       
     DatasetAnalysis,
     MethodInfo, 
     MethodValidatorInput
@@ -48,15 +47,7 @@ def extract_properties_from_inputs(inputs: MethodValidatorInput) -> Dict[str, An
         "is_rct": variables_dict.get("is_rct", False)
     }
 
-# --- Removed local Pydantic definitions --- 
-# class Variables(BaseModel): ...
-# class TemporalStructure(BaseModel): ...
-# class DatasetInfo(BaseModel): ...
-# class DatasetAnalysis(BaseModel): ...
-# class MethodInfo(BaseModel): ...
-# class MethodValidatorInput(BaseModel): ...
-
-# --- Tool Definition --- 
+ 
 @tool
 def method_validator_tool(inputs: MethodValidatorInput) -> Dict[str, Any]: # Use Pydantic Input
     """

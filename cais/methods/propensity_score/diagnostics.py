@@ -4,11 +4,6 @@ import pandas as pd
 import numpy as np
 from typing import Dict, List, Optional, Any
 
-# Import necessary plotting libraries if visualizations are needed
-# import matplotlib.pyplot as plt
-# import seaborn as sns
-
-# Import utility for standardized differences if needed
 from cais.methods.utils import calculate_standardized_differences
 
 def assess_balance(df_original: pd.DataFrame, df_matched_or_weighted: pd.DataFrame, 

@@ -14,18 +14,18 @@ from langchain.chains.conversation.memory import ConversationBufferMemory
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder
 from langchain.tools import tool
-# Import the callback handler
+
 from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
-# Import tool rendering utility
+
 from langchain.tools.render import render_text_description
-# Import LCEL components
+
 from langchain.agents.format_scratchpad.tools import format_to_tool_messages
 from langchain.agents.output_parsers.tools import ToolsAgentOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.language_models import BaseChatModel
 from langchain_anthropic.chat_models import convert_to_anthropic_tool
 import os
-# Import actual tools from the tools directory
+
 from cais.tools.input_parser_tool import input_parser_tool
 from cais.tools.dataset_analyzer_tool import dataset_analyzer_tool
 from cais.tools.query_interpreter_tool import query_interpreter_tool
@@ -34,9 +34,7 @@ from cais.tools.method_validator_tool import method_validator_tool
 from cais.tools.method_executor_tool import method_executor_tool
 from cais.tools.explanation_generator_tool import explanation_generator_tool
 from cais.tools.output_formatter_tool import output_formatter_tool
-#from cais.prompts import SYSTEM_PROMPT # Assuming SYSTEM_PROMPT is defined here or imported
 from langchain_core.output_parsers import StrOutputParser
-# Import the centralized factory function
 from .config import get_llm_client 
 #from .prompts import SYSTEM_PROMPT 
 from langchain_core.messages import AIMessage, AIMessageChunk
@@ -75,8 +73,7 @@ class ReActMultiInputOutputParser(AgentOutputParser):
     """Parses ReAct-style output that may contain multiple tool calls."""
 
     def get_format_instructions(self) -> str:
-        # You can reuse the original FORMAT_INSTRUCTIONS,
-        # but let the model know it may emit multiple actions.
+        
         return FORMAT_INSTRUCTIONS + (
             "\n\nIf you need to call more than one tool, simply repeat:\n"
             "Action: <tool_name>\n"

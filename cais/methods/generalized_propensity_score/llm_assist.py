@@ -7,7 +7,7 @@ by leveraging an LLM, providing intelligent defaults when not specified by the u
 from typing import Dict, List, Any, Optional
 import pandas as pd
 import logging
-from cais.utils.llm_helpers import call_llm_with_json_output # Hypothetical import
+from cais.utils.llm_helpers import call_llm_with_json_output 
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,8 @@ def suggest_treatment_model_spec(
     full_prompt = "\n".join(prompt_parts)
 
     if llm_client:
-        logger.info("LLM client provided. Sending constructed prompt (actual call is hypothetical).")
+        # TODO: Implement actual call to LLM
+        logger.info("LLM client provided. Sending constructed prompt .")
         logger.debug(f"LLM Prompt for treatment model spec:\n{full_prompt}")
         # In a real implementation:
         # response_json = call_llm_with_json_output(llm_client, full_prompt)
@@ -127,7 +128,8 @@ def suggest_outcome_model_spec(
     full_prompt = "\n".join(prompt_parts)
 
     if llm_client:
-        logger.info("LLM client provided. Sending constructed prompt for outcome model (hypothetical call).")
+        # TODO: Implement actual call to LLM
+        logger.info("LLM client provided. Sending constructed prompt for outcome model ")
         logger.debug(f"LLM Prompt for outcome model spec:\n{full_prompt}")
         # In a real implementation:
         # response_json = call_llm_with_json_output(llm_client, full_prompt)
@@ -188,7 +190,8 @@ def suggest_dose_response_t_values(
     full_prompt = "\n".join(prompt_parts)
 
     if llm_client:
-        logger.info("LLM client provided. Sending prompt for t-values (hypothetical call).")
+        # TODO: Implement actual call to LLM
+        logger.info("LLM client provided. Sending prompt for t-values ")
         logger.debug(f"LLM Prompt for t-values:\n{full_prompt}")
         # In a real implementation:
         # response_json = call_llm_with_json_output(llm_client, full_prompt)

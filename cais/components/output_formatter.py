@@ -6,15 +6,12 @@ structured output for presentation to the user.
 """
 
 from typing import Dict, List, Any, Optional
-import json # Add this import at the top of the file
+import json 
 
-# Import the new model
 from cais.models import FormattedOutput
 
-# Add this module-level variable, typically near imports or at the top
 CURRENT_OUTPUT_LOG_FILE = None
 
-# Revert signature and logic to handle results and structured explanation
 def format_output(
     query: str,
     method: str,

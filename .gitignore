@@ -214,4 +214,8 @@ mlruns/
 *.rar
 
 # Project specific
-tests/output/ 
+tests/output/
+
+# Demo notebooks with API keys
+cais_demo.ipynb
+*demo*.ipynb 

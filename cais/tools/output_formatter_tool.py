@@ -4,37 +4,30 @@ Output formatter tool for causal inference results.
 This tool provides the LangChain interface for the output formatter component.
 """
 
-# REVERT Pydantic approach for this tool temporarily
 
-from typing import Dict, Any, Optional#, List, Union # Keep only needed
-# from pydantic import BaseModel, Field # REVERT
+from typing import Dict, Any, Optional
 import logging
-import json # Ensure json is imported
+import json 
 
 # Add import for @tool decorator
 from langchain.tools import tool
 
 from cais.components import output_formatter
-# Import the Pydantic model returned by the component
+
 from cais.models import FormattedOutput
 
-# --- REVERT: Remove Pydantic Model Definitions --- 
-# class Variables(BaseModel): 
-# ... (Remove all re-defined models)
-# class OutputFormatterInput(BaseModel):
-# ... (Remove definition)
+
 
 # --- Tool Definition --- 
 logger = logging.getLogger(__name__)
 
 @tool
-# REVERT to original signature with individual arguments
 def output_formatter_tool(
     query: str,
     method: str,
-    results: Dict[str, Any], # Output from method_executor_tool
-    explanation: Dict[str, Any], # Output from explainer_tool
-    dataset_analysis: Optional[Dict[str, Any]] = None, # Use Dict
+    results: Dict[str, Any], 
+    explanation: Dict[str, Any], 
+    dataset_analysis: Optional[Dict[str, Any]] = None, 
     dataset_description: Optional[str] = None 
 ) -> Dict[str, Any]:
     """

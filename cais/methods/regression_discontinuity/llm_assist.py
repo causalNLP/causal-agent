@@ -5,10 +5,8 @@ LLM assistance functions for Regression Discontinuity Design (RDD).
 from typing import List, Dict, Any, Optional
 import logging
 
-# Imported for type hinting
 from langchain.chat_models.base import BaseChatModel
 
-# Import shared LLM helpers
 from cais.utils.llm_helpers import call_llm_with_json_output
 
 logger = logging.getLogger(__name__)
@@ -30,6 +28,7 @@ def suggest_rdd_parameters(
         Dictionary containing suggested 'running_variable' and 'cutoff', or empty.
     """
     logger.info("LLM RDD parameter suggestion is not implemented yet.")
+    # TODO: Implement actual call to LLM
     if llm:
         # Placeholder: Analyze columns, distributions, query for potential
         # running variables (e.g., 'score', 'age') and cutoffs (e.g., 50, 65).

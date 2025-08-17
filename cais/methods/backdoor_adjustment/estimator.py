@@ -9,9 +9,8 @@ import numpy as np
 import statsmodels.api as sm
 from typing import Dict, Any, List, Optional
 import logging
-from langchain.chat_models.base import BaseChatModel # For type hinting llm
+from langchain.chat_models.base import BaseChatModel 
 
-# Import diagnostics and llm assist (placeholders for now)
 from .diagnostics import run_backdoor_diagnostics
 from .llm_assist import interpret_backdoor_results, identify_backdoor_set
 
@@ -21,10 +20,10 @@ def estimate_effect(
     df: pd.DataFrame,
     treatment: str,
     outcome: str,
-    covariates: List[str], # Backdoor set - Required for this method
-    query: Optional[str] = None, # For potential LLM use
-    llm: Optional[BaseChatModel] = None, # For potential LLM use
-    **kwargs # To capture any other potential arguments
+    covariates: List[str], 
+    query: Optional[str] = None,
+    llm: Optional[BaseChatModel] = None, 
+    **kwargs 
 ) -> Dict[str, Any]:
     """
     Estimates the causal effect using Backdoor Adjustment (via OLS regression).

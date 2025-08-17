@@ -8,21 +8,20 @@ elements such as the causal question, relevant variables, and constraints.
 import re
 import os
 import json
-import logging # Added for better logging
+import logging 
 from typing import Dict, List, Any, Optional, Union
 import pandas as pd
 from pydantic import BaseModel, Field, ValidationError
-from functools import partial # Import partial
+from functools import partial 
 
-# Add dotenv import
+
 from dotenv import load_dotenv
 
-# LangChain Imports
-from langchain_openai import ChatOpenAI # Example, replace if using another provider
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.exceptions import OutputParserException # Correct path
-from langchain_core.language_models import BaseChatModel # Import BaseChatModel
 
+from langchain_openai import ChatOpenAI 
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.exceptions import OutputParserException 
+from langchain_core.language_models import BaseChatModel
 # --- Load .env file --- 
 load_dotenv() # Load environment variables from .env file
 
@@ -32,11 +31,8 @@ logger = logging.getLogger(__name__)
 
 # --- Instantiate LLM Client --- 
 # Ensure OPENAI_API_KEY environment variable is set
-# Consider making model name configurable
 try:
-    # Using with_structured_output later, so instantiate base model here
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-    # Add a check or allow configuration for different providers if needed
 except ImportError:
     logger.error("langchain_openai not installed. Please install it to use OpenAI models.")
     llm = None

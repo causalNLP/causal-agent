@@ -30,21 +30,9 @@ from cais.tools import (
     output_formatter_tool
 )
 
-# Import the main agent function
 from .agent import run_causal_analysis
 
-# Remove backward compatibility for old pipeline
-# try:
-#     from .pipeline import CausalInferencePipeline
-# except ImportError:
-#     # Define a placeholder class if the old pipeline doesn't exist
-#     class CausalInferencePipeline:
-#         """Placeholder for CausalInferencePipeline."""
-#         
-#         def __init__(self, *args, **kwargs):
-#             pass
 
-# Update __all__ to export the main function
 __all__ = [
     'run_causal_analysis'
 ]

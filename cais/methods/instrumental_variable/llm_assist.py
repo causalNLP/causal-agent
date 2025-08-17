@@ -8,10 +8,8 @@ including identifying potential instruments, validating IV assumptions, and inte
 from typing import List, Dict, Any, Optional
 import logging
 
-# Imported for type hinting
 from langchain.chat_models.base import BaseChatModel
 
-# Import shared LLM helpers
 from cais.utils.llm_helpers import call_llm_with_json_output
 
 logger = logging.getLogger(__name__)

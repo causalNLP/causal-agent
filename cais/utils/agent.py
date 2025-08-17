@@ -14,17 +14,14 @@ from langchain.chains.conversation.memory import ConversationBufferMemory
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder
 from langchain.tools import tool
-# Import the callback handler
+
 from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
-# Import tool rendering utility
 from langchain.tools.render import render_text_description
-# Import LCEL components
 from langchain.agents.format_scratchpad.tools import format_to_tool_messages
 from langchain.agents.output_parsers.tools import ToolsAgentOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.language_models import BaseChatModel
 from langchain_anthropic.chat_models import convert_to_anthropic_tool
-# Import actual tools from the tools directory
 from cais.tools.input_parser_tool import input_parser_tool
 from cais.tools.dataset_analyzer_tool import dataset_analyzer_tool
 from cais.tools.query_interpreter_tool import query_interpreter_tool
@@ -33,11 +30,8 @@ from cais.tools.method_validator_tool import method_validator_tool
 from cais.tools.method_executor_tool import method_executor_tool
 from cais.tools.explanation_generator_tool import explanation_generator_tool
 from cais.tools.output_formatter_tool import output_formatter_tool
-#from cais.prompts import SYSTEM_PROMPT # Assuming SYSTEM_PROMPT is defined here or imported
 from langchain_core.output_parsers import StrOutputParser
-# Import the centralized factory function
 from .config import get_llm_client 
-#from .prompts import SYSTEM_PROMPT 
 from langchain_core.messages import AIMessage, AIMessageChunk
 import re
 import json
@@ -146,11 +140,7 @@ class ReActMultiInputOutputParser(AgentOutputParser):
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# --- Centralized LLM Client Factory (REMOVED FROM HERE) --- 
-# load_dotenv() # Moved to config
-# def get_llm_client(...): # Moved to config
-#     ...
-# --- End Removed Section --- 
+ 
 
 def create_agent_prompt(tools: List[tool]) -> ChatPromptTemplate:
     """Create the prompt template for the causal inference agent, emphasizing workflow and data handoff.
@@ -304,16 +294,7 @@ def run_causal_analysis(query: str, dataset_path: str,
         # --- Instantiate the shared LLM client --- 
         shared_llm = get_llm_client(temperature=0) # Or read provider/model from env
         
-        # --- Dependency Injection Note (REMAINS RELEVANT) --- 
-        # If tools need the LLM, they must be adapted. Example using partial:
-        # from functools import partial
-        # from .components import input_parser 
-        # # Assume input_parser.parse_input needs llm 
-        # input_parser_tool_with_llm = tool(partial(input_parser.parse_input, llm=shared_llm)) 
-        # Use input_parser_tool_with_llm in the tools list passed to the agent below.
-        # Similar adjustments needed for decision_tree._recommend_ps_method if used.
-        # --- End Note --- 
-
+        
         # --- Create agent using the shared LLM --- 
         agent_executor = create_causal_agent(shared_llm) 
         

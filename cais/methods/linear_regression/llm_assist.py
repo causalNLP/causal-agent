@@ -35,6 +35,7 @@ def suggest_lr_covariates(
         List of suggested covariate names.
     """
     logger.info("LLM covariate suggestion for LR is not implemented yet.")
+    # TODO: Implement actual call to LLM
     if llm:
         # Placeholder: Call LLM here in future
         pass

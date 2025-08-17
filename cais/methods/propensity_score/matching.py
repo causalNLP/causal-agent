@@ -2,16 +2,15 @@
 import pandas as pd
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
-import statsmodels.api as sm # For bias adjustment regression
-import logging # For logging fallback
+import statsmodels.api as sm 
+import logging 
 from typing import Dict, List, Optional, Any
 
 # Import DoWhy
 from dowhy import CausalModel
 
 from .base import estimate_propensity_scores, format_ps_results, select_propensity_model
-from .diagnostics import assess_balance #, plot_overlap, plot_balance # Import diagnostic functions
-# Remove determine_optimal_caliper, it will be replaced by a heuristic
+from .diagnostics import assess_balance 
 from .llm_assist import get_llm_parameters # Import LLM helpers
 
 logger = logging.getLogger(__name__)

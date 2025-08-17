@@ -2,9 +2,6 @@ from typing import List, Optional, Union, Dict, Any, Tuple
 from pydantic import BaseModel, Field, validator
 import json
 
-# --- Pydantic models for LLM structured output ---
-# These models are used by query_interpreter and potentially other components
-# to structure the output received from Language Models.
 
 class LLMSelectedVariable(BaseModel):
     """Pydantic model for selecting a single variable."""

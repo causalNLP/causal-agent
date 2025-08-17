@@ -13,7 +13,7 @@ import numpy as np
 import warnings
 from typing import Dict, Any, Optional
 import logging
-from langchain.chat_models.base import BaseChatModel # For type hinting llm
+from langchain.chat_models.base import BaseChatModel 
 
 from .diagnostics import run_dim_diagnostics
 from .llm_assist import interpret_dim_results
@@ -24,9 +24,9 @@ def estimate_effect(
     df: pd.DataFrame,
     treatment: str,
     outcome: str,
-    query: Optional[str] = None, # For potential LLM use
-    llm: Optional[BaseChatModel] = None, # For potential LLM use
-    **kwargs # To capture any other potential arguments (e.g., covariates - which are ignored)
+    query: Optional[str] = None,
+    llm: Optional[BaseChatModel] = None,
+    **kwargs 
 ) -> Dict[str, Any]:
     """
     Estimates the causal effect using Difference in Means (via OLS).

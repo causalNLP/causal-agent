@@ -6,16 +6,9 @@ import logging
 import pandas as pd
 import numpy as np
 from typing import Dict, List, Optional, Any, Tuple
-from cais.config import get_llm_client # IMPORT LLM Client Factory
-
-# DoWhy imports (Commented out for simplification)
-# from dowhy import CausalModel
-# from dowhy.causal_estimators import CausalEstimator
-# from dowhy.causal_estimator import CausalEstimate
-# Statsmodels import for estimation
+from cais.config import get_llm_client 
 import statsmodels.formula.api as smf
 
-# Local imports
 from .llm_assist import (
     identify_time_variable, 
     determine_treatment_period, 
@@ -23,7 +16,7 @@ from .llm_assist import (
     interpret_did_results
 )
 from .diagnostics import validate_parallel_trends # Import diagnostics
-# Import from the new utils module
+
 from .utils import create_post_indicator
 
 logger = logging.getLogger(__name__)
@@ -64,47 +57,7 @@ def format_did_results(statsmodels_results: Any, interaction_term_key: str,
     
     return results
 
-# Comment out unused DoWhy result formatter
-# def format_dowhy_results(estimate: CausalEstimate, 
-#                          validation_results: Dict[str, Any],
-#                          parameters: Dict[str, Any]) -> Dict[str, Any]:
-#     '''Formats the DiD results from DoWhy causal estimate into a standard dictionary.'''
-    
-#     try:
-#         # Extract values from DoWhy estimate
-#         effect = float(estimate.value)
-#         stderr = float(estimate.get_standard_error()) if hasattr(estimate, 'get_standard_error') else np.nan
-#         ci_lower, ci_upper = estimate.get_confidence_intervals() if hasattr(estimate, 'get_confidence_intervals') else (np.nan, np.nan)
-#         # Extract p-value if available, otherwise use NaN
-#         pval = estimate.get_significance_test_results().get('p_value', np.nan) if hasattr(estimate, 'get_significance_test_results') else np.nan
-        
-#         # Get available details from estimate
-#         details = str(estimate)
-#         if hasattr(estimate, 'summary'):
-#             details = str(estimate.summary())
-            
-#         logger.info(f"Extracted effect from DoWhy estimate: {effect}")
-        
-#     except Exception as e:
-#         logger.error(f"Error extracting results from DoWhy estimate: {e}")
-#         effect, stderr, pval, ci_lower, ci_upper = np.nan, np.nan, np.nan, np.nan, np.nan
-#         details = f"Error extracting DoWhy results: {e}"
-    
-#     # Create a standardized results dictionary
-#     results = {
-#         "effect_estimate": effect,
-#         "effect_se": stderr,
-#         "p_value": pval,
-#         "confidence_interval": [ci_lower, ci_upper],
-#         "diagnostics": validation_results,
-#         "parameters": parameters,
-#         "details": details,
-#         "estimator": "dowhy"
-#     }
-    
-#     return results
 
-# --- Main `estimate_effect` function --- 
 
 def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str, 
                       covariates: List[str], 
@@ -239,98 +192,7 @@ def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str,
         logger.warning("Parallel trends assumption potentially violated (based on placeholder check). Proceeding with estimation, but results may be biased.")
         # Add this info to the final results diagnostics
 
-    # --- Step 4: Prepare for Statsmodels Estimation --- 
-    # (DoWhy section commented out for simplicity)
-    # all_common_causes = covariates + [time_var, group_var] # group_var is unit ID
-    # use_dowhy_estimate = False
-    # dowhy_estimate = None
     
-    # try:
-    #     # Create DoWhy CausalModel
-    #     model = CausalModel(
-    #         data=df_processed,
-    #         treatment=treated_group_col_for_formula, # Use group indicator here
-    #         outcome=outcome,
-    #         common_causes=all_common_causes,
-    #     )
-    #     logger.info("DoWhy CausalModel created for DiD estimation.")
-        
-    #     # Identify estimand
-    #     identified_estimand = model.identify_effect(proceed_when_unidentifiable=True)
-    #     logger.info(f"DoWhy identified estimand: {identified_estimand.estimand_type}")
-        
-    #     # Try to estimate using DiD estimator if available in DoWhy
-    #     try:
-    #         logger.info("Attempting to use DoWhy's DiD estimator...")
-            
-    #         # Debug info - print DataFrame info to help diagnose possible issues
-    #         logger.debug(f"DataFrame shape before DoWhy DiD: {df_processed.shape}")
-    #         # ... (rest of DoWhy debug logs commented out) ...
-            
-    #         # Create params dictionary for DoWhy DiD estimator
-    #         did_params = {
-    #             'time_var': time_var,
-    #             'treatment_period': treatment_period,
-    #             'unit_var': group_var
-    #         }
-            
-    #         # Add control variables if available
-    #         if covariates:
-    #             did_params['control_vars'] = covariates
-            
-    #         logger.debug(f"DoWhy DiD params: {did_params}")
-            
-    #         # Try to use DiD estimator from DoWhy (requires recent version of DoWhy)
-    #         if hasattr(model, 'estimate_effect'):
-    #             try:
-    #                 # First check if difference_in_differences method is available
-    #                 available_methods = model.get_available_effect_estimators() if hasattr(model, 'get_available_effect_estimators') else []
-    #                 logger.debug(f"Available DoWhy estimators: {available_methods}")
-                    
-    #                 if "difference_in_differences" not in str(available_methods):
-    #                     logger.warning("'difference_in_differences' estimator not found in available DoWhy estimators. Falling back to statsmodels.")
-    #                 else:
-    #                     # Try the estimation with more error handling
-    #                     logger.info("Calling DoWhy DiD estimator...")
-    #                     estimate = model.estimate_effect(
-    #                         identified_estimand,
-    #                         method_name="difference_in_differences",
-    #                         method_params=did_params
-    #                     )
-                        
-    #                     if estimate:
-    #                         # Extra check to verify estimate has expected attributes
-    #                         if hasattr(estimate, 'value') and not pd.isna(estimate.value):
-    #                             dowhy_estimate = estimate
-    #                             use_dowhy_estimate = True
-    #                             logger.info(f"Successfully used DoWhy's DiD estimator. Effect estimate: {estimate.value}")
-    #                         else:
-    #                             logger.warning(f"DoWhy's DiD estimator returned invalid estimate: {estimate}. Falling back to statsmodels.")
-    #                     else:
-    #                         logger.warning("DoWhy's DiD estimator returned None. Falling back to statsmodels.")
-    #             except IndexError as idx_err:
-    #                 # Handle specific IndexError that's occurring
-    #                 logger.error(f"IndexError in DoWhy DiD estimator: {idx_err}. Check input data structure.")
-    #                 # Trace more details about the error
-    #                 import traceback
-    #                 logger.error(f"Error traceback: {traceback.format_exc()}")
-    #                 logger.warning("Falling back to statsmodels due to IndexError in DoWhy.")
-    #         else:
-    #             logger.warning("DoWhy model does not have estimate_effect method. Falling back to statsmodels.")
-                
-    #     except (ImportError, AttributeError) as e:
-    #         logger.warning(f"DoWhy DiD estimator not available or not implemented: {e}. Falling back to statsmodels.")
-    #     except ValueError as ve:
-    #         logger.error(f"ValueError in DoWhy DiD estimator: {ve}. Likely issue with data formatting. Falling back to statsmodels.")
-    #     except Exception as e:
-    #         logger.error(f"Error using DoWhy's DiD estimator: {e}. Falling back to statsmodels.")
-    #         # Add traceback for better debugging
-    #         import traceback
-    #         logger.error(f"Full error traceback: {traceback.format_exc()}")
-            
-    # except Exception as e:
-    #     logger.error(f"Failed to create DoWhy CausalModel: {e}", exc_info=True)
-    #     # model = None  # Set model to None if creation fails
     
     # Create parameters dictionary for formatting results
     parameters = {
@@ -348,15 +210,7 @@ def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str,
         # "placebo_test": run_placebo_test(...) 
     }
     
-    # If DoWhy estimation was successful, use those results (Section Commented Out)
-    # if use_dowhy_estimate and dowhy_estimate:
-    #     logger.info("Using DoWhy DiD estimation results.")
-    #     parameters["estimation_method"] = "DoWhy Difference-in-Differences"
-        
-    #     # Format the results
-    #     formatted_results = format_dowhy_results(dowhy_estimate, did_diagnostics, parameters)
-    # else:
-        
+         
     # --- Step 5: Use Statsmodels OLS --- 
     logger.info("Determining Statsmodels OLS formula based on number of time periods...")
 

@@ -5,12 +5,9 @@ This module provides a LangChain tool for matching query concepts to actual
 dataset variables, identifying treatment, outcome, and covariate variables.
 """
 
-# Removed Pydantic import, will be imported via models
-# from pydantic import BaseModel, Field
-from typing import Dict, List, Any, Optional, Union # Keep Any, Dict for workflow_state
+from typing import Dict, List, Any, Optional, Union 
 import logging
 
-# Import shared Pydantic models from the central location
 from cais.models import (
     TemporalStructure,
     DatasetInfo,
@@ -21,14 +18,7 @@ from cais.models import (
     QueryInterpreterOutput
 )
 
-# --- Removed local Pydantic definitions --- 
-# class TemporalStructure(BaseModel): ...
-# class DatasetInfo(BaseModel): ...
-# class DatasetAnalysis(BaseModel): ...
-# class QueryInfo(BaseModel): ...
-# class QueryInterpreterInput(BaseModel): ...
-# class Variables(BaseModel): ...
-# class QueryInterpreterOutput(BaseModel): ...
+
 
 logger = logging.getLogger(__name__)
 

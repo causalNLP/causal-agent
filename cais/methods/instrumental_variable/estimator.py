@@ -1,7 +1,7 @@
 import pandas as pd
 import statsmodels.api as sm
 from statsmodels.sandbox.regression.gmm import IV2SLS
-from dowhy import CausalModel # Primary path
+from dowhy import CausalModel
 from typing import Dict, Any, List, Union, Optional
 import logging
 from langchain.chat_models.base import BaseChatModel

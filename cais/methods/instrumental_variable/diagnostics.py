@@ -1,11 +1,9 @@
-# Placeholder for IV-specific diagnostic functions
 import pandas as pd
 import statsmodels.api as sm
 from statsmodels.regression.linear_model import OLS
-# from statsmodels.sandbox.regression.gmm import IV2SLSResults # Removed problematic import
 from typing import Dict, Any, List, Tuple, Optional
-import logging # Import logging
-import numpy as np # Import numpy for np.zeros
+import logging
+import numpy as np 
 
 # Configure logger
 logger = logging.getLogger(__name__)

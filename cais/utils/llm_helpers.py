@@ -3,18 +3,14 @@ Utility functions for LLM interactions within the cais module.
 """
 
 from typing import Dict, Any, Optional, List
-# Assume pandas is available for get_columns_info and sample_data
 import pandas as pd
 import logging
-import json # Ensure json is imported
-
-# Added import for type hint
+import json
 from langchain.chat_models.base import BaseChatModel
-from langchain_core.messages import AIMessage # For type hinting llm.invoke response
+from langchain_core.messages import AIMessage 
 
 logger = logging.getLogger(__name__)
 
-# Placeholder for actual LLM calling logic
 def call_llm_with_json_output(llm: Optional[BaseChatModel], prompt: str) -> Optional[Dict[str, Any]]:
     """
     Calls the provided LLM with a prompt, expecting a JSON object in the response.
@@ -142,7 +138,7 @@ def analyze_dataset_for_method(df: pd.DataFrame, query: str, method: str) -> Dic
     except Exception:
         sample_data = "Error retrieving sample data."
     
-    # --- Revised Prompt --- 
+    
     prompt = f"""
     Given the dataset with columns {columns_info} and the causal query "{query}",
     suggest SENSIBLE INITIAL DEFAULT parameters for applying the {method} method.
@@ -171,7 +167,6 @@ def analyze_dataset_for_method(df: pd.DataFrame, query: str, method: str) -> Dic
       }}
     }}
     """
-    # --- End Revised Prompt --- 
     
     # Call LLM with prompt - Assuming analyze_dataset_for_method provides the llm object
     # For now, this internal call still uses the placeholder without passing llm
@@ -217,7 +212,6 @@ def llm_identify_temporal_and_unit_vars(
 
     logger.info("Attempting LLM identification of time and unit variables...")
 
-    # Construct the prompt (revised based on user feedback in conversation)
     prompt = f"""
 You are a data analysis expert tasked with determining whether a dataset supports a Difference-in-Differences (DiD) or Two-Way Fixed Effects (TWFE) design to answer the following query:
 {query}

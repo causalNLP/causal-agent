@@ -11,16 +11,15 @@ import pandas as pd
 import logging
 import numpy as np
 from cais.config import get_llm_client
-# Import LLM and message types
+
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 from langchain_core.exceptions import OutputParserException
-# Import base Pydantic models needed directly
+
 from pydantic import BaseModel, ValidationError
 from dowhy import CausalModel
 import json
 
-# Import shared Pydantic models from the central location
 from cais.models import (
     LLMSelectedVariable,
     LLMSelectedCovariates,
@@ -29,15 +28,9 @@ from cais.models import (
     LLMRCTCheck,
     LLMTreatmentReferenceLevel,
     LLMInteractionSuggestion, 
-    LLMEstimand, 
-    # LLMDIDCheck,
-    # LLMDiDTemporalVars,
-    # LLMDiDGroupVars,
-    # LLMRDDCheck,
-    # LLMRDDVarsExtended
+    LLMEstimand,
 )
 
-# Import the new prompt templates
 from cais.prompts.method_identification_prompts import (
     IV_IDENTIFICATION_PROMPT_TEMPLATE,
     RDD_IDENTIFICATION_PROMPT_TEMPLATE,
@@ -52,16 +45,7 @@ from cais.prompts.method_identification_prompts import (
     DID_TERM_IDENTIFICATION_PROMPT_TEMPLATE)
 
 
-# Assume central models are defined elsewhere or keep local definitions for now
-# from ..models import ... 
 
-# --- Pydantic models for LLM structured output --- 
-# REMOVED - Now defined in causalscientist/cais/models.py
-# class LLMSelectedVariable(BaseModel): ...
-# class LLMSelectedCovariates(BaseModel): ...
-# class LLMIVars(BaseModel): ...
-# class LLMRDDVars(BaseModel): ...
-# class LLMRCTCheck(BaseModel): ...
 
 
 logger = logging.getLogger(__name__)
@@ -133,8 +117,7 @@ def determine_treatment_reference_level(is_rct: Optional[bool], llm: Optional[Ba
     Determines the treatment reference level
     """
 
-    # If LLM didn't explicitly say RCT, default to False or keep None?
-    # Let's default to False if LLM didn't provide a boolean value.
+    
     if is_rct is None: is_rct = False
     treatment_reference_level = None
 
