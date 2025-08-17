@@ -7,29 +7,29 @@
 #
 
 echo "Generating context for RCT Data"
-bash data_generation/synthetic/create_context/create_context_rct.sh
+bash auto_causal/data_generation/synthetic/create_context/create_context_rct.sh
 
 echo "Generating context for Multi-RCT Data"
-bash data_generation/synthetic/create_context/create_context_multi_rct.sh
+bash auto_causal/autodata_generation/synthetic/create_context/create_context_multi_rct.sh
 
 echo "Generating context for Front_Door Data"
-bash data_generation/synthetic/create_context/create_context_front_door.sh
+bash auto_causal/data_generation/synthetic/create_context/create_context_front_door.sh
 
 echo "Generating context for Observational Data"
-bash data_generation/synthetic/create_context/create_context_observational.sh
+bash auto_causal/data_generation/synthetic/create_context/create_context_observational.sh
 
 echo "Generating context for Canonical DiD Data"
-bash data_generation/synthetic/create_context/create_context_did_canonical.sh
+bash auto_causal/data_generation/synthetic/create_context/create_context_did_canonical.sh
 
 echo "Generating context for TWFE DiD Data"
-bash data_generation/synthetic/create_context/create_context_did_twfe.sh
+bash auto_causal/data_generation/synthetic/create_context/create_context_did_twfe.sh
 
 echo "Generating context for IV Data"
-bash rdata_generation/synthetic/create_context/create_context_iv.sh
+bash auto_causal/rdata_generation/synthetic/create_context/create_context_iv.sh
 
 echo "Generating context for IV-Encouragement Data"
-bash data_generation/synthetic/create_context/create_context_iv_encouragement.sh
+bash auto_causal/data_generation/synthetic/create_context/create_context_iv_encouragement.sh
 
 echo "Generating context for RDD Data"
-bash data_generation/synthetic/create_context/create_context_rdd.sh
+bash auto_causal/data_generation/synthetic/create_context/create_context_rdd.sh
 

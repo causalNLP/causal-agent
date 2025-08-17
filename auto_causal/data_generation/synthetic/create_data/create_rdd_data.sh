@@ -6,7 +6,7 @@
 #  Created by Sawal Acharya on 5/14/25.
 #
 
-source data_generation/synthetic/settings.sh
+source auto_causal/data_generation/synthetic/settings.sh
 METHOD="rdd"
 METADATA_FOLDER="${BASE_FOLDER}/${METHOD}/metadata"
 DATA_FOLDER="${BASE_FOLDER}/${METHOD}/data"

@@ -5,7 +5,7 @@
 #
 #  Created by Sawal Acharya on 5/14/25.
 #
-source data_generation/synthetic/settings.sh
+source auto_causal/data_generation/synthetic/settings.sh
 
 for METHOD in rct frontdoor multi_rct did_canonical did_twfe iv iv_encouragement rdd observational; do
     METADATA_FOLDER="${BASE_FOLDER}/${METHOD}/metadata/${METHOD}.json"
