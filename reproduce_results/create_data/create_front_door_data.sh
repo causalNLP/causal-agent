@@ -3,7 +3,7 @@ METHOD="frontdoor"
 METADATA_FOLDER="${BASE_FOLDER}/${METHOD}/metadata"
 DATA_FOLDER="${BASE_FOLDER}/${METHOD}/data"
 
-python auto_causal/synthetic_data_generation/generate_synthetic.py \
+python auto_causal/synthetic/generate_synthetic.py \
     -md ${METADATA_FOLDER} \
     -d ${DATA_FOLDER} \
     -m ${METHOD} \
