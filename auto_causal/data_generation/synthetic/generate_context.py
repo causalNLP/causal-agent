@@ -5,7 +5,7 @@ import argparse
 import os
 import pandas as pd
 import json
-from auto_causal.synthetic.prompts import generate_data_summary, create_prompt, filter_question
+from auto_causal.data_generation.synthetic.prompts import generate_data_summary, create_prompt, filter_question
 from openai import OpenAI
 from pathlib import Path
 from tqdm import tqdm

@@ -5,7 +5,7 @@
 #
 #  Created by Sawal Acharya on 5/14/25.
 #
-source reproduce_results/settings.sh
+source data_generation/synthetic/settings.sh
 
 for METHOD in rct frontdoor multi_rct did_canonical did_twfe iv iv_encouragement rdd observational; do
     METADATA_FOLDER="${BASE_FOLDER}/${METHOD}/metadata/${METHOD}.json"
@@ -14,7 +14,7 @@ for METHOD in rct frontdoor multi_rct did_canonical did_twfe iv iv_encouragement
     DESCRIPTION_PATH="${BASE_FOLDER}/${METHOD}/description/${METHOD}.json"
     OUTPUT_DATA_FOLDER="${BASE_FOLDER}/synthetic_data"
 
-    python auto_causal/synthetic/finalize_data.py \
+    python auto_causal/data_generation/synthetic/finalize_data.py \
         -md "$METADATA_FOLDER" \
         -id "$INPUT_DATA_FOLDER" \
         -m  "$METHOD" \

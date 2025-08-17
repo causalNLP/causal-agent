@@ -2,15 +2,15 @@
 
 ## Step 1: Configure Parameters
 
-1. Go to the `reproduce_results` folder
+1. Go to the `data_generation/synthetic` folder
 2. Open `settings.sh` and configure the hyperparameters
 
 ## Step 2: Generate Synthetic Data
 ### For a Single Method
-- Go to the home directory (Do not run from reproduce results)
+- Go to the home directory (Do not run from data_generation/synthetic)
 - To generate data for a specific method (e.g., RCT), run the following bash script:
   ```bash
-  bash reproduce_results/create_data/create_rct_data.sh
+  bash data_generation/synthetic/create_data/create_rct_data.sh
   ```
 
 
@@ -29,7 +29,7 @@
 
 To generate synthetic data for all methods in one go:
 ```bash
-bash reproduce_results/create_synthetic_data_all.sh
+bash data_generation/synthetic/create_synthetic_data_all.sh
 ```
 
 ## Step 3: Generate Contextual Information
@@ -39,7 +39,7 @@ bash reproduce_results/create_synthetic_data_all.sh
 1. Go to the home directory
 2. To generate column labels, backstory, and query for datasets related to a specific method (e.g., RCT), run:
    ```bash
-   bash reproduce_results/create_context/create_context_rct.sh
+   bash data_generation/synthetic/create_context/create_context_rct.sh
    ```
 
 **Output:** GPT generated information will be saved to: `samples/synthetic/rct/description/rct.json`
@@ -48,14 +48,14 @@ bash reproduce_results/create_synthetic_data_all.sh
 
 To generate contextual information for all methods at once:
 ```bash
-bash reproduce_results/create_context_all.sh
+bash data_generation/synthetic/create_context_all.sh
 ```
 
 ## Step 4: Generate Summary Files
 - Go to the home directory
 - Then run the following command:
   ```bash
-  bash reproduce_results/finalize_synthetic_dataset.sh
+  bash data_generation/synthetic/finalize_synthetic_dataset.sh
   ```
 
 ### Output Files

@@ -1,9 +1,9 @@
-source reproduce_results/settings.sh
+source data_generation/synthetic/settings.sh
 METHOD="frontdoor"
 METADATA_FOLDER="${BASE_FOLDER}/${METHOD}/metadata"
 DATA_FOLDER="${BASE_FOLDER}/${METHOD}/data"
 
-python auto_causal/synthetic/generate_synthetic.py \
+python auto_causal/data_generation/synthetic/generate_synthetic.py \
     -md ${METADATA_FOLDER} \
     -d ${DATA_FOLDER} \
     -m ${METHOD} \

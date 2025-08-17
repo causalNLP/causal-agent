@@ -6,10 +6,10 @@
 #  Created by Sawal Acharya on 5/14/25.
 #
 
-source reproduce_results/settings.sh
+source data_generation/synthetic/settings.sh
 METHOD="rct"
 METADATA_FOLDER="${BASE_FOLDER}/${METHOD}/metadata/${METHOD}.json"
 DATA_FOLDER="${BASE_FOLDER}/${METHOD}/data"
 OUTPUT_FOLDER="${BASE_FOLDER}/${METHOD}/description"
 
-python auto_causal/synthetic/generate_context.py -mp ${METADATA_FOLDER} -d ${DATA_FOLDER} -o ${OUTPUT_FOLDER} -m ${METHOD}
+python auto_causal/data_generation/synthetic/generate_context.py -mp ${METADATA_FOLDER} -d ${DATA_FOLDER} -o ${OUTPUT_FOLDER} -m ${METHOD}

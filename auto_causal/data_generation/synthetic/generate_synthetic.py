@@ -2,7 +2,7 @@
 ## functions in auto_causal.synthetic.generator. The output is a csv file containing the data
 ## and a json file containing the metadata.
 
-from auto_causal.synthetic.io import generate_observational_data, generate_rct_data, \
+from auto_causal.data_generation.synthetic.io import generate_observational_data, generate_rct_data, \
     generate_multi_rct_data, generate_canonical_did_data, generate_twfe_did_data, generate_data_iv, \
     generate_encouragement_data, generate_rdd_data, generate_frontdoor_data
 
