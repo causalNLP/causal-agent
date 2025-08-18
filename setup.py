@@ -55,7 +55,7 @@ class VenvCommand(Command):
 
 
 setup(
-    name="cais",
+    name="causal-agent",
     version=read_version(),
     author="Vishal Verma",
     author_email="vishal.verma@andrew.cmu.edu",

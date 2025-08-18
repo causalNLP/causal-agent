@@ -1,6 +1,6 @@
 # CAIS - Causal AI Scientist
 
-[![PyPI version](https://badge.fury.io/py/cais.svg)](https://badge.fury.io/py/cais)
+[![PyPI version](https://badge.fury.io/py/causal-agent.svg)](https://badge.fury.io/py/causal-agent)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/release/python-3100/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -11,16 +11,16 @@
 ### Installation
 
 ```bash
-pip install cais
+pip install causal-agent
 ```
 
 ### Basic Usage
 
 ```python
-import cais
+from cais import run_causal_analysis
 
 # Run causal analysis with a simple question
-result = cais.run_causal_analysis(
+result = run_causal_analysis(
     query="What is the effect of education on income?",
     dataset_path="your_data.csv",
     dataset_description="Dataset containing education and income data"
@@ -86,7 +86,7 @@ os.environ["GOOGLE_API_KEY"] = "your-api-key"
 
 ### Education Research
 ```python
-result = cais.run_causal_analysis(
+result = run_causal_analysis(
     query="Does smaller class size improve student test scores?",
     dataset_path="education_data.csv",
     dataset_description="Student data with class sizes and test scores"
@@ -95,7 +95,7 @@ result = cais.run_causal_analysis(
 
 ### Healthcare
 ```python
-result = cais.run_causal_analysis(
+result = run_causal_analysis(
     query="What is the effect of the new treatment on patient recovery time?",
     dataset_path="clinical_trial_data.csv",
     dataset_description="Randomized trial data comparing treatments"
@@ -104,7 +104,7 @@ result = cais.run_causal_analysis(
 
 ### Economics
 ```python
-result = cais.run_causal_analysis(
+result = run_causal_analysis(
     query="How does minimum wage increase affect employment?",
     dataset_path="employment_data.csv",
     dataset_description="Employment data before and after policy change"
@@ -129,8 +129,11 @@ metadata = pd.DataFrame({
     'data_description': ['Education dataset', 'Training program data']
 })
 
-# Run batch analysis
-cais.batch_analysis(metadata, data_folder='./data/', output_file='results.json')
+# Save metadata to CSV file first
+metadata.to_csv('metadata.csv', index=False)
+
+# Run batch analysis using CLI
+# cais batch metadata.csv ./data/ results.json
 ```
 
 ### Custom LLM Configuration
@@ -153,7 +156,7 @@ CAIS returns structured results including:
 - **Explanation**: Plain-language interpretation of results
 
 ```python
-result = cais.run_causal_analysis(query, dataset_path, description)
+result = run_causal_analysis(query, dataset_path, description)
 
 # Access key results
 effect = result['results']['results']['effect_estimate']

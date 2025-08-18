@@ -5,7 +5,7 @@ This module provides automated causal inference capabilities
 through a pipeline that selects and applies appropriate causal methods.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 # Import components
 from cais.components import (
