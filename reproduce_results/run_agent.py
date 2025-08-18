@@ -2,7 +2,7 @@ import os, re, io, time, json, logging, contextlib, textwrap
 from typing import Dict, Any
 import pandas as pd
 import argparse
-from auto_causal.agent import run_causal_analysis
+from cais.agent import run_causal_analysis
 
 # Constants
 RATE_LIMIT_SECONDS = 2
