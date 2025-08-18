@@ -3,10 +3,10 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cais"
-version = "0.1.0"
+name = "causal-agent"
+version = "0.1.1"
 description = "A library for automated causal inference"
-readme = "README.md"
+readme = "README_PYPI.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
