@@ -11,21 +11,6 @@ from cais.agent import run_causal_analysis
 
 load_dotenv()
 
-# class TestAdhoc(unittest.TestCase):
-#     def test_adhoc(self):
-#         query = "Does receiving a voter turnout mailing increase the probability of voting compared to receiving no mailing?"
-#         dataset_path = "data/voter_turnout_data.csv"
-#         dataset_description = """The ISPS D001 dataset, titled "Social Pressure and Voter Turnout: Evidence from a Large-Scale Field Experiment," 
-#         originates from a 2006 field experiment in Michigan. Researchers Gerber, Green, and Larimer investigated how different mail-based interventions 
-#         influenced voter turnout in a primary election. The study encompassed 180,002 households (344,084 registered voters), randomly assigned to a control 
-#         group or one of four treatment groups: Civic Duty, Hawthorne Effect, Self, and Neighbors. Each treatment involved a distinct mailing designed to 
-#         apply social pressure or appeal to civic responsibility. The primary outcome measured was voter turnout in the 2006 local elections. 
-#         Data were sourced from Michigan's Qualified Voter File (QVF), curated by Practical Political Consulting. The dataset includes individual 
-#         and household-level information, treatment assignments, and voting outcomes. Comprehensive documentation and replication materials are available
-#           to facilitate further research and analysis."""
-
-#         result = run_causal_analysis(query, dataset_path, dataset_description)
-#         print(result)
 
 class TestAdhoc(unittest.TestCase):
     def test_adhoc_from_structured_input(self):
@@ -46,30 +31,17 @@ class TestAdhoc(unittest.TestCase):
         expected_method = test_input_data["method"]
         expected_answer = test_input_data["answer"]
 
-        # Ensure dataset_path is correct if it's relative to a specific root or needs joining
-        # For example, if your tests run from the root of the project:
-        # script_dir = os.path.dirname(__file__)
-        # project_root = os.path.abspath(os.path.join(script_dir, "../../..")) # Adjust based on test_adhoc.py location
-        # dataset_path = os.path.join(project_root, dataset_path)
-        # For now, assuming dataset_path is directly usable or handled by run_causal_analysis
-
+        
         print(f"Running adhoc test with query: {query}")
         print(f"Dataset path: {dataset_path}")
 
-        # Call the main causal analysis function
-        # We need to know what `run_causal_analysis` returns to make assertions.
-        # Assuming it returns a dictionary that includes the method used and the effect estimate.
+        ## Assuming it returns a dictionary that includes the method used and the effect estimate.
         result = run_causal_analysis(query, dataset_path, dataset_description)
         
         print("Causal analysis result:")
         #print(json.dumps(result, indent=2)) # Pretty print the result dictionary
 
-        # Assertions (these are examples and depend on the actual structure of `result`)
-        # You'll need to adapt these based on what `run_causal_analysis` returns.
         
-        # Example: Assuming result is a dict and might have a top-level key for the final output summary
-        # and within that, information about method used and effect estimate.
-        # This is highly speculative and needs to be adjusted.
         final_summary = result # or result.get("summary"), etc.
         
        

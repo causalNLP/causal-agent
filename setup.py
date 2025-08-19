@@ -63,7 +63,7 @@ setup(
     long_description=read_file("README_PYPI.md") or "A library for automated causal inference",
     long_description_content_type="text/markdown",
     url="https://github.com/causalNLP/causal-agent",
-    packages=find_packages(exclude=["tests", "tests.*", "reproduce_results*", "replication_codes*"]),
+    packages=find_packages(exclude=["tests", "tests.*", "data_generation*", "replication_codes*"]),
     include_package_data=True,
     zip_safe=False,
     python_requires=">=3.10",
