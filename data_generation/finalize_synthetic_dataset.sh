@@ -14,7 +14,7 @@ for METHOD in rct multi_rct did_canonical did_twfe iv iv_encouragement rdd obser
     DESCRIPTION_PATH="${BASE_FOLDER}/${METHOD}/description/${METHOD}.json"
     OUTPUT_DATA_FOLDER="${BASE_FOLDER}/synthetic_data"
 
-    python main/finalize_data.py \
+    python data_generation/finalize_data.py \
         -md "$METADATA_FOLDER" \
         -id "$INPUT_DATA_FOLDER" \
         -m  "$METHOD" \
