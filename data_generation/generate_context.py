@@ -20,6 +20,12 @@ logger = logging.getLogger("description_logger")
 
 MODEL = "gpt-4"
 
+DOMAIN_LIST = [
+    "education", "healthcare", "labor", "policy",
+    "psychology", "law", "political_science",
+    "economics", "sociology"
+]
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-mp', '--metadata_path', type=str, required=True,
@@ -30,7 +36,7 @@ def parse_args():
                         help='Path to the folder where the output json files will be saved.')
     parser.add_argument('-m', '--method', type=str, required=True,
                         help="Method corresponding to the dataset")
-    parser.add_argument('-do', '--domain', type=str, default="social science",
+    parser.add_argument('-do', '--domain', type=str, default="",
                         help="Domain of the dataset")
     return parser.parse_args()
 
@@ -62,7 +68,6 @@ if __name__ == "__main__":
     metadata_path = args.metadata_path
     output_folder = args.output_folder
     method = args.method
-    domain = args.domain
 
     with open(metadata_path, 'r') as f:
         all_metadata = json.load(f)
@@ -72,7 +77,7 @@ if __name__ == "__main__":
     all_responses = {}
 
     dataset_files = get_dataset_files(args.dataset_folder)
-    for dataset_path in tqdm(dataset_files):
+    for i, dataset_path in enumerate(tqdm(dataset_files)):
         file_name = os.path.basename(dataset_path)
         logger.info("Generating context for file: %s", file_name)
 
@@ -84,6 +89,7 @@ if __name__ == "__main__":
         metadata = all_metadata[file_name]
         cutoff = metadata.get("cutoff")
 
+        domain = args.domain if args.domain else DOMAIN_LIST[i % len(DOMAIN_LIST)]
         summary = generate_data_summary(df, metadata.get("continuous"), metadata.get("binary"),
                                         metadata.get("type"), cutoff=cutoff)
         prompt = create_prompt(summary, metadata.get("type"), domain, history)
