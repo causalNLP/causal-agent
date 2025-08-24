@@ -5,7 +5,7 @@ import argparse
 import os
 import pandas as pd
 import json
-from data_generation.prompts import generate_data_summary, create_prompt, filter_question
+from data_generation.prompts import generate_data_summary, create_prompt, filter_description, filter_question
 from openai import OpenAI
 from pathlib import Path
 from tqdm import tqdm
@@ -91,11 +91,20 @@ if __name__ == "__main__":
                                                   messages=[{"role": "user", "content": prompt}],
                                                   temperature=0.7).choices[0].message.content
         response_json = json.loads(response)
-        filtered_prompt = filter_question(response_json["question"])
-        clean_response = client.chat.completions.create(model=MODEL,
-                                                        messages=[{"role": "user", "content": filtered_prompt}],
+
+        filtered_description_prompt = filter_description(response_json["description"])
+        clean_description = client.chat.completions.create(model=MODEL,
+                                                        messages=[{"role": "user", "content": filtered_description_prompt}],
                                                         temperature=0).choices[0].message.content
-        response_json["question"] = clean_response
+        response_json["description"] = clean_description
+
+        filtered_question_prompt = filter_question(response_json["question"])
+        clean_question = client.chat.completions.create(model=MODEL,
+                                                        messages=[{"role": "user", "content": filtered_question_prompt}],
+                                                        temperature=0).choices[0].message.content
+        response_json["question"] = clean_question
+
+        
 
         data_summary = response_json["summary"]
         history += f"{len(all_responses)+1}. Context summary: {data_summary}\n"
