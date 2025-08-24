@@ -14,7 +14,7 @@ from typing import List
 import logging 
 import logging.config
 
-Path("data_generation/logs").mkdir(parents=True, exist_ok=True)
+Path("reproduce_results/logs").mkdir(parents=True, exist_ok=True)
 logging.config.fileConfig('data_generation/log_config.ini')
 logger = logging.getLogger("description_logger")
 

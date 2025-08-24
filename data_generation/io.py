@@ -10,7 +10,7 @@ import json
 
 from .util import export_info
 
-Path("data_generation/logs").mkdir(parents=True, exist_ok=True)
+Path("reproduce_results/logs").mkdir(parents=True, exist_ok=True)
 logging.config.fileConfig('data_generation/log_config.ini')
 
 def config_hyperparameters(base_seed, base_mean, base_cov_diag, max_cont, max_bin, n_obs,
