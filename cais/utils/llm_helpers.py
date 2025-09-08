@@ -181,109 +181,139 @@ def analyze_dataset_for_method(df: pd.DataFrame, query: str, method: str) -> Dic
     return processed_response 
 
 
-def llm_identify_temporal_and_unit_vars(
-    column_names: List[str], 
-    column_dtypes: Dict[str, str],
-    dataset_description: str,
-    dataset_summary: str,
-    heuristic_time_candidates: Optional[List[str]] = None, # These are no longer used in the revised prompt
-    heuristic_id_candidates: Optional[List[str]] = None,   # These are no longer used in the revised prompt
-    query: str = "No query provided.",
-    llm: Optional[BaseChatModel] = None
-) -> Dict[str, Optional[str]]:
-    """Uses LLM to identify the primary time:
-
+def llm_identify_temporal_and_unit_vars(column_names: List[str], column_dtypes: Dict[str, str],
+                                       dataset_description: str, dataset_summary: str,
+                                       heuristic_time_candidates: Optional[List[str]] = None,
+                                       heuristic_id_candidates: Optional[List[str]] = None,
+                                       query: str = "No query provided.",
+                                       llm: Optional[BaseChatModel] = None) -> Dict[str, Optional[str]]:
+    """
+    Main function to identify temporal and unit variables using Chain-of-Thought reasoning.
+    
     Args:
-        column_names: List of all column names.
-        column_dtypes: Dictionary mapping column names to string representation of data types.
-        dataset_description: Textual description of the dataset.
+        column_names: List of all column names
+        column_dtypes: Dictionary mapping column names to string representation of data types
+        dataset_description: Textual description of the dataset
         dataset_summary: Summary of the dataset
-        heuristic_time_candidates: Optional list of columns identified as time vars by heuristics (currently unused by prompt).
-        heuristic_id_candidates: Optional list of columns identified as unit ID vars by heuristics (currently unused by prompt).
-        llm: The language model client instance.
-
+        heuristic_time_candidates: Optional list (IGNORED - maintained for backward compatibility)
+        heuristic_id_candidates: Optional list (IGNORED - maintained for backward compatibility)
+        query: User query for context
+        llm: The language model client instance
+    
     Returns:
-        A dictionary with keys 'time_variable' and 'unit_variable', 
-        whose values are the identified column names or None.
+        Dictionary with essential DiD variables: time_variable, unit_variable, did_canonical, did_term, treatment_time, treatment_state
     """
     if not llm:
-        logger.warning("LLM client not provided for temporal/unit identification. Returning None.")
-        return {"time_variable": None, "unit_variable": None}
-
-    logger.info("Attempting LLM identification of time and unit variables...")
-
+        logger.warning("LLM client not provided. Returning None values.")
+        return {
+            "time_variable": None, "unit_variable": None, "did_canonical": None,
+            "did_term": None, "treatment_time": None, "treatment_state": None
+        }
+    
+    logger.info("Starting enhanced Chain-of-Thought DiD variable identification...")
+    
     prompt = f"""
-You are a data analysis expert tasked with determining whether a dataset supports a Difference-in-Differences (DiD) or Two-Way Fixed Effects (TWFE) design to answer the following query:
-{query}
+You need to identify variables for Difference-in-Differences analysis to compute causal effects that answer the user query. DiD will estimate the treatment effect by comparing changes over time between treated and control units, which requires careful identification of the right variables.
 
-You are given the following information:
+User query: {query}
 
-Dataset Description:
-{dataset_description}
+Dataset context:
+Description: {dataset_description}
+Summary: {dataset_summary}
+Available columns: {column_names}
+Column types: {column_dtypes}
 
-Columns and Data Types:
-{column_dtypes}
+Think through this systematically:
 
-First, based on the above information, check if any columns represent information about the time/periods associated directly with intervention application. It could be either:
-1. A variable that represents **time periods associated with the intervention**. This must satisfy one of the following:
-   - A binary indicator showing pre/post-intervention status,
-   - A discrete or continuous variable that records **when units were observed**, which can be aligned with treatment application periods.
+Step 1: DiD appropriateness assessment
+- Does the dataset have multiple time periods when data was collected?
+- Are there multiple units (entities) observed across these time periods?
+- Is there a clear treatment/intervention mentioned in the query or dataset?
+- Can we identify before/after periods relative to the treatment?
+If any answer is no, this is not suitable for DiD analysis. All variables should be returned as null.
 
- Do **not** select generic time-related variables that merely describe time as a feature, such as **'date of birth'**, **'year of graduation'**, 'week of sign-up', **'years of schooling'** unless they directly represent **observation times relevant to treatment**.
+Step 2: Time variable identification
+- Which column represents observation periods (when outcomes were measured)?
+- Look for: year, quarter, period, date, time, wave
+- Avoid personal characteristics: age, experience, duration_since_X, years_employed
+- If multiple time-related columns exist, prefer binary (0/1) over multi-valued ones. Watch out for names like post, after. These usually denote before/after treatment periods and are ideal for canonical DiD.
 
-2. A variable that represents the **unit of observation** (e.g., individual, region, school) — the entity over which we compare treated vs. untreated groups across time.
+Step 3: Unit variable identification
+- Which column represents the cross-sectional entities that receive or do not receive treatment?
+- Look for: state, individual_id, firm_id, country, region, school_id, person_id
+- Each unit should be observed across multiple time periods
+- As with the time variable, there may be multiple unit-related columns. If multiple exist, prefer binary (0/1) variables. These denote the presence or absence of treatment and can be used for canonical DiD.
 
-Return ONLY a valid JSON object with this structure and no surrounding explanation:
+Step 4: Treatment structure analysis (critical decision point)
+Carefully analyze the treatment timing and structure:
+
+For canonical 2x2 DiD:
+- Treatment occurs at one specific time point for some units
+- Creates clear before/after periods for all units
+- Example: Policy implemented in 2010, so 2008-2009 = before, 2010-2011 = after
+- All treated units receive treatment at the same time
+- Need to identify: treatment_time (when) and treatment_state (which units)
+
+For staggered TWFE DiD:
+- Treatment occurs at different times for different units, OR
+- Need to track treatment status varying across unit-time observations
+- Requires a binary indicator showing treatment status for each unit at each time
+- Need to identify: did_term (binary column indicating treatment status)
+
+Step 5: DiD type determination
+Determine which approach applies:
+- If treatment occurs at one specific time did_canonical and there is only one entity receiving treatment → did_canonical = true
+- If treatment is staggered across time or varies by unit-time and multiple entities are involved → did_canonical = false
+- If you cannot determine clear treatment timing → did_canonical = false (safer default)
+
+Step 6: Variable extraction
+Based on your analysis:
+- time_variable: The temporal observation column
+- unit_variable: The cross-sectional entity identifier
+- did_canonical: Boolean - true for 2x2 DiD, false for staggered TWFE
+- did_term: For TWFE only (did_canonical=false) - binary (0/1) column indicating treatment status at time t for unit i
+- treatment_time: For 2x2 only (did_canonical=true) - the specific reference time when treatment occurred. This should be determined from the description. If unsure, return null.
+- treatment_state: For 2x2 only (did_canonical=true) - the specific entity that received treatment. This should be determined from the description. If unsure, return null.
+
+Critical requirements:
+- Base analysis STRICTLY on provided information - do not speculate
+- did_term must be binary (0/1) if specified
+- Prefer binary time indicators over multi-valued when available
+- Return null for any variable you cannot clearly identify
+- Only return variables that actually exist in the dataset
+
+Work through each step methodically, then provide your final analysis. You must return ONLY a valid JSON object with the following structure (no explanations or surrounding text):
 
 {{
-  "time_variable": "<column_name_or_null>",
-  "unit_variable": "<column_name_or_null>"
+    "time_variable": "column_name_or_null",
+    "unit_variable": "column_name_or_null", 
+    "did_canonical": true_or_false_or_null,
+    "did_term": "binary_column_name_or_null",
+    "treatment_time": "specific_time_value_or_null",
+    "treatment_state": "specific_unit_value_or_null"
 }}
 """
-
-
-    parsed_response = None
-    try:
-        llm_response_obj = llm.invoke(prompt)
-        response_content = ""
-        if hasattr(llm_response_obj, 'content'):
-            response_content = llm_response_obj.content
-        elif isinstance(llm_response_obj, str): # Some LLMs might return str directly
-            response_content = llm_response_obj
-        else:
-            logger.warning(f"LLM response object type not recognized for content extraction: {type(llm_response_obj)}")
-
-        if response_content:
-            # Attempt to strip markdown ```json ... ``` if present
-            if response_content.strip().startswith("```json"):
-                response_content = response_content.strip()[7:-3].strip()
-            elif response_content.strip().startswith("```"):
-                 response_content = response_content.strip()[3:-3].strip()
-
-            parsed_response = json.loads(response_content)
-        else:
-            logger.warning("LLM invocation returned no content.")
-
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to decode JSON from LLM response for time/unit vars: {e}. Response content: '{response_content[:500]}...'") # Log snippet
-    except Exception as e:
-        logger.error(f"Error during LLM invocation or processing for time/unit vars: {e}", exc_info=True)
-
-    # Process the response
-    if parsed_response and isinstance(parsed_response, dict):
-        time_var = parsed_response.get("time_variable")
-        unit_var = parsed_response.get("unit_variable")
-        
-        # Basic validation: ensure returned names are actual columns or None
-        if time_var is not None and time_var not in column_names:
-            logger.warning(f"LLM identified time variable '{time_var}' not found in columns. Setting to None.")
-            time_var = None
-        if unit_var is not None and unit_var not in column_names:
-            logger.warning(f"LLM identified unit variable '{unit_var}' not found in columns. Setting to None.")
-            unit_var = None
+    
+    result = call_llm_with_json_output(llm, prompt)
+    if result:
+        # Validate that identified variables exist in columns
+        for key in ["time_variable", "unit_variable", "did_term"]:
+            if result.get(key) and result[key] not in column_names:
+                logger.warning(f"{key} '{result[key]}' not found in columns, setting to None")
+                result[key] = None
+                
+        # Validate did_canonical is boolean or None
+        did_canonical = result.get("did_canonical")
+        if did_canonical is not None and not isinstance(did_canonical, bool):
+            logger.warning(f"Invalid did_canonical '{did_canonical}', must be boolean. Setting to None")
+            result["did_canonical"] = None
             
-        logger.info(f"LLM identified time='{time_var}', unit='{unit_var}'")
-        return {"time_variable": time_var, "unit_variable": unit_var}
+        logger.info(f"DiD variables identified - time: {result.get('time_variable')}, unit: {result.get('unit_variable')}, "
+                   f"canonical: {result.get('did_canonical')}, did_term: {result.get('did_term')}")
+        return result
     else:
-        logger.warning("LLM call failed or returned invalid/unparsable JSON for time/unit identification.")
-        return {"time_variable": None, "unit_variable": None} 
+        logger.error("Error in DiD variable identification")
+        return {
+            "time_variable": None, "unit_variable": None, "did_canonical": None,
+            "did_term": None, "treatment_time": None, "treatment_state": None
+        }

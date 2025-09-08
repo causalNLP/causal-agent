@@ -41,10 +41,7 @@ from cais.prompts.method_identification_prompts import (
     OUTCOME_VAR_IDENTIFICATION_PROMPT_TEMPLATE,
     COVARIATES_IDENTIFICATION_PROMPT_TEMPLATE, 
     ESTIMAND_PROMPT_TEMPLATE,
-    CONFOUNDER_IDENTIFICATION_PROMPT_TEMPLATE,
-    DID_TERM_IDENTIFICATION_PROMPT_TEMPLATE)
-
-
+    CONFOUNDER_IDENTIFICATION_PROMPT_TEMPLATE)
 
 
 
@@ -260,13 +257,31 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
     # --- Identify Time/Group (from dataset analysis) --- 
     time_variable = None
     group_variable = None
-    has_temporal = dataset_analysis.get("temporal_structure", {}).get("has_temporal_structure", False)
+    
+    # Extract all DiD-specific properties 
+    did_term = None
+    did_canonical = None
+    treatment_time = None
+    treatment_state = None
+
+    logger.info("data analysis all", dataset_analysis)
     temporal_structure = dataset_analysis.get("temporal_structure", {})
+
     if temporal_structure.get("has_temporal_structure", False):
         time_variable = temporal_structure.get("time_column") or temporal_structure.get("temporal_columns", [None])[0]
+    
         if temporal_structure.get("is_panel_data", False):
             group_variable = temporal_structure.get("id_column")
-    logger.info(f"Identified Time Var: {time_variable}, Group Var: {group_variable}, temporal structure: {temporal_structure}")
+    
+        # Extract all DiD properties from temporal_structure
+        did_canonical = temporal_structure.get("did_canonical", None)
+        did_term = temporal_structure.get("did_term", None)
+        treatment_time = temporal_structure.get("treatment_time", None) 
+        treatment_state = temporal_structure.get("treatment_state", None)
+    
+    logger.info(f"Identified Time Var: {time_variable}, Group Var: {group_variable}")
+    logger.info(f"DiD Properties - Canonical: {did_canonical}, Did Term: {did_term}")
+    logger.info(f"Treatment Info - Time: {treatment_time}, State: {treatment_state}")
 
     # --- Identify IV/RDD/RCT using LLM --- 
     instrument_variable = None
@@ -316,14 +331,6 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
             estimand = "ate" if "ate" in estimand_result.estimand.strip().lower() else "att"
             logger.info(f"LLM identified estimand: {estimand}")
 
-            ## Did Term  
-            did_term_prompt = DID_TERM_IDENTIFICATION_PROMPT_TEMPLATE.format(query=query_text, description=dataset_description,
-                                                                             column_info=columns, time_variable=time_variable,
-                                                                             group_variable=group_variable, column_types=column_categories)
-            did_term_result = _call_llm_for_var(llm, did_term_prompt, LLMRDDVars)
-            did_term_result = did_term_result.did_term if did_term_result in columns else None
-            logger.info(f"LLM identified DiD term: {did_term_result}")
-
 
 
             #smd_score_all = compute_smd(dataset_analysis.get("data", pd.DataFrame()), treatment_variable, usable_covariates)
@@ -352,22 +359,30 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
 
     # --- Consolidate --- 
     return {
+        ## basic information 
         "treatment_variable": treatment_variable,
         "treatment_variable_type": treatment_variable_type,
         "outcome_variable": outcome_variable,
         "covariates": covariates,
+        ## for difference in differences 
         "time_variable": time_variable,
         "group_variable": group_variable,
+        "did_canonical": did_canonical,
+        "did_term": did_term,
+        "treatment_time": treatment_time,
+        "treatment_state": treatment_state,
+        ## for iv
         "instrument_variable": instrument_variable,
+        ## for rdd
         "running_variable": running_variable,
         "cutoff_value": cutoff_value,
+        ## for rct 
         "is_rct": is_rct,
         "treatment_reference_level": treatment_reference_level,
+        ## for heterogeneous effects
         "interaction_term_suggested": interaction_term_suggested,
         "interaction_variable_candidate": interaction_variable_candidate, 
-        "confounders": confounders,
-        "did_term": did_term_result
-    }
+        "confounders": confounders}
 
 def compute_smd(df: pd.DataFrame, treat, covars_list) -> Dict[str, float]:
     """

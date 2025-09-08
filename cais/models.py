@@ -51,6 +51,10 @@ class TemporalStructure(BaseModel):
     time_column: Optional[str] = None
     time_periods: Optional[int] = None
     units: Optional[int] = None
+    did_canonical: Optional[bool] = None
+    did_term: Optional[str] = None
+    treatment_time: Optional[float] = None
+    #treatment_state: Optional[str] = None
 
 class DatasetInfo(BaseModel):
     """Basic information about the dataset file."""
@@ -114,6 +118,10 @@ class Variables(BaseModel):
     covariates: Optional[List[str]] = Field(default_factory=list)
     time_variable: Optional[str] = None
     group_variable: Optional[str] = None # Often the unit ID
+    did_canonical: Optional[bool] = None
+    did_term: Optional[str] = None
+    treatment_time: Optional[float] = None
+    treatment_state: Optional[str] = None
     running_variable: Optional[str] = None
     cutoff_value: Optional[Union[float, int]] = None
     is_rct: Optional[bool] = Field(False, description="Flag indicating if the dataset is from an RCT.")
