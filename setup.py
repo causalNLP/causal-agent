@@ -23,7 +23,7 @@ def read_requirements(filename: str = "requirements.txt"):
 
 
 def read_version():
-    init_py = read_file("cais/__init__.py")
+    init_py = read_file("causal_agent/__init__.py")
     m = re.search(r'__version__\s*=\s*"([^"]+)"', init_py)
     return m.group(1) if m else "0.0.0"
 
@@ -81,7 +81,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "cais=cais.cli:main",
+            "causal-agent=causal_agent.cli:main",
         ]
     },
     cmdclass={

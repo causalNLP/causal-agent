@@ -57,7 +57,7 @@ Homepage = "https://github.com/causalNLP/causal-agent"
 Issues = "https://github.com/causalNLP/causal-agent/issues"
 
 [project.scripts]
-cais = "cais.cli:main"
+causal-agent = "causal_agent.cli:main"
 
 [tool.setuptools.packages.find]
 exclude = ["tests*", "reproduce_results*", "replication_codes*"]
