@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 
 # Functions to test (assuming they exist in llm_assist)
-from cais.methods.difference_in_differences.llm_assist import (
+from causal_agent.methods.difference_in_differences.llm_assist import (
     identify_time_variable, 
     determine_treatment_period, 
     identify_treatment_group,
@@ -11,7 +11,7 @@ from cais.methods.difference_in_differences.llm_assist import (
 )
 
 # Patch target for the helper function if LLM calls are made
-LLM_ASSIST_MODULE = "cais.methods.difference_in_differences.llm_assist"
+LLM_ASSIST_MODULE = "causal_agent.methods.difference_in_differences.llm_assist"
 
 @pytest.fixture
 def mock_llm():

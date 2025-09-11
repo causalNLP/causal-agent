@@ -3,11 +3,11 @@ import pandas as pd
 import numpy as np
 
 # Import the function to test
-from cais.methods.difference_in_differences import estimator as did_estimator
+from causal_agent.methods.difference_in_differences import estimator as did_estimator
 # Import placeholder diagnostics to check if they are called
-from cais.methods.difference_in_differences import diagnostics as did_diagnostics
+from causal_agent.methods.difference_in_differences import diagnostics as did_diagnostics
 # Import placeholder llm assists to check if they are called
-from cais.methods.difference_in_differences import llm_assist as did_llm_assist
+from causal_agent.methods.difference_in_differences import llm_assist as did_llm_assist
 
 from unittest.mock import patch # For testing placeholder calls
 

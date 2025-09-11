@@ -1,10 +1,10 @@
 import pytest
 from unittest.mock import MagicMock, patch
 import pandas as pd
-from cais.methods.diff_in_means.llm_assist import interpret_dim_results
+from causal_agent.methods.diff_in_means.llm_assist import interpret_dim_results
 
 # Patch target for the helper function where it's used
-LLM_ASSIST_MODULE = "cais.methods.diff_in_means.llm_assist"
+LLM_ASSIST_MODULE = "causal_agent.methods.diff_in_means.llm_assist"
 
 @pytest.fixture
 def mock_llm():

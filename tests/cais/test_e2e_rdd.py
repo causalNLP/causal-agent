@@ -8,7 +8,7 @@ import re # For parsing results
 # SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 # sys.path.append(os.path.dirname(os.path.dirname(SCRIPT_DIR)))
 
-from cais.agent import run_causal_analysis
+from causal_agent.agent import run_causal_analysis
 
 class TestE2ERDD(unittest.TestCase):
     

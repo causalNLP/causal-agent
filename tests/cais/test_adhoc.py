@@ -7,7 +7,7 @@ import pandas as pd
 from dotenv import load_dotenv
 
 # Import the main entry point
-from cais.agent import run_causal_analysis
+from causal_agent.agent import run_causal_analysis
 
 load_dotenv()
 

@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 import numpy as np
-from cais.methods.instrumental_variable.diagnostics import (
+from causal_agent.methods.instrumental_variable.diagnostics import (
     calculate_first_stage_f_statistic,
     run_overidentification_test
 )

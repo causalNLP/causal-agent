@@ -1,0 +1,38 @@
+[MASTER]
+init-hook='import sys; sys.path.append(".")'
+
+[MESSAGES CONTROL]
+disable=
+    C0114,  # missing-module-docstring
+    C0115,  # missing-class-docstring
+    C0116,  # missing-function-docstring
+    R0903,  # too-few-public-methods
+    R0913,  # too-many-arguments
+    W0613,  # unused-argument
+    R0801,  # duplicate-code
+    C0103,  # invalid-name
+    R0902,  # too-many-instance-attributes
+    R0914,  # too-many-locals
+    R0915,  # too-many-statements
+    W0212,  # protected-access
+    C0301,  # line-too-long (handled by black)
+
+[FORMAT]
+max-line-length=88
+
+[DESIGN]
+max-args=10
+max-locals=20
+max-returns=6
+max-branches=15
+max-statements=50
+max-parents=7
+max-attributes=10
+min-public-methods=1
+max-public-methods=25
+
+[SIMILARITIES]
+min-similarity-lines=10
+ignore-comments=yes
+ignore-docstrings=yes
+ignore-imports=no

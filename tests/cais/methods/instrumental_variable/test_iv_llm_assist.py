@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 # Import functions to test
-from cais.methods.instrumental_variable.llm_assist import (
+from causal_agent.methods.instrumental_variable.llm_assist import (
     identify_instrument_variable,
     validate_instrument_assumptions_qualitative,
     interpret_iv_results
@@ -12,9 +12,9 @@ from cais.methods.instrumental_variable.llm_assist import (
 # from langchain.chat_models.base import BaseChatModel
 
 # Assume shared helpers are in this location
-# LLM_HELPERS_PATH = "causalscientist.cais.utils.llm_helpers"
+# LLM_HELPERS_PATH = "causalscientist.causal_agent.utils.llm_helpers"
 # Correct patch target is where the function is *used*
-LLM_ASSIST_PATH = "cais.methods.instrumental_variable.llm_assist"
+LLM_ASSIST_PATH = "causal_agent.methods.instrumental_variable.llm_assist"
 
 @pytest.fixture
 def mock_llm():

@@ -4,7 +4,7 @@ import numpy as np
 import statsmodels.api as sm
 from unittest.mock import patch, MagicMock
 
-from cais.methods.diff_in_means.estimator import estimate_effect
+from causal_agent.methods.diff_in_means.estimator import estimate_effect
 
 # --- Fixtures ---
 
@@ -28,8 +28,8 @@ def sample_rct_data():
 
 # --- Test Cases ---
 
-@patch('cais.methods.diff_in_means.estimator.run_dim_diagnostics')
-@patch('cais.methods.diff_in_means.estimator.interpret_dim_results')
+@patch('causal_agent.methods.diff_in_means.estimator.run_dim_diagnostics')
+@patch('causal_agent.methods.diff_in_means.estimator.interpret_dim_results')
 def test_estimate_effect_basic(mock_interpret, mock_diagnostics, sample_rct_data):
     """Test basic execution and output structure."""
     mock_diagnostics.return_value = {"status": "Success", "details": {'control_group_stats': {}, 'treated_group_stats': {}}}
@@ -59,8 +59,8 @@ def test_estimate_effect_basic(mock_interpret, mock_diagnostics, sample_rct_data
 def test_estimate_effect_ignores_kwargs(sample_rct_data):
     """Test that extra kwargs (like covariates) are ignored."""
     # Should run without error and produce same results as basic test
-    with patch('cais.methods.diff_in_means.estimator.run_dim_diagnostics') as mock_diag, \
-         patch('cais.methods.diff_in_means.estimator.interpret_dim_results') as mock_interp:
+    with patch('causal_agent.methods.diff_in_means.estimator.run_dim_diagnostics') as mock_diag, \
+         patch('causal_agent.methods.diff_in_means.estimator.interpret_dim_results') as mock_interp:
         results = estimate_effect(sample_rct_data, 'treatment', 'outcome', covariates=['ignored_covariate'])
 
     assert results['formula'] == "outcome ~ treatment + const"
@@ -85,8 +85,8 @@ def test_estimate_effect_non_binary_treatment(sample_rct_data):
     
     with pytest.warns(UserWarning, match="Treatment column 'treatment' contains values other than 0 and 1"):
         # We still expect it to run the OLS under the hood
-         with patch('cais.methods.diff_in_means.estimator.run_dim_diagnostics'), \
-              patch('cais.methods.diff_in_means.estimator.interpret_dim_results'):
+         with patch('causal_agent.methods.diff_in_means.estimator.run_dim_diagnostics'), \
+              patch('causal_agent.methods.diff_in_means.estimator.interpret_dim_results'):
             results = estimate_effect(df_non_binary, 'treatment', 'outcome')
             assert 'effect_estimate' in results # Check it still produced output
 

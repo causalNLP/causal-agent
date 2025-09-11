@@ -3,7 +3,7 @@ import os
 import pandas as pd
 
 # Import the refactored parse_input function
-from cais.components import input_parser
+from causal_agent.components import input_parser
 
 # Check if OpenAI API key is available, skip if not
 api_key_present = bool(os.environ.get("OPENAI_API_KEY"))

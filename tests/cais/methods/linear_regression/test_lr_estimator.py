@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 from statsmodels import iolib
-from cais.methods.linear_regression.estimator import estimate_effect
+from causal_agent.methods.linear_regression.estimator import estimate_effect
 
 # --- Fixtures ---
 

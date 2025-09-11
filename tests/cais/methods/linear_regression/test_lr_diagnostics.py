@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
-from cais.methods.linear_regression.diagnostics import run_lr_diagnostics
+from causal_agent.methods.linear_regression.diagnostics import run_lr_diagnostics
 
 # Reuse the sample data fixture from estimator tests
 @pytest.fixture

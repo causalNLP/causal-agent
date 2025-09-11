@@ -4,7 +4,7 @@ import numpy as np
 from unittest.mock import patch, MagicMock
 
 # Import the function to test
-from cais.methods.propensity_score.weighting import estimate_effect
+from causal_agent.methods.propensity_score.weighting import estimate_effect
 
 class TestPropensityScoreWeighting(unittest.TestCase):
 
@@ -20,12 +20,12 @@ class TestPropensityScoreWeighting(unittest.TestCase):
         self.outcome = 'outcome'
         self.covariates = ['covariate1', 'covariate2']
 
-    @patch('cais.methods.propensity_score.weighting.get_llm_parameters')
-    @patch('cais.methods.propensity_score.weighting.determine_optimal_weight_type')
-    @patch('cais.methods.propensity_score.weighting.determine_optimal_trim_threshold')
-    @patch('cais.methods.propensity_score.weighting.select_propensity_model')
-    @patch('cais.methods.propensity_score.weighting.estimate_propensity_scores')
-    @patch('cais.methods.propensity_score.weighting.assess_weight_distribution')
+    @patch('causal_agent.methods.propensity_score.weighting.get_llm_parameters')
+    @patch('causal_agent.methods.propensity_score.weighting.determine_optimal_weight_type')
+    @patch('causal_agent.methods.propensity_score.weighting.determine_optimal_trim_threshold')
+    @patch('causal_agent.methods.propensity_score.weighting.select_propensity_model')
+    @patch('causal_agent.methods.propensity_score.weighting.estimate_propensity_scores')
+    @patch('causal_agent.methods.propensity_score.weighting.assess_weight_distribution')
     def test_estimate_effect_structure_and_types(self, mock_assess_weights, mock_estimate_ps, 
                                                  mock_select_model, mock_determine_trim, 
                                                  mock_determine_weight, mock_get_llm_params):

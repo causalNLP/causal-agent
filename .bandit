@@ -1,0 +1,6 @@
+[bandit]
+exclude_dirs = tests,build,dist
+skips = B101,B601,B602,B603,B604,B605,B606,B607,B608,B609,B610,B611,B701
+
+[bandit.assert_used]
+skips = ['*_test.py', '*/test_*.py']

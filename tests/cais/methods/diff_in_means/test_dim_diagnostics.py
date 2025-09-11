@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 import numpy as np
-from cais.methods.diff_in_means.diagnostics import run_dim_diagnostics
+from causal_agent.methods.diff_in_means.diagnostics import run_dim_diagnostics
 
 # --- Fixture ---
 @pytest.fixture

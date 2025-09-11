@@ -4,7 +4,7 @@ import numpy as np
 from unittest.mock import patch, MagicMock
 
 # Import the function to test
-from cais.methods.propensity_score import matching as ps_matching
+from causal_agent.methods.propensity_score import matching as ps_matching
 
 # Helper function to generate synthetic data for PSM
 def generate_synthetic_psm_data(n_samples=1000, treatment_effect=5.0, seed=42):
@@ -79,9 +79,9 @@ class TestPropensityScoreMatching:
         assert 'plots' in results['diagnostics']
         assert 'percent_treated_matched' in results['diagnostics']
 
-    @patch('cais.methods.propensity_score.matching.get_llm_parameters')
-    @patch('cais.methods.propensity_score.matching.determine_optimal_caliper')
-    @patch('cais.methods.propensity_score.matching.select_propensity_model')
+    @patch('causal_agent.methods.propensity_score.matching.get_llm_parameters')
+    @patch('causal_agent.methods.propensity_score.matching.determine_optimal_caliper')
+    @patch('causal_agent.methods.propensity_score.matching.select_propensity_model')
     def test_llm_parameter_usage(self, mock_select_model, mock_determine_caliper, mock_get_llm_params):
         """Test that LLM helper functions are called and their results are potentially used."""
         df = generate_synthetic_psm_data(n_samples=100, seed=456) # Smaller sample for this test

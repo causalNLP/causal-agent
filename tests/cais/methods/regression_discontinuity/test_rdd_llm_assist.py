@@ -1,12 +1,12 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from cais.methods.regression_discontinuity.llm_assist import (
+from causal_agent.methods.regression_discontinuity.llm_assist import (
     suggest_rdd_parameters,
     interpret_rdd_results
 )
 
 # Patch target for the helper function where it's used
-LLM_ASSIST_MODULE = "cais.methods.regression_discontinuity.llm_assist"
+LLM_ASSIST_MODULE = "causal_agent.methods.regression_discontinuity.llm_assist"
 
 @pytest.fixture
 def mock_llm():

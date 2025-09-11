@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 import numpy as np
-from cais.methods.regression_discontinuity.diagnostics import run_rdd_diagnostics
+from causal_agent.methods.regression_discontinuity.diagnostics import run_rdd_diagnostics
 
 # --- Fixture for RDD data ---
 @pytest.fixture

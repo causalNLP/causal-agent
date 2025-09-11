@@ -1,0 +1,203 @@
+# Test Data Management Configuration
+# This file configures the advanced test data management system
+
+# Environment settings
+environment: local  # local, ci, performance
+debug_mode: false
+verbose_output: false
+log_level: INFO
+
+# Data management configuration
+data:
+  # Caching settings
+  use_cache: true
+  max_cache_size_mb: 100
+  max_cache_entries: 50
+  cache_datasets: true
+  
+  # Dataset generation
+  use_synthetic_data: true
+  synthetic_data_seed: 42
+  max_dataset_size: 10000
+  
+  # Cleanup settings
+  cleanup_temp_data: true
+  cleanup_after_each_test: false
+  cleanup_old_resources_interval: 300  # seconds
+  max_temp_resource_age: 3600  # seconds
+  
+  # Data validation
+  data_validation: true
+  missing_data_threshold: 0.1
+  
+  # Preloaded datasets (loaded at session start)
+  preload_datasets:
+    - "rct_standard"
+    - "observational_standard"
+    - "iv_standard"
+    - "rdd_standard"
+    - "did_standard"
+  
+  # Dataset cache directory
+  dataset_cache_dir: null  # Will use default if null
+
+# Performance monitoring
+performance:
+  max_execution_time_seconds: 10.0
+  max_memory_usage_mb: 500.0
+  enable_profiling: false
+  profile_output_dir: null
+  benchmark_iterations: 3
+  warmup_iterations: 1
+  statistical_significance_level: 0.05
+  
+  # Memory management
+  memory_monitoring: true
+  memory_check_interval: 60  # seconds
+  max_memory_growth_mb: 100
+
+# Test isolation settings
+isolation:
+  enable_test_isolation: true
+  isolate_random_state: true
+  isolate_working_directory: false
+  cleanup_abandoned_tests: true
+  max_abandoned_test_age: 1800  # seconds
+
+# Temporary resource management
+temp_resources:
+  auto_cleanup: true
+  cleanup_on_exit: true
+  max_temp_file_age: 3600  # seconds
+  max_temp_dir_size_mb: 1000
+  temp_file_prefix: "causal_agent_test_"
+  
+  # Resource limits
+  max_temp_files: 1000
+  max_temp_dirs: 100
+  warn_on_resource_limit: true
+
+# LLM configuration for testing
+llm:
+  mock_llm: true
+  use_real_llm: false
+  llm_provider: "openai"
+  model_name: "gpt-3.5-turbo"
+  api_key_env_var: "OPENAI_API_KEY"
+  timeout_seconds: 30
+  max_retries: 3
+  temperature: 0.0
+  mock_response_delay: 0.1
+
+# Coverage settings
+coverage:
+  minimum_coverage_percentage: 80.0
+  coverage_report_format: ["html", "xml"]
+  coverage_output_dir: null
+  exclude_patterns:
+    - "*/tests/*"
+    - "*/conftest.py"
+    - "*/__pycache__/*"
+  include_patterns:
+    - "causal_agent/*"
+
+# CI/CD settings
+ci:
+  python_versions: ["3.10", "3.11", "3.12"]
+  operating_systems: ["ubuntu-latest", "macos-latest", "windows-latest"]
+  test_matrix_strategy: "full"
+  parallel_jobs: 4
+  artifact_retention_days: 30
+  notification_on_failure: true
+
+# Test execution settings
+execution:
+  fail_fast: false
+  random_seed: 42
+  test_timeout_seconds: 300
+  retry_failed_tests: false
+  max_test_retries: 2
+  
+  # Parallel execution
+  enable_parallel_tests: false
+  max_parallel_workers: 4
+
+# Output and reporting
+output:
+  output_dir: "test_output"
+  generate_reports: true
+  report_formats: ["junit", "html"]
+  save_test_data_report: true
+  save_performance_report: true
+  
+  # Logging
+  log_to_file: true
+  log_file: "test_data_management.log"
+  log_rotation: true
+  max_log_size_mb: 10
+
+# Method-specific configurations
+method_configs:
+  backdoor_adjustment:
+    max_execution_time: 5.0
+    required_sample_size: 200
+    confounders_required: true
+    cache_results: true
+    
+  propensity_score:
+    max_execution_time: 8.0
+    required_sample_size: 300
+    overlap_check: true
+    cache_results: true
+    
+  instrumental_variable:
+    max_execution_time: 10.0
+    required_sample_size: 400
+    instrument_strength_check: true
+    cache_results: true
+    
+  regression_discontinuity:
+    max_execution_time: 7.0
+    required_sample_size: 250
+    bandwidth_optimization: true
+    cache_results: true
+    
+  difference_in_differences:
+    max_execution_time: 12.0
+    required_sample_size: 500
+    parallel_trends_check: true
+    cache_results: true
+
+# Custom settings for specific test scenarios
+custom_settings:
+  # Performance testing
+  performance_test:
+    data:
+      max_cache_size_mb: 500
+      preload_datasets: []
+    performance:
+      enable_profiling: true
+      benchmark_iterations: 10
+    
+  # CI environment
+  ci_test:
+    data:
+      cleanup_temp_data: true
+      cleanup_after_each_test: true
+      max_cache_size_mb: 50
+    performance:
+      max_execution_time_seconds: 30.0
+      enable_profiling: false
+    llm:
+      mock_llm: true
+      use_real_llm: false
+    
+  # Local development
+  local_dev:
+    data:
+      cleanup_temp_data: false
+      cleanup_after_each_test: false
+    debug_mode: true
+    verbose_output: true
+    performance:
+      enable_profiling: true

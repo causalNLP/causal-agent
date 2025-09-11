@@ -5,7 +5,7 @@ import statsmodels.api as sm
 from statsmodels.iolib.summary import Summary
 from unittest.mock import patch, MagicMock
 
-from cais.methods.backdoor_adjustment.estimator import estimate_effect
+from causal_agent.methods.backdoor_adjustment.estimator import estimate_effect
 
 # --- Fixtures ---
 
@@ -36,8 +36,8 @@ def sample_confounded_data():
 
 # --- Test Cases ---
 
-@patch('cais.methods.backdoor_adjustment.estimator.run_backdoor_diagnostics')
-@patch('cais.methods.backdoor_adjustment.estimator.interpret_backdoor_results')
+@patch('causal_agent.methods.backdoor_adjustment.estimator.run_backdoor_diagnostics')
+@patch('causal_agent.methods.backdoor_adjustment.estimator.interpret_backdoor_results')
 def test_estimate_effect_basic(mock_interpret, mock_diagnostics, sample_confounded_data):
     """Test basic execution with a valid adjustment set."""
     mock_diagnostics.return_value = {"status": "Success", "details": {}}

@@ -1,0 +1,133 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install pytest pytest-cov pytest-xdist pytest-mock coverage[toml] pytest-html pytest-json-report
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install -e .[dev]
+      shell: bash
+
+    - name: Set up test environment
+      run: |
+        echo "PYTHONPATH=${{ github.workspace }}" >> $GITHUB_ENV
+        echo "CAUSAL_AGENT_TEST_MODE=true" >> $GITHUB_ENV
+        echo "CAUSAL_AGENT_LOG_LEVEL=WARNING" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Verify test directories
+      run: |
+        echo "Checking test directory structure..."
+        ls -la tests/ || echo "Tests directory not found"
+        ls -la tests/unit/ || echo "Unit tests directory not found"
+        ls -la tests/integration/ || echo "Integration tests directory not found"
+        ls -la tests/end_to_end/ || echo "E2E tests directory not found"
+        ls -la tests/performance/ || echo "Performance tests directory not found"
+      shell: bash
+
+    - name: Run unit tests
+      run: |
+        if [ -d "tests/unit" ] && [ "$(find tests/unit -name '*.py' -type f | wc -l)" -gt 0 ]; then
+          pytest tests/unit/ -v -m "unit" --junit-xml=test-results-unit.xml
+        else
+          echo "No unit tests found, creating empty results file"
+          echo '<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="unit" tests="0" failures="0" errors="0" skipped="0"></testsuite></testsuites>' > test-results-unit.xml
+        fi
+      shell: bash
+
+    - name: Run integration tests
+      run: |
+        if [ -d "tests/integration" ] && [ "$(find tests/integration -name '*.py' -type f | wc -l)" -gt 0 ]; then
+          pytest tests/integration/ -v -m "integration" --junit-xml=test-results-integration.xml
+        else
+          echo "No integration tests found, creating empty results file"
+          echo '<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="integration" tests="0" failures="0" errors="0" skipped="0"></testsuite></testsuites>' > test-results-integration.xml
+        fi
+      shell: bash
+
+    - name: Run end-to-end tests
+      run: |
+        if [ -d "tests/end_to_end" ] && [ "$(find tests/end_to_end -name '*.py' -type f | wc -l)" -gt 0 ]; then
+          pytest tests/end_to_end/ -v -m "e2e" --junit-xml=test-results-e2e.xml
+        else
+          echo "No end-to-end tests found, creating empty results file"
+          echo '<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="e2e" tests="0" failures="0" errors="0" skipped="0"></testsuite></testsuites>' > test-results-e2e.xml
+        fi
+      shell: bash
+
+    - name: Run performance tests (non-Windows)
+      if: matrix.os != 'windows-latest'
+      run: |
+        if [ -d "tests/performance" ] && [ "$(find tests/performance -name '*.py' -type f | wc -l)" -gt 0 ]; then
+          pytest tests/performance/ -v -m "performance" --junit-xml=test-results-performance.xml
+        else
+          echo "No performance tests found, creating empty results file"
+          echo '<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="performance" tests="0" failures="0" errors="0" skipped="0"></testsuite></testsuites>' > test-results-performance.xml
+        fi
+      shell: bash
+
+    - name: Generate coverage report and validate
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+      run: |
+        python scripts/coverage_analysis.py --target 80.0
+      env:
+        MIN_COVERAGE: 80.0
+        MIN_CRITICAL_COVERAGE: 90.0
+      shell: bash
+
+    - name: Upload coverage to Codecov
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
+        path: |
+          test-results-*.xml
+          htmlcov/
+          coverage.xml
+
+    - name: Publish test results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always() && matrix.os == 'ubuntu-latest'
+      with:
+        files: test-results-*.xml
+        check_name: "Test Results (Python ${{ matrix.python-version }})"

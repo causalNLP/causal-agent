@@ -1,0 +1,23 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 1%
+        if_no_uploads: error
+    patch:
+      default:
+        target: 80%
+        threshold: 1%
+        if_no_uploads: error
+
+comment:
+  layout: "reach,diff,flags,tree"
+  behavior: default
+  require_changes: false
+
+ignore:
+  - "tests/"
+  - "**/__pycache__/"
+  - "setup.py"
+  - "**/*.pyi"
