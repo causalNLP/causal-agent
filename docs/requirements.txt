@@ -1,0 +1,35 @@
+# Sphinx and core documentation dependencies
+sphinx>=7.0.0
+sphinx-rtd-theme>=2.0.0
+sphinx-autobuild>=2021.3.14
+
+# Sphinx extensions
+myst-parser>=2.0.0
+nbsphinx>=0.9.0
+sphinxext-opengraph>=0.9.0
+
+# Jupyter and notebook support
+jupyter>=1.0.0
+ipykernel>=6.0.0
+nbconvert>=7.0.0
+
+# Additional dependencies for documentation features
+matplotlib>=3.5.0
+seaborn>=0.12.0
+plotly>=5.0.0
+
+# For API documentation generation
+sphinx-autoapi>=3.0.0
+
+# For diagram generation
+sphinxcontrib-mermaid>=0.9.0
+
+# For better markdown support
+recommonmark>=0.7.1
+
+# For spell checking (optional)
+sphinxcontrib-spelling>=8.0.0
+
+# For better search and SEO
+sphinx-search>=0.2.0
+sphinx-sitemap>=2.5.0

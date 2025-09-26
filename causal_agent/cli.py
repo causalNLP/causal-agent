@@ -1,3 +1,17 @@
+"""
+Command-line interface for Causal Agent.
+
+This module provides a CLI for running causal analysis either as single queries
+or batch processing from metadata files.
+
+Usage:
+    # Single analysis
+    causal_agent run dataset.csv "What is the effect of treatment on outcome?"
+    
+    # Batch analysis  
+    causal_agent batch metadata.csv data_folder/ results.json
+"""
+
 import os
 import argparse
 from typing import Optional

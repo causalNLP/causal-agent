@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Features Test</title>
+    <link rel="stylesheet" href="custom.css">
+</head>
+<body>
+    <h1>Interactive Features Test</h1>
+    
+    <h2>Copy-to-Clipboard Test</h2>
+    <pre class="highlight"><code class="language-python"># Test code block
+from causal_agent import CausalAgent
+agent = CausalAgent()
+result = agent.analyze(data, treatment='test', outcome='result')
+print(f"Effect: {result.ate}")</code></pre>
+    
+    <h2>Tooltip Test</h2>
+    <p>This is a <span data-tooltip="This is a test tooltip" data-tooltip-type="info">test term</span> with a tooltip.</p>
+    
+    <h2>Expandable Section Test</h2>
+    <div class="expandable-section" data-collapsed="true">
+        <h3 class="expandable-title">Test Expandable Section</h3>
+        <div class="expandable-content">
+            <p>This content should be expandable.</p>
+            <ul>
+                <li>Item 1</li>
+                <li>Item 2</li>
+                <li>Item 3</li>
+            </ul>
+        </div>
+    </div>
+    
+    <h2>Interactive Decision Tree Test</h2>
+    <div class="interactive-example" data-interactive="decision-tree"></div>
+    
+    <h2>Feedback Test</h2>
+    <p>The feedback widget should appear in the bottom-right corner.</p>
+    
+    <script src="interactive_features.js"></script>
+</body>
+</html>

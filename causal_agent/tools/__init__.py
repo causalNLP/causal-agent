@@ -1,6 +1,20 @@
 """
-This package contains the tool wrappers for the causal_agent LangChain agent,
-providing standardized interfaces for various components.
+Causal Agent tools package.
+
+This package contains LangChain tool wrappers for the causal_agent module,
+providing standardized interfaces for various causal inference components.
+Each tool wraps a core component to make it compatible with the LangChain
+agent framework.
+
+Tools available:
+- input_parser_tool: Parses and validates user inputs
+- dataset_analyzer_tool: Analyzes dataset characteristics
+- query_interpreter_tool: Interprets natural language queries
+- method_selector_tool: Selects appropriate causal methods
+- method_validator_tool: Validates method assumptions
+- method_executor_tool: Executes causal inference methods
+- explanation_generator_tool: Generates explanations
+- output_formatter_tool: Formats final outputs
 """
 
 from causal_agent.tools.input_parser_tool import input_parser_tool

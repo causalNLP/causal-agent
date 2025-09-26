@@ -1,0 +1,26 @@
+# Robots.txt for Causal AI Scientist Documentation
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://causal-ai-scientist.readthedocs.io/sitemap.xml
+
+# Disallow crawling of search results and internal files
+Disallow: /search.html
+Disallow: /_sources/
+Disallow: /_static/
+Disallow: /_downloads/
+
+# Allow crawling of important sections
+Allow: /getting_started/
+Allow: /methods/
+Allow: /tutorials/
+Allow: /api/
+Allow: /theory/
+Allow: /development/
+Allow: /deployment/
+Allow: /about/
+
+# Crawl delay (optional, be respectful)
+Crawl-delay: 1

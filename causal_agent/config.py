@@ -1,5 +1,10 @@
 # causal_agent/config.py
-"""Central configuration for AutoCausal, including LLM client setup."""
+"""Central configuration for Causal Agent, including LLM client setup.
+
+This module provides configuration management for the causal_agent package,
+including LLM client initialization for various providers (OpenAI, Anthropic,
+Google, DeepSeek, Together) and environment variable management.
+"""
 
 import os
 import logging

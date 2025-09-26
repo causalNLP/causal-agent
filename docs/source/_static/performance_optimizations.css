@@ -1,0 +1,593 @@
+/* Performance and Accessibility Optimizations for CAIS Documentation */
+
+/* Critical CSS for above-the-fold content */
+.critical-content {
+    /* Ensure critical content loads first */
+    contain: layout style paint;
+}
+
+/* Performance optimizations */
+.wy-nav-content-wrap {
+    /* Enable hardware acceleration for smooth scrolling */
+    transform: translateZ(0);
+    will-change: transform;
+}
+
+/* Optimize images for performance */
+img {
+    /* Lazy loading for images */
+    loading: lazy;
+    /* Optimize image rendering */
+    image-rendering: optimizeQuality;
+    /* Prevent layout shift */
+    height: auto;
+    max-width: 100%;
+}
+
+/* Optimize fonts for performance */
+@font-face {
+    font-family: 'Lato';
+    font-display: swap; /* Improve font loading performance */
+    src: local('Lato'), url('https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic&subset=latin,latin-ext') format('woff2');
+}
+
+/* Reduce paint complexity */
+.highlight,
+.code-block,
+.literal-block {
+    /* Use transform instead of changing layout properties */
+    transform: translateZ(0);
+    /* Contain paint operations */
+    contain: paint;
+}
+
+/* Optimize animations for performance */
+@media (prefers-reduced-motion: no-preference) {
+    .search-result-item,
+    .filter-btn,
+    .btn-copy {
+        /* Use transform for animations instead of layout properties */
+        transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    
+    .search-result-item:hover {
+        transform: translateY(-2px);
+    }
+    
+    .btn-copy:hover {
+        transform: translateY(-1px);
+    }
+}
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    
+    .spinner {
+        animation: none;
+    }
+}
+
+/* Accessibility improvements */
+
+/* Fix greyed out text issues */
+body, .wy-nav-content {
+    color: #333 !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #2c3e50 !important;
+}
+
+.wy-nav-content h1, 
+.wy-nav-content h2, 
+.wy-nav-content h3, 
+.wy-nav-content h4, 
+.wy-nav-content h5, 
+.wy-nav-content h6 {
+    color: #2c3e50 !important;
+}
+
+p, li, td, th, span, div {
+    color: inherit !important;
+}
+
+/* Focus management */
+*:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* Skip to content link */
+.skip-to-content {
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    background: #007bff;
+    color: white;
+    padding: 8px;
+    text-decoration: none;
+    border-radius: 0 0 4px 4px;
+    z-index: 9999;
+    transition: top 0.3s ease;
+}
+
+.skip-to-content:focus {
+    top: 0;
+}
+
+/* Improve color contrast */
+.wy-menu-vertical a {
+    color: #404040; /* Improved contrast ratio */
+}
+
+.wy-menu-vertical a:hover {
+    color: #2980b9;
+    background-color: #e1e4e5;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .search-highlight,
+    .highlighted {
+        background: #ffff00;
+        color: #000000;
+        border: 1px solid #000000;
+    }
+    
+    .filter-btn.active {
+        background: #000000;
+        color: #ffffff;
+        border: 2px solid #000000;
+    }
+    
+    .btn-copy {
+        border: 2px solid #ffffff;
+    }
+    
+    .search-result-item {
+        border: 2px solid #000000;
+    }
+}
+
+/* Screen reader improvements */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Improve form accessibility */
+input[type="search"],
+input[type="text"],
+textarea {
+    border: 2px solid #e9ecef;
+    border-radius: 4px;
+    padding: 8px 12px;
+}
+
+input[type="search"]:focus,
+input[type="text"]:focus,
+textarea:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+/* Improve button accessibility */
+button,
+.btn {
+    min-height: 44px; /* Minimum touch target size */
+    min-width: 44px;
+    cursor: pointer;
+}
+
+button:disabled,
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Improve link accessibility */
+a {
+    color: #007bff;
+    text-decoration: underline;
+}
+
+a:hover,
+a:focus {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* External link indicators */
+a[href^="http"]:not([href*="causal-ai-scientist.readthedocs.io"])::after {
+    content: " ↗";
+    font-size: 0.8em;
+    color: #6c757d;
+}
+
+/* Responsive design optimizations */
+
+/* Mobile-first approach */
+@media (max-width: 767px) {
+    /* Optimize for mobile performance */
+    .wy-nav-content {
+        padding: 1em;
+    }
+    
+    /* Improve touch targets */
+    .wy-menu-vertical li a {
+        padding: 12px 16px;
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+    
+    /* Optimize search for mobile */
+    #rtd-search-form input[name="q"] {
+        font-size: 16px; /* Prevent zoom on iOS */
+        padding: 12px;
+    }
+    
+    /* Stack filter buttons vertically on small screens */
+    .filter-options {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-btn {
+        margin-bottom: 8px;
+        text-align: center;
+    }
+    
+    /* Optimize code blocks for mobile */
+    .highlight,
+    .literal-block {
+        font-size: 14px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Improve table responsiveness */
+    .docutils {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    
+    /* Optimize images for mobile */
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+}
+
+/* Tablet optimizations */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .wy-nav-content {
+        padding: 1.5em;
+    }
+    
+    /* Optimize grid layouts for tablet */
+    .characteristics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .search-results-list {
+        display: block; /* Single column on tablet */
+    }
+}
+
+/* Desktop optimizations */
+@media (min-width: 1024px) {
+    /* Enable advanced layouts on desktop */
+    .search-results-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 20px;
+    }
+    
+    /* Optimize sidebar for desktop */
+    .wy-nav-side {
+        width: 300px;
+    }
+    
+    .wy-nav-content-wrap {
+        margin-left: 300px;
+    }
+}
+
+/* Large screen optimizations */
+@media (min-width: 1200px) {
+    .wy-nav-content {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    /* Enable sticky elements on large screens */
+    .search-filters {
+        position: sticky;
+        top: 20px;
+        z-index: 10;
+    }
+    
+    .local-toc {
+        position: sticky;
+        top: 20px;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+    }
+}
+
+/* Print optimizations */
+@media print {
+    /* Hide navigation and interactive elements */
+    .wy-nav-side,
+    .wy-nav-top,
+    .search-filters,
+    .feedback-widget,
+    .btn-copy,
+    .notebook-buttons {
+        display: none !important;
+    }
+    
+    /* Optimize content for print */
+    .wy-nav-content-wrap {
+        margin-left: 0 !important;
+    }
+    
+    .wy-nav-content {
+        max-width: none !important;
+        padding: 0 !important;
+    }
+    
+    /* Improve text readability */
+    body {
+        font-size: 12pt;
+        line-height: 1.4;
+        color: #000;
+        background: #fff;
+    }
+    
+    /* Optimize code blocks for print */
+    .highlight,
+    .literal-block {
+        border: 1px solid #000;
+        page-break-inside: avoid;
+    }
+    
+    /* Add page breaks */
+    h1, h2 {
+        page-break-before: always;
+    }
+    
+    h1:first-child,
+    h2:first-child {
+        page-break-before: auto;
+    }
+    
+    /* Show URLs for links */
+    a[href]:after {
+        content: " (" attr(href) ")";
+        font-size: 0.8em;
+        color: #666;
+    }
+}
+
+/* Dark mode support - disabled to prevent greyed out text */
+/* 
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-color: #1a1a1a;
+        --text-color: #e0e0e0;
+        --link-color: #4dabf7;
+        --border-color: #404040;
+    }
+    
+    body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+    }
+    
+    .wy-nav-side {
+        background-color: #2d2d2d;
+    }
+    
+    .wy-menu-vertical a {
+        color: var(--text-color);
+    }
+    
+    .wy-menu-vertical a:hover {
+        background-color: #404040;
+    }
+    
+    .search-result-item {
+        background-color: #2d2d2d;
+        border-color: var(--border-color);
+    }
+    
+    .highlight,
+    .literal-block {
+        background-color: #2d2d2d;
+        border-color: var(--border-color);
+    }
+    
+    input[type="search"],
+    input[type="text"],
+    textarea {
+        background-color: #2d2d2d;
+        color: var(--text-color);
+        border-color: var(--border-color);
+    }
+}
+*/
+
+/* Force light mode colors to fix greyed out text */
+body {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+}
+
+.wy-nav-content {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+}
+
+/* Performance monitoring */
+.perf-marker {
+    /* Hidden elements for performance monitoring */
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Optimize for Core Web Vitals */
+
+/* Largest Contentful Paint (LCP) optimization */
+.hero-content,
+.main-content {
+    /* Ensure critical content is prioritized */
+    contain: layout style;
+}
+
+/* First Input Delay (FID) optimization */
+button,
+input,
+select,
+textarea {
+    /* Optimize interactive elements */
+    touch-action: manipulation;
+}
+
+/* Cumulative Layout Shift (CLS) optimization */
+.async-content {
+    /* Reserve space for dynamically loaded content */
+    min-height: 200px;
+}
+
+/* Optimize third-party resources */
+iframe {
+    loading: lazy;
+}
+
+/* Resource hints for better performance */
+.preload-hint::before {
+    content: "";
+    /* Preload critical resources */
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>');
+}
+
+/* Optimize for different connection speeds */
+@media (max-resolution: 1dppx) {
+    /* Optimize for low-resolution displays */
+    img {
+        image-rendering: optimizeSpeed;
+    }
+}
+
+@media (min-resolution: 2dppx) {
+    /* Optimize for high-resolution displays */
+    img {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+}
+
+/* Battery optimization */
+@media (prefers-reduced-motion: reduce) {
+    /* Reduce animations for battery saving */
+    * {
+        animation-duration: 0s !important;
+        transition-duration: 0s !important;
+    }
+}
+
+/* Network optimization */
+@media (prefers-reduced-data: reduce) {
+    /* Optimize for limited data connections */
+    img {
+        display: none;
+    }
+    
+    .hero-image::after {
+        content: "Image hidden to save data";
+        display: block;
+        padding: 20px;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        text-align: center;
+        color: #6c757d;
+    }
+}
+
+/* Accessibility: Focus indicators */
+.focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* Accessibility: Screen reader navigation */
+.landmark {
+    /* Improve screen reader navigation */
+    position: relative;
+}
+
+.landmark::before {
+    content: attr(aria-label);
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+/* Accessibility: Color-blind friendly colors */
+.colorblind-safe {
+    /* Use patterns in addition to colors */
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 2px,
+        rgba(255,255,255,0.1) 2px,
+        rgba(255,255,255,0.1) 4px
+    );
+}
+
+/* Performance: Contain layout thrashing */
+.contain-layout {
+    contain: layout;
+}
+
+.contain-paint {
+    contain: paint;
+}
+
+.contain-size {
+    contain: size;
+}
+
+/* Performance: Optimize repaints */
+.will-change-transform {
+    will-change: transform;
+}
+
+.will-change-opacity {
+    will-change: opacity;
+}
+
+/* Clean up will-change after animations */
+.animation-complete {
+    will-change: auto;
+}

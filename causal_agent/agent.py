@@ -4,6 +4,26 @@ LangChain agent for the causal_agent module.
 This module configures a LangChain agent with specialized tools for causal inference,
 allowing for an interactive approach to analyzing datasets and applying appropriate
 causal inference methods.
+
+The main entry point is the `run_causal_analysis` function which orchestrates:
+1. Input parsing and validation
+2. Dataset analysis and variable identification  
+3. Query interpretation and method selection
+4. Causal method execution with diagnostics
+5. Result interpretation and explanation generation
+
+Example:
+    >>> from causal_agent import run_causal_analysis
+    >>> result = run_causal_analysis(
+    ...     query="What is the effect of education on income?",
+    ...     dataset_path="data.csv",
+    ...     dataset_description="Education and income dataset"
+    ... )
+    >>> print(result['results']['results']['effect_estimate'])
+
+The agent supports multiple LLM providers (OpenAI, Anthropic, Google, etc.) and
+automatically selects from various causal inference methods including RCT analysis,
+Difference-in-Differences, Instrumental Variables, Propensity Score methods, and more.
 """
 
 import logging

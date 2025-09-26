@@ -1,0 +1,29 @@
+# Testing and validation dependencies for documentation
+# Install with: pip install -r test_requirements.txt
+
+# Spell checking
+pyspellchecker>=0.7.0
+
+# HTTP requests for link checking
+requests>=2.28.0
+
+# HTML parsing
+beautifulsoup4>=4.11.0
+lxml>=4.9.0
+
+# Additional testing utilities
+pytest>=7.0.0
+pytest-html>=3.1.0
+
+# For notebook testing (if needed)
+nbformat>=5.4.0
+nbconvert>=6.5.0
+
+# For performance testing
+psutil>=5.9.0
+
+# For generating test reports
+jinja2>=3.1.0
+
+# For parallel processing
+concurrent-futures>=3.1.1; python_version < '3.2'

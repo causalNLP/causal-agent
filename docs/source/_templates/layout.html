@@ -1,0 +1,236 @@
+{% extends "sphinx_rtd_theme/layout.html" %}
+
+{# Custom layout template for enhanced search and navigation #}
+
+{% block extrahead %}
+  {{ super() }}
+  
+  {# SEO meta tags #}
+  <meta name="description" content="Comprehensive documentation for Causal AI Scientist (CAIS), an autonomous agent that combines Large Language Models with causal inference methods for automated causal analysis.">
+  <meta name="keywords" content="causal inference, machine learning, AI agent, LLM, statistics, econometrics, data science">
+  <meta name="author" content="CAIS Team">
+  <meta name="robots" content="index, follow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  {# Open Graph meta tags #}
+  <meta property="og:title" content="{{ title }} - {{ project }}">
+  <meta property="og:description" content="Comprehensive documentation for Causal AI Scientist (CAIS)">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ pageurl }}">
+  <meta property="og:site_name" content="{{ project }} Documentation">
+  <meta property="og:image" content="{{ pathto('_static/logo.png', 1) }}">
+  
+  {# Twitter Card meta tags #}
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ title }} - {{ project }}">
+  <meta name="twitter:description" content="Comprehensive documentation for Causal AI Scientist (CAIS)">
+  <meta name="twitter:image" content="{{ pathto('_static/logo.png', 1) }}">
+  
+  {# Canonical URL #}
+  <link rel="canonical" href="{{ pageurl }}">
+  
+  {# Additional structured data for search engines #}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "{{ title }}",
+    "description": "Documentation for Causal AI Scientist (CAIS)",
+    "author": {
+      "@type": "Organization",
+      "name": "CAIS Team"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "{{ project }}",
+      "url": "{{ html_baseurl or '' }}"
+    },
+    "url": "{{ pageurl }}",
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": "{{ pageurl }}"
+    }
+  }
+  </script>
+  
+  {# Preload critical resources #}
+  <link rel="preload" href="{{ pathto('_static/custom.css', 1) }}" as="style">
+  <link rel="preload" href="{{ pathto('_static/search_enhancements.js', 1) }}" as="script">
+  
+  {# DNS prefetch for external resources #}
+  <link rel="dns-prefetch" href="//fonts.googleapis.com">
+  <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+  
+{% endblock %}
+
+{% block footer %}
+  {{ super() }}
+  
+  {# Include search configuration and enhanced functionality #}
+  <script src="{{ pathto('_static/searchindex_config.js', 1) }}"></script>
+  <script src="{{ pathto('_static/search_enhancements.js', 1) }}"></script>
+  
+  {# Add structured navigation data #}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {% for parent in parents %}
+      {
+        "@type": "ListItem",
+        "position": {{ loop.index }},
+        "name": "{{ parent.title }}",
+        "item": "{{ parent.link }}"
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+      {% if parents %},{% endif %}
+      {
+        "@type": "ListItem",
+        "position": {{ parents|length + 1 }},
+        "name": "{{ title }}",
+        "item": "{{ pageurl }}"
+      }
+    ]
+  }
+  </script>
+  
+  {# Enhanced analytics tracking #}
+  {% if theme_analytics_id %}
+  <script>
+    // Enhanced search tracking
+    document.addEventListener('DOMContentLoaded', function() {
+      // Track page views with additional context
+      if (typeof gtag !== 'undefined') {
+        gtag('config', '{{ theme_analytics_id }}', {
+          'page_title': '{{ title }}',
+          'page_location': window.location.href,
+          'content_group1': '{{ pagename.split('/')[0] if '/' in pagename else 'root' }}',
+          'content_group2': '{{ docname }}'
+        });
+        
+        // Track scroll depth
+        let maxScroll = 0;
+        window.addEventListener('scroll', function() {
+          const scrollPercent = Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100);
+          if (scrollPercent > maxScroll && scrollPercent % 25 === 0) {
+            maxScroll = scrollPercent;
+            gtag('event', 'scroll', {
+              'event_category': 'engagement',
+              'event_label': scrollPercent + '%',
+              'value': scrollPercent
+            });
+          }
+        });
+        
+        // Track time on page
+        let startTime = Date.now();
+        window.addEventListener('beforeunload', function() {
+          const timeOnPage = Math.round((Date.now() - startTime) / 1000);
+          gtag('event', 'timing_complete', {
+            'name': 'time_on_page',
+            'value': timeOnPage,
+            'event_category': 'engagement'
+          });
+        });
+      }
+    });
+  </script>
+  {% endif %}
+  
+{% endblock %}
+
+{# Enhanced search box with better UX #}
+{% block searchbox %}
+  <div role="search">
+    <form id="rtd-search-form" class="wy-form" action="{{ pathto('search') }}" method="get">
+      <input type="text" name="q" placeholder="Search documentation... (e.g., 'decision tree', 'RCT method')" 
+             aria-label="Search documentation" autocomplete="off" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+      
+      {# Search suggestions container (added by JavaScript) #}
+      {# Loading indicator container (added by JavaScript) #}
+    </form>
+  </div>
+{% endblock %}
+
+{# Add navigation breadcrumbs for better UX #}
+{% block breadcrumbs %}
+  <div class="wy-breadcrumbs">
+    {% include "breadcrumbs.html" %}
+    <div class="wy-breadcrumbs-aside">
+      {% if hasdoc(pagename) %}
+        <a href="{{ pathto('_sources/' + sourcename, true)|e }}" rel="nofollow"> 
+          {{ _('View page source') }}
+        </a>
+      {% endif %}
+      {% if pagename != 'index' %}
+        <a href="{{ pathto('genindex') }}" title="{{ _('General Index') }}">
+          {{ _('Index') }}
+        </a>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+
+{# Enhanced mobile navigation #}
+{% block mobile_nav %}
+  <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        {% block sidebartitle %}
+          {% if logo %}
+            <a href="{{ pathto(master_doc) }}">
+              <img src="{{ pathto('_static/' + logo, 1) }}" class="logo" alt="{{ _('Logo') }}"/>
+            </a>
+          {% endif %}
+          {% if not embedded %}
+            {% if project %}
+              <a href="{{ pathto(master_doc) }}">{{ project }}</a>
+            {% endif %}
+            {% if version %}
+              <div class="version">
+                {{ release }}
+              </div>
+            {% endif %}
+          {% endif %}
+        {% endblock %}
+        
+        {# Enhanced search for mobile #}
+        {% include "searchbox.html" %}
+        
+        {# Quick navigation links #}
+        <div class="quick-nav">
+          <a href="{{ pathto('getting_started/index') }}" class="quick-nav-link">
+            🚀 Getting Started
+          </a>
+          <a href="{{ pathto('methods/index') }}" class="quick-nav-link">
+            🔬 Methods
+          </a>
+          <a href="{{ pathto('tutorials/index') }}" class="quick-nav-link">
+            📖 Tutorials
+          </a>
+          <a href="{{ pathto('api/index') }}" class="quick-nav-link">
+            📚 API
+          </a>
+        </div>
+      </div>
+      
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        {% block menu %}
+          {% set toctree = toctree(maxdepth=theme_navigation_depth|int,
+                                   collapse=theme_collapse_navigation|tobool,
+                                   includehidden=theme_includehidden|tobool,
+                                   titles_only=theme_titles_only|tobool) %}
+          {% if toctree %}
+            {{ toctree }}
+          {% else %}
+            <!-- Local TOC -->
+            <div class="local-toc">{{ toc }}</div>
+          {% endif %}
+        {% endblock %}
+      </div>
+    </div>
+  </nav>
+{% endblock %}

@@ -1,8 +1,17 @@
 """
-Auto Causal components package.
+Causal Agent components package.
 
 This package contains the core components for the causal_agent module,
-each handling a specific part of the causal inference workflow.s
+each handling a specific part of the causal inference workflow:
+
+- input_parser: Parses and validates user inputs
+- dataset_analyzer: Analyzes dataset characteristics and variables
+- query_interpreter: Interprets natural language causal queries
+- decision_tree: Selects appropriate causal inference methods
+- method_validator: Validates method selection and assumptions
+- explanation_generator: Generates human-readable explanations
+- output_formatter: Formats results for output
+- state_manager: Manages workflow state updates
 """
 
 from causal_agent.components.input_parser import parse_input

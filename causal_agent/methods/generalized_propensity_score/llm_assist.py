@@ -174,7 +174,7 @@ def suggest_dose_response_t_values(
         f"For a Generalized Propensity Score (GPS) analysis with continuous treatment '{treatment_var}', the user needs to estimate an Average Dose-Response Function (ADRF).",
         f"The observed range of '{treatment_var}' is from {df[treatment_var].min():.2f} to {df[treatment_var].max():.2f}.",
         f"The user desires approximately {num_points} points for the ADRF curve.",
-        f"The user's research query is: '{query if query else 'Not specified'}'.",
+        "The user's research query is: 'Not specified'.",
         "Suggest a list of specific treatment values (t_values) at which to evaluate the ADRF. Consider:",
         "1. Covering the observed range of the treatment.",
         "2. Potentially including specific points of policy interest if deducible from the query (though this is advanced).",

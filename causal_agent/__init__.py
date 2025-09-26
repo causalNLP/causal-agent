@@ -1,8 +1,32 @@
 """
-Auto Causal module for causal inference.
+Causal Agent - Automated Causal Inference with Large Language Models.
 
-This module provides automated causal inference capabilities
-through a pipeline that selects and applies appropriate causal methods.
+The causal_agent module provides an LLM-powered tool for generating data-driven 
+answers to natural language causal queries. It automatically:
+
+- Parses natural language causal questions
+- Analyzes dataset characteristics and variables  
+- Selects appropriate causal inference methods
+- Executes causal analysis with proper diagnostics
+- Interprets results in plain language
+
+Example:
+    >>> from causal_agent import run_causal_analysis
+    >>> result = run_causal_analysis(
+    ...     query="What is the effect of education on income?",
+    ...     dataset_path="data.csv", 
+    ...     dataset_description="Education and income dataset"
+    ... )
+    >>> print(f"Effect: {result['results']['results']['effect_estimate']}")
+
+The module supports various causal inference methods including:
+- Randomized Controlled Trials (RCT)
+- Difference-in-Differences (DiD) 
+- Instrumental Variables (IV)
+- Regression Discontinuity Design (RDD)
+- Propensity Score Matching/Weighting
+- Backdoor Adjustment
+- Linear Regression with controls
 """
 
 __version__ = "0.1.1"
