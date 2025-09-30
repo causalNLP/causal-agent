@@ -7,7 +7,10 @@ within the query_interpreter component.
 # query, description, column_info, treatment, outcome
 
 IV_IDENTIFICATION_PROMPT_TEMPLATE = """
-You need to assess whether a valid instrument exists in the dataset to apply Instrumental Variable (IV) methods for estimating causal effects to answer the user query. Use systematic reasoning to evaluate potential IVs against strict criteria.
+You are an expert in causal inference. 
+You need to assess whether a valid instrument exists in the dataset to apply Instrumental Variable (IV) methods for estimating causal effects to answer the user query.
+Use systematic reasoning to evaluate potential instruments against strict criteria. You need to be strict with the assessment.
+Do not suggest IV based on weak reasoning. 
 
 User Query: "{query}"
 Dataset Description: {description}
@@ -19,34 +22,35 @@ Think through this step by step:
 
 Step 1: Understand the causal question
 - What causal effect is the user trying to estimate?
-- What potential unobserved confounders might bias the treatment-outcome relationship?
+- What potential unobserved confounders might affect treatment and outcome?
 
 Step 2: Identify potential instrumental variables
 - Which columns could plausibly serve as instruments?
 - Exclude the treatment and outcome variables themselves
-- Look for variables that might influence treatment assignment
+- Look for variables that might influence treatment assignment and do not directly affect the outcome
 - Only consider variables that exist in the available columns list
 
 Step 3: Evaluate each potential IV against the four key conditions
 
 Condition 1 - Relevance:
-- Does this variable causally influence the treatment?
+- Does this variable directly influence the treatment?
 
 Condition 2 - Exclusion restriction:
-- Does this variable affect the outcome only through the treatment?
-- There should be no direct pathway from instrument to outcome bypassing treatment
+- Does this variable affect the outcome only through the treatment? There should be no direct pathway from instrument to outcome bypassing treatment. 
 
 Condition 3 - Independence:
-- Is this variable as good as randomly assigned with respect to unobserved confounders?
+- Is this variable as good as randomly assigned with respect to unobserved confounders? This means 
+    it should not be correlated with any factors that affect the outcome other than through treatment.
 
-Condition 4 - Compliance (for experimental data only):
-- If this is experimental data, is there compliance variation?
-- Do we have data showing some units didn't follow their assigned treatment?
+Those are general IV assumptions. However, we also see if this is an encouragement design or encouragement-like setting.
+Condition 4 - Compliance:
+- Is there compliance variation, i.e., some units who weren't eligible to get the treatment got treatment or vice versa?
+- Do we have data showing some units didn't follow their assigned treatment? If there is no data on compliance, discard this condition.
 
 Step 4: Make final determination
 - Select the best candidate only if it satisfies all conditions
 - If no good candidates exist, return null
-- Only select variables from the available columns, do not create new variables
+- Only select variables from the available columns; do not create new variables
 
 Important: Return only valid JSON. No explanations, reasoning, or markdown formatting.
 
@@ -56,7 +60,10 @@ Important: Return only valid JSON. No explanations, reasoning, or markdown forma
 """
 
 RDD_IDENTIFICATION_PROMPT_TEMPLATE = """
-You need to identify if a running variable exists for performing Regression Discontinuity Design (RDD) to answer the user query. Go through the data description and available columns carefully. In RDD, treatment assignment is determined by whether a continuous variable crosses a specific threshold.
+You are an expert in causal inference. 
+You need to identify if a running variable exists for performing Regression Discontinuity Design (RDD) to answer the user query. 
+Go through the data description and available columns carefully. You need to be strict with the assessment.
+In RDD, treatment assignment (for analysis) is determined by whether a continuous variable crosses a specific threshold.
 
 User Query: "{query}"
 Dataset Description: {description}
@@ -67,23 +74,16 @@ Think through this step by step:
 
 Step 1: Analyze the research design
 - Does the query or description imply a cutoff, threshold, or eligibility criterion?
-- Look for evidence that a threshold value dictates whether a person receives the intervention.
+- Check if the design implies that a cutoff/threshold determines if the unit receives the intervention or not.
 
-Step 2: Identify the running variable from context
-- What continuous variable determines treatment assignment in this design?
-- This should be clearly implied from the query or dataset description.
+Step 2: If there is a running variable implied by the context, identify the running variable:
+- What is the variable associated with the cutoff, i.e., what variable determines whether a unit is receiving the intervention/treatment or not?
 
-Step 3: Validate the running variable exists in data
-- Is the identified running variable actually present in the available columns?
-- Do not choose variables randomly. If this is not apparent from the provided information, return null.
-- Only select variables that exist in the available columns list
-
-Step 4: Identify the cutoff value from design
+Step 3: Identify the cutoff value from design
 - What specific threshold value determines treatment assignment?
-- This should be implied from the description.
 
-Step 5: Final determination
-- Only suggest RDD if both running variable and cutoff are clearly identified from the design context
+Step 4: Final determination
+- Only suggest RDD if both running variable and cutoff value can be identified
 - Return null if the assignment mechanism is not threshold-based or you are unsure.
 
 Important: Return only valid JSON. No explanations, reasoning, or markdown formatting.
@@ -95,7 +95,9 @@ Important: Return only valid JSON. No explanations, reasoning, or markdown forma
 """
 
 RCT_IDENTIFICATION_PROMPT_TEMPLATE = """
-You need to determine if the data comes from a Randomized Controlled Trial (RCT) to answer the user query. This assessment will help determine if experimental causal inference methods are appropriate based on the study description.
+You are an expert in causal inference. 
+You need to determine if the data comes from a Randomized Controlled Trial (RCT). 
+Based on the assessment, we will decide if RCT methods are appropriate to answer the user query.
 
 User Query: "{query}"
 Dataset Description: {description}
@@ -109,7 +111,7 @@ Step 1: Look for randomization indicators
 - Does the description mention "random", "randomized", "randomly assigned", "control group", or "trial"?
 
 Step 2: Assess assignment method
-- Was treatment assigned randomly or through natural/self-selection processes?
+- Was treatment assigned randomly?
 
 Step 3: Make determination
 - True if random assignment is clearly indicated
@@ -124,7 +126,9 @@ Important: Return only valid JSON. No explanations, reasoning, or markdown forma
 """
 
 INTERACTION_TERM_IDENTIFICATION_PROMPT_TEMPLATE = """
-You need to determine if an interaction term is required to answer the user query about heterogeneous treatment effects. This assessment will identify if the analysis should examine differential treatment effects across subgroups.
+You are an expert in causal inference. 
+You need to determine if an interaction term is required in the causal model built to answer the user query. 
+Be strict with your assessment. 
 
 User Query: "{query}"
 Dataset Description: "{description}"
@@ -133,17 +137,15 @@ Available Covariates: {covariates_list_with_types}
 
 Think through this step by step:
 
-Step 1: Analyze the query for subgroup language
-- Does the query explicitly ask about treatment effects for specific subgroups?
-- Look for phrases like "effect for men vs women", "does treatment work differently for", "among elderly patients"
-
-Step 2: Distinguish between subgroup analysis and overall effects
+Step 1: Distinguish between subgroup analysis and overall effects
 - Is the query asking for differential effects across groups (interaction needed)?
 - Or is it asking for overall average effects (no interaction needed)?
 
-Step 3: Identify the relevant covariate
+Step 2: Analyze the query and see if it implies subgroup effects
+- Does the query explicitly ask about treatment effects for specific subgroups?
+
+Step 3: Identify the relevant interaction covariate
 - Which covariate from the available list would define the subgroups mentioned?
-- Ensure the covariate actually exists in the dataset
 - Only select variables that exist in the available covariates list
 
 Step 4: Make final determination
@@ -160,7 +162,9 @@ Important: Return only valid JSON. No explanations, reasoning, or markdown forma
 """
 
 TREATMENT_VAR_IDENTIFICATION_PROMPT_TEMPLATE = """
-You need to identify the treatment variable to perform causal analysis that answers the user query. The treatment variable represents the actual intervention or exposure received by units.
+You are an expert in causal inference. 
+You need to identify the treatment variable to perform causal analysis that answers the user query. 
+The treatment variable corresponds to the variable representing the treatment or intervention of interest. 
 
 User Query: {query}
 Dataset Description: {description}
@@ -169,7 +173,7 @@ Available Variables: {column_info}
 Think through this step by step:
 
 Step 1: Understand the causal question
-- What is the specific treatment whose causal effect needs to be estimated i.e what is the intervention of interest?
+- What is the specific treatment whose causal effect needs to be estimated, i.e., what is the intervention of interest?
 
 Step 2: Distinguish between assignment and actual treatment
 - For experimental data: Is this an encouragement design where assignment differs from actual uptake?
@@ -177,19 +181,13 @@ Step 2: Distinguish between assignment and actual treatment
 - In encouragement designs, choose the actual treatment received, not the random assignment.
 
 Step 3: Identify the treatment variable
-- Which column represents the actual intervention or exposure of interest?
-- Ensure this variable captures what units actually experienced, not just what was intended
-- For IV/encouragement designs, this should be the endogenous treatment, not the instrument
+- Which column represents the actual intervention or treatment of interest?
+- The variable should represent the actual treatment received. 
 - Only select variables that exist in the available variables list
 
-Step 4: Validate the choice
-- Does this variable directly represent the causal factor mentioned in the query?
-- For encouragement designs, is there variation between assignment and uptake?
-
-Step 5: Make final determination
+Step 4: Make final determination
 - Return the variable representing actual treatment received
 - Return null if no clear treatment variable can be identified from the information provided
-- Do not create or suggest new variables
 
 Important: Return only valid JSON. No explanations, reasoning, or markdown formatting.
 
@@ -199,7 +197,9 @@ Important: Return only valid JSON. No explanations, reasoning, or markdown forma
 """
 
 OUTCOME_VAR_IDENTIFICATION_PROMPT_TEMPLATE = """
-You need to identify the outcome variable to perform causal analysis that answers the user query. The outcome variable represents what you want to measure the effect on.
+You are an expert in causal inference. 
+You need to identify the outcome variable to perform causal analysis that answers the user query. 
+The outcome variable corresponds to the variable representing the effect of an intervention or treatment of interest.
 
 User Query: {query}
 Dataset Description: {description}
@@ -209,14 +209,12 @@ Think through this step by step:
 
 Step 1: Identify what the query is measuring
 - What outcome or effect is the user asking about?
-- What variable would represent the result or consequence of the treatment?
 
-Step 2: Find the matching variable
+Step 2: Find the related variable
 - Which column in the dataset corresponds to this outcome?
-- Ensure it represents the dependent variable, not the treatment
 - Only select variables that exist in the available variables list
 
-Step 3: Make determination
+Step 3: Make final determination
 - Return the variable that captures the outcome of interest
 - Return null if no clear outcome variable can be identified
 - Do not create or suggest new variables
@@ -229,7 +227,9 @@ Important: Return only valid JSON. No explanations, reasoning, or markdown forma
 """
 
 COVARIATES_IDENTIFICATION_PROMPT_TEMPLATE = """
+You are an expert in causal inference. 
 You need to identify the pre-treatment variables in a dataset that can be used as controls in a causal estimation model to answer the user's query.
+Be strict with your assessment.
 
 User Query: {query}
 Dataset Description: {description}
@@ -237,37 +237,41 @@ Available Variables: {column_info}
 The treatment variable is: {treatment}
 The outcome variable is: {outcome}
 
-Pre-treatment variables are those that are measured before the treatment is applied and are not affected by the treatment. These variables can be used as controls in the causal model.
+Pre-treatment variables are those that are measured before the treatment is applied and are not affected by the treatment. 
+These variables can be used as controls in the causal model to improve precision. 
 
-For example, say we have an RCT with outcome Y, treatment T, and pre-treatment variables X1, X2, and X3. We can perform a regression of the form: Y ~ T + X1 + X2 + X3.
-
-Based on the information above, return a list of variables that qualify as pre-treatment variables from the available columns. Only select variables that exist in the available variables list. Do not create or suggest new variables.
+Based on the information above, return a list of variables that qualify as pre-treatment variables from the available columns. Only select variables that exist in the available variables list. 
+Do not create or suggest new variables. 
 
 If no suitable pre-treatment variables can be identified, return an empty list.
 
 Important: Return only valid JSON. No explanations, reasoning, or markdown formatting.
 
 {{
-    "controls": ["list_of_column_names_or_empty_list"]
+    "covariates": ["list_of_column_names_or_empty_list"]
 }}
 """
 
 CONTROLS_IDENTIFICATION_PROMPT_TEMPLATE = """
-You need to identify control variables to improve the causal estimation for answering the user query. Control variables are pre-treatment variables that can reduce bias and improve precision.
+You need to identify control variables to improve the causal estimation for answering the user query. 
+Control variables are pre-treatment variables that can reduce bias and improve precision. 
+Please do not consider confounders. 
 
+Here are the basic information. 
 User Query: {query}
 Dataset Description: {description}
 Available Variables: {column_info}
+
+Likewise, we have selected {method} as the causal causal inference method to perform the analysis. Similarly, 
+the identified treatment and outcome variables are as follows:
 Treatment Variable: {treatment}
 Outcome Variable: {outcome}
-Causal Method: {method}
 
-Think through this step by step:
+Think through the following step to select the appropriate control variables:
 
 Step 1: Understand control variable requirements
 - Controls must be measured before treatment occurs
 - Controls should not be affected by the treatment (pre-treatment variables only)
-- Controls should be related to the outcome but not problematic for the chosen method
 
 Step 2: Apply method-specific criteria
 - For RCT: Include pre-treatment variables to improve precision
@@ -275,13 +279,7 @@ Step 2: Apply method-specific criteria
 - For RDD: Include variables that do not affect the running variable
 - For DiD: Include variables that do not affect treatment timing or group assignment
 
-Step 3: Screen available variables
-- Which variables are clearly pre-treatment characteristics?
-- Which variables could plausibly affect the outcome?
-- Exclude variables that violate method-specific requirements
-- Only consider variables that exist in the available variables list
-
-Step 4: Make final selection
+Step 3: Make final selection
 - Include variables that satisfy both general and method-specific criteria
 - When uncertain about a variable, do not include it
 - Return empty list if no suitable controls can be identified
@@ -295,7 +293,9 @@ Important: Return only valid JSON. No explanations, reasoning, or markdown forma
 """
 
 ESTIMAND_PROMPT_TEMPLATE = """
-You need to determine the appropriate estimand to answer the user query. The estimand defines which population's treatment effect you are estimating.
+You are an expert in causal inference. 
+You need to determine the appropriate estimand to answer the user query. 
+The estimand defines which population's treatment effect you are estimating.
 
 User Query: {query}
 Dataset Description: {dataset_description}
@@ -306,18 +306,18 @@ Outcome Variable: {outcome}
 Think through this step by step:
 
 Step 1: Analyze the query language
-- Does the query ask about effects "for everyone" or "on average" (suggests ATE)?
+- Does the query imply effects "for everyone" or "on average" (suggests ATE)?
 - Does it ask about effects "for those who received treatment" (suggests ATT)?
 - Does it ask about effects "for those who didn't receive treatment" (suggests ATC)?
 - Does it mention "compliers" or involve instrumental variables (suggests LATE)?
 - Does it ask about effects "for specific groups" or conditional on characteristics (suggests CATE)?
 
-Step 2: Consider the policy context
-- Is this for policy evaluation affecting the general population (ATE)?
-- Is this for understanding impact on actual participants (ATT)?
-- Is this for understanding potential impact on non-participants (ATC)?
-- Is this in an IV context with compliance issues (LATE)?
-- Is this examining heterogeneous effects across subgroups (CATE)?
+Step 2: Consider the context
+- Are we interested in evaluating the effect on the general population (ATE)?
+- Are we interested in the effect on actual participants (ATT)?
+- Are we interested in understanding the impact on non-participants (ATC)?
+- Are we in an IV context with compliance issues (LATE)?
+- Are we examining heterogeneous effects across subgroups (CATE)?
 
 Step 3: Make final determination
 - Choose the estimand that best matches the query's intent and context
@@ -331,7 +331,10 @@ Important: Return only valid JSON. No explanations, reasoning, or markdown forma
 """
 
 CONFOUNDER_IDENTIFICATION_PROMPT_TEMPLATE = """
-You need to identify potential confounders to control for when estimating the causal effect to answer the user query. Confounders create bias by affecting both treatment assignment and the outcome.
+You are an expert in causal inference.
+You need to identify potential confounders to control for when estimating the causal effect to answer the user query. 
+Confounders are those variables that influence both the treatment and the outcome. This especially happens in observational studies. Be strict with your assessment.
+For RCTs, we do not need to control for confounders as randomization takes care of that. 
 
 User Query: {query}
 Dataset Description: {description}
@@ -341,19 +344,16 @@ Outcome Variable: {outcome}
 
 Think through this step by step:
 
-Step 1: Understand confounding for this analysis
-- What factors might influence both who receives '{treatment}' and the level of '{outcome}'?
-- These create spurious associations that bias causal estimates
+Step 1: Understand confounding 
+- What factors might influence both treatment: '{treatment}' and the outcome: '{outcome}'?
 
-Step 2: Screen for pre-treatment variables
-- Which variables are measured before treatment occurs?
+Step 2: Exclusions
 - Exclude any variables that could be caused by the treatment
-- Only consider variables that exist in the available variables list
+- Only consider variables that exist in the available variables list. Do not create new variables.
 
-Step 3: Evaluate dual causation
-- For each pre-treatment variable, ask: Does it plausibly affect treatment assignment?
-- For the same variable, ask: Does it plausibly affect the outcome directly?
-- Only variables affecting both qualify as confounders
+Step 3: Assess influence on both treatment and outcome
+- Which variables plausibly affect the treatment assignment and the outcome?
+- Only variables affecting both qualify as confounders. 
 
 Step 4: Make final determinations
 - Include variables with clear causal pathways to both treatment and outcome
@@ -374,12 +374,12 @@ Important: Return only valid JSON. No explanations, reasoning, or markdown forma
 
 TREATMENT_REFERENCE_IDENTIFICATION_PROMPT_TEMPLATE = """
 You are a causal inference assistant.
-"
+
 Dataset Description: {description}
 Identified Treatment Variable: "{treatment_variable}"
 Unique Values in Treatment Variable (sample): {treatment_variable_values}
 
-User Query: "{query}
+User Query: "{query}"
 
 Based on the user query, does it specify a particular category of the treatment variable '{treatment_variable}' that should be considered the control, baseline, or reference group for comparison?
 
@@ -388,7 +388,7 @@ Examples:
 - Query: "Compare ActiveLearning and StandardMethod against NoIntervention" -> Reference for treatment "TeachingMethod" might be "NoIntervention"
 
 If a reference level is clearly specified or strongly implied AND it is one of the unique values provided for the treatment variable, identify it. Otherwise, state null.
-If multiple values seem like controls (e.g. "compare A and B vs C and D"), return null for now, as this requires more complex handling.
+If multiple values seem like controls (e.g., "compare A and B vs C and D"), return null for now, as this requires more complex handling.
 
 Respond ONLY with a JSON object adhering to this Pydantic model:
 {{
@@ -396,4 +396,3 @@ Respond ONLY with a JSON object adhering to this Pydantic model:
     "reasoning": "string_or_null_brief_explanation"
 }}
 """
-
