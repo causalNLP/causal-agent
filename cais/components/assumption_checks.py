@@ -3,18 +3,25 @@ import pandas as pd
 from typing import Dict, Any, List, Tuple
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import OneHotEncoder
+import statsmodels.api as sm
+from typing import Dict, Any, Optional, List, Union
+from rdd import optimal_bandwidth
 
-# ---------- Internal helpers ----------
+## ------ For observational methods relying on conditional ignorability ----------
+# ----------- Internal helpers ------------
 
 def _smd_from_groups(a: np.ndarray, b: np.ndarray) -> float:
     """SMD = (mu_t - mu_c) / sqrt((var_t + var_c)/2)."""
+
     mu_t, mu_c = np.nanmean(a), np.nanmean(b)
     var_t, var_c = np.nanvar(a, ddof=1), np.nanvar(b, ddof=1)
     denom = np.sqrt((var_t + var_c) / 2.0 + 1e-12)
+
     return float((mu_t - mu_c) / (denom if denom > 0 else 1.0))
 
 def _one_hot_df(df: pd.DataFrame, cols: List[str]) -> Tuple[pd.DataFrame, Dict[str, List[str]]]:
     """One-hot encode categorical cols; return expanded DF and mapping."""
+
     num_cols = [c for c in cols if pd.api.types.is_numeric_dtype(df[c])]
     cat_cols = [c for c in cols if c not in num_cols]
     mapping: Dict[str, List[str]] = {}
@@ -31,12 +38,14 @@ def _one_hot_df(df: pd.DataFrame, cols: List[str]) -> Tuple[pd.DataFrame, Dict[s
         for c in cat_cols:
             mapping[c] = [col for col in oh_cols if col.startswith(c + "_")]
     X = pd.concat(parts, axis=1) if parts else pd.DataFrame(index=df.index)
+
     return X, mapping
 
 # ---------- Public diagnostics ----------
 
 def compute_covariate_smds(df: pd.DataFrame, treat_col: str, covariates: List[str]) -> Dict[str, float]:
     """SMD for each covariate; categorical collapsed to max|SMD| across levels."""
+
     tmask = df[treat_col].values.astype(bool)
     X, mapping = _one_hot_df(df, covariates)
     smds: Dict[str, float] = {}
@@ -48,32 +57,38 @@ def compute_covariate_smds(df: pd.DataFrame, treat_col: str, covariates: List[st
         else:
             smd = float(np.max([abs(_smd_from_groups(vals_t[:, i], vals_c[:, i])) for i in range(len(cols))]))
         smds[base] = smd
+
     return smds
 
 def estimate_propensity_scores(df: pd.DataFrame, treat_col: str, covariates: List[str]) -> np.ndarray:
     """Logistic regression propensity scores on one-hot covariates."""
+
     y = df[treat_col].values.astype(int)
     X, _ = _one_hot_df(df, covariates)
     if X.shape[1] == 0:
         return np.full(len(df), fill_value=y.mean(), dtype=float)
     lr = LogisticRegression(max_iter=200, solver="lbfgs")
     lr.fit(X, y)
+
     return lr.predict_proba(X)[:, 1]
 
 def compute_ps_smd(ps: np.ndarray, treat: np.ndarray) -> float:
     """SMD of the propensity score itself (single summary metric)."""
+
     tmask = treat.astype(bool)
+
     return _smd_from_groups(ps[tmask], ps[~tmask])
 
 def summarize_ps_overlap(ps: np.ndarray, treat: np.ndarray) -> Dict[str, Any]:
     """Simple overlap summary (min/max & quantiles)."""
+
     tmask = treat.astype(bool)
     def stats(v):
         return {
             "min": float(np.min(v)),
-            "q10": float(np.quantile(v, 0.10)),
+            "quantile_25": float(np.quantile(v, 0.25)),
             "median": float(np.median(v)),
-            "q90": float(np.quantile(v, 0.90)),
+            "quantile_75": float(np.quantile(v, 0.75)),
             "max": float(np.max(v)),
         }
     treated_stats = stats(ps[tmask])
@@ -87,10 +102,12 @@ def summarize_ps_overlap(ps: np.ndarray, treat: np.ndarray) -> Dict[str, Any]:
 
 def psm_diagnostics(df: pd.DataFrame, treatment: str, covariates: List[str]) -> Dict[str, Any]:
     """Bundle: covariate SMDs, PS array, PS SMD, and overlap summary."""
+
     smds = compute_covariate_smds(df, treatment, covariates)
     ps = estimate_propensity_scores(df, treatment, covariates)
     ps_smd = compute_ps_smd(ps, df[treatment].values.astype(int))
     overlap = summarize_ps_overlap(ps, df[treatment].values.astype(int))
+
     return {
         "covariate_SMDs": smds,
         "propensity_scores": ps,
@@ -98,21 +115,21 @@ def psm_diagnostics(df: pd.DataFrame, treatment: str, covariates: List[str]) -> 
         "ps_overlap": overlap,
     }
 
-import numpy as np
-import pandas as pd
-import statsmodels.api as sm
-from typing import Dict, Any, Optional
+## ----------------------------- For Difference-in-Differences --------------------------------
 
 def _as_categorical_time(df: pd.DataFrame, time_col: str):
     # Ensure sortable time; create an integer index for regression
+
     tvals = pd.Categorical(df[time_col], ordered=True)
     if not tvals.ordered:
         # try to order by unique sorted values
         uniq = sorted(df[time_col].unique())
         tvals = pd.Categorical(df[time_col], categories=uniq, ordered=True)
     t_idx = tvals.codes  # -1 if NA
+
     return tvals, t_idx
 
+## This will work only if time_col is non-binary
 def infer_treatment_timing(df: pd.DataFrame, time_col: str, group_col: str, treat_col: str,
                            treated_value: Optional[int]=1) -> Dict[str, Any]:
     """
@@ -238,10 +255,8 @@ def pretrend_parallel_test_with_periods(df: pd.DataFrame, time_col: str, group_c
     })
     return out
 
-import numpy as np
-import pandas as pd
-import statsmodels.api as sm
-from typing import Dict, Any, List, Union
+
+## ----------------------------- For Instrumental Variables --------------------------------
 
 def iv_first_stage_relevance(df: pd.DataFrame,
                              instrument: Union[str, List[str]],
@@ -278,40 +293,50 @@ def iv_first_stage_relevance(df: pd.DataFrame,
         "weak_iv_flag": bool(fval < 10.0)  # Stock–Yogo rule-of-thumb
     }
 
-import numpy as np
-import pandas as pd
-from typing import Dict, Any, Optional
+## ----------------------------- For Regression Discontinuity Design --------------------------------
 
-def rdd_design_compliance(df: pd.DataFrame, running: str, treatment: str, cutoff: float) -> Dict[str, Any]:
+def rdd_design_compliance(df: pd.DataFrame, running: str, treatment: str, cutoff: float, 
+                          thresh_comply: float=0.8) -> Dict[str, Any]:
     """
     Check if treatment is (approximately) assigned by cutoff: T ≈ 1{running >= cutoff}.
     Returns compliance rate and misclassification share.
     """
     if running not in df.columns or treatment not in df.columns:
         return {"ok": False, "error": "Missing running/treatment column."}
+    
+
 
     assign = (df[running] >= cutoff).astype(int)
     t = df[treatment].astype(int)
+    if t.nunique() != 2:
+        return {"ok": False, "error": "Treatment variable not binary."}
+    
     agree = (assign == t)
     rate = float(agree.mean())
     return {
-        "ok": bool(rate >= 0.9),          # loose gate; tune as needed
+        "ok": bool(rate >= thresh_comply),          # loose gate; tune as needed
         "compliance_rate": rate,
         "misclassified_share": float(1.0 - rate),
-        "n": int(len(df)),
-    }
+        "n": int(len(df))}
 
 def rdd_window_summary(df: pd.DataFrame, running: str, outcome: str, cutoff: float,
                        h: Optional[float] = None) -> Dict[str, Any]:
     """
     Summarize outcome means just around the cutoff for visual inspection.
-    Uses a symmetric window width h (default 0.2 * SD of running).
+    To determine h i.e. the bandwidth we use the Imbens-Kalyanaraman optimal bandwidth selector, in the 
+    rdd package.
     """
+
     x = df[running].astype(float)
     y = df[outcome].astype(float)
+    mean_running = float(np.nanmean(x))
+    ## data is already centered
+    if abs(mean_running) < 0.01:
+        cutoff = 0.0  # snap to zero if close
     if h is None:
-        sd = float(np.nanstd(x))
-        h = 0.2 * sd if sd > 0 else np.nanmax(np.abs(x - cutoff)) * 0.2
+        #sd = float(np.nanstd(x))
+        #h = 0.2 * sd if sd > 0 else np.nanmax(np.abs(x - cutoff)) * 0.2
+        h = optimal_bandwidth(y.values, x.values, cutoff)
 
     mask = (x >= cutoff - h) & (x <= cutoff + h)
     subx, suby = x[mask], y[mask]
@@ -325,14 +350,14 @@ def rdd_window_summary(df: pd.DataFrame, running: str, outcome: str, cutoff: flo
         "mean_left": float(np.nanmean(left)) if left.size else None,
         "mean_right": float(np.nanmean(right)) if right.size else None,
         "jump_right_minus_left": (float(np.nanmean(right) - np.nanmean(left))
-                                  if left.size and right.size else None)
-    }
+                                  if left.size and right.size else None)}
 
 def rdd_bins_for_plot(df: pd.DataFrame, running: str, outcome: str, cutoff: float,
                       h: float, bins_per_side: int = 10) -> Dict[str, Any]:
     """
     Prepare simple binned averages for a binscatter near cutoff (purely for plotting later).
     """
+
     x = df[running].astype(float)
     y = df[outcome].astype(float)
     mask = (x >= cutoff - h) & (x <= cutoff + h)
@@ -357,4 +382,5 @@ def rdd_bins_for_plot(df: pd.DataFrame, running: str, outcome: str, cutoff: floa
 
     left_bins = binside(left, cutoff - h, cutoff, bins_per_side)
     right_bins = binside(right, cutoff, cutoff + h, bins_per_side)
+
     return {"cutoff": float(cutoff), "h": float(h), "left_bins": left_bins, "right_bins": right_bins}
