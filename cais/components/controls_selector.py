@@ -130,7 +130,8 @@ def select_controls(method_name, variables, columns, column_categories, query, d
     if method_name in ["difference_in_differences", "regression_discontinuity_design", "instrumental_variables", 
                        "linear_regression"]:
         controls = identify_controls(treatment, outcome, method_name, columns, column_categories, instrument, 
-                                     running_var, time_var, state_var)
+                                     running_var, time_var, state_var, query_text=query, dataset_description=description, 
+                                     llm=llm)
                                      
 
     return controls

@@ -5,6 +5,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import OneHotEncoder
 import statsmodels.api as sm
 from typing import Dict, Any, Optional, List, Union
+from rddensity import rddensity
 from rdd import optimal_bandwidth
 
 ## ------ For observational methods relying on conditional ignorability ----------
@@ -384,3 +385,25 @@ def rdd_bins_for_plot(df: pd.DataFrame, running: str, outcome: str, cutoff: floa
     right_bins = binside(right, cutoff, cutoff + h, bins_per_side)
 
     return {"cutoff": float(cutoff), "h": float(h), "left_bins": left_bins, "right_bins": right_bins}
+
+
+def mccrary_test(df, running_var, cutoff):
+    """
+    Performs the McCrary density test
+
+    Args:
+        df (pd.DataFrame): DataFrame containing the running variable 
+        running_var (str): Column name of the running variable 
+        cutoff (float): cutoff value for the running variable 
+    Returns:
+         (float) the p-value of the test 
+    """
+
+    if running_var not in df.columns:
+        return np.nan 
+
+    running_vals = df[running_var].values
+    test = rddensity(running_vals, c=cutoff)
+    p_val = float(test.test['p_jk'])
+
+    return p_val

@@ -325,7 +325,6 @@ def validate_regression_discontinuity(validation_result: Dict[str, Any],
         return
 
     # 1) Enforced-by-design check: is treatment determined by cutoff?
-    ## Not all datasets will have a treatment variable. 
     design = rdd_design_compliance(df, running_variable, treatment, cutoff_value)
     validation_result.setdefault("evidence", {})["rdd_design"] = design
     if not design.get("ok", False):
@@ -355,11 +354,18 @@ def validate_regression_discontinuity(validation_result: Dict[str, Any],
         "visual_recommendation": "Plot outcome vs running within a symmetric window around the cutoff; inspect for a jump."
     }
 
+    ## Adding McCrary test 
+    mccrary_p = mccrary_test(df, running_variable, cutoff_value)
+    if mccrary_p is np.nan:
+        validation_result["concerns"].append("McCrary test could not be computed.")
+    else:
+        if mccrary_p < 0.05:
+            validation_result["concerns"].append(f"McCrary test p={mccrary_p:.3g} suggests manipulation around cutoff.")
+
     # If no jump in the simple window means, add a soft concern (still visual, not a test)
     jump = win.get("jump_right_minus_left")
     if jump is not None and abs(jump) < 1e-8:
         validation_result["concerns"].append("No visible outcome jump in a narrow window around cutoff (visual).")
-
 
 
 def validate_instrumental_variable(validation_result: Dict[str, Any], 
