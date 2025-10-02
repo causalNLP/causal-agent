@@ -68,7 +68,7 @@ def identify_controls(treatment_variable: str, outcome_variable:str, method_name
 
     # 2. Use LLM 
     if llm:
-        logger.info("Using LLM to refine covariate list...")
+        logger.info("Using LLM to refine covariate list for controls selection")
         prompt = CONTROLS_IDENTIFICATION_PROMPT_TEMPLATE.format(query=query_text, description=dataset_description, 
                                                                  column_info=", ".join(usable_controls), 
                                                                  treatment=treatment_variable, outcome=outcome_variable, 

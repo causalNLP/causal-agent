@@ -6,7 +6,14 @@ from sklearn.preprocessing import OneHotEncoder
 import statsmodels.api as sm
 from typing import Dict, Any, Optional, List, Union
 from rddensity import rddensity
-from rdd import optimal_bandwidth
+
+# Try to import optimal_bandwidth from rdd package
+try:
+    from rdd import optimal_bandwidth
+    _has_rdd_optimal_bandwidth = True
+except ImportError:
+    _has_rdd_optimal_bandwidth = False
+    optimal_bandwidth = None
 
 ## ------ For observational methods relying on conditional ignorability ----------
 # ----------- Internal helpers ------------
@@ -148,9 +155,11 @@ def infer_treatment_timing(df: pd.DataFrame, time_col: str, group_col: str, trea
         return out
 
     # compute by group & time
-    mean_t = df.groupby([group_col, time_col])[treat_col].mean().reset_index()
+    mean_t = df.groupby([group_col, time_col], as_index=False)[treat_col].mean()
+    # Rename the treatment column to avoid conflicts
+    mean_t = mean_t.rename(columns={treat_col: 'mean_treatment'})
     # choose group with larger max mean treatment as treated_group
-    max_by_group = mean_t.groupby(group_col)[treat_col].max()
+    max_by_group = mean_t.groupby(group_col)['mean_treatment'].max()
     treated_group = max_by_group.idxmax()
     control_group = [g for g in grp_values if g != treated_group][0]
 
@@ -161,7 +170,7 @@ def infer_treatment_timing(df: pd.DataFrame, time_col: str, group_col: str, trea
         out["notes"] = "No time variation for treated group."
         return out
     # pick earliest period with high treatment share
-    adopt_rows = tg.loc[tg[treat_col] >= 0.5]
+    adopt_rows = tg.loc[tg['mean_treatment'] >= 0.5]
     if adopt_rows.empty:
         out["notes"] = "Treated group never shows high treatment intensity."
         return out
@@ -173,11 +182,11 @@ def infer_treatment_timing(df: pd.DataFrame, time_col: str, group_col: str, trea
     post = [t for t in all_times if t >= adoption_time]
 
     # sanity: control should remain mostly untreated overall
-    ctrl_max = mean_t.loc[mean_t[group_col] == control_group, treat_col].max()
+    ctrl_max = mean_t.loc[mean_t[group_col] == control_group, 'mean_treatment'].max()
     ok_ctrl_untreated = ctrl_max < 0.5
 
     # sanity: treated pre periods should be mostly untreated
-    tg_pre = tg[tg[time_col].isin(pre)][treat_col] if pre else pd.Series([], dtype=float)
+    tg_pre = tg[tg[time_col].isin(pre)]['mean_treatment'] if pre else pd.Series([], dtype=float)
     ok_no_anticipation = True
     if len(tg_pre) > 0:
         ok_no_anticipation = float(tg_pre.max()) < 0.5

@@ -157,8 +157,8 @@ def method_selector_tool(
     }
     
     # Determine workflow state for the next step
-    next_tool_name = "method_validator_tool" if method_selected_flag else "error_handler_tool" 
-    next_reason = "Now we need to validate the assumptions of the selected method" if method_selected_flag else "Method selection failed or returned an error."
+    next_tool_name = "controls_selector_tool" if method_selected_flag else "error_handler_tool"
+    next_reason = "Now we need to select control variables for the chosen method" if method_selected_flag else "Method selection failed or returned an error."
     workflow_update = create_workflow_state_update(
         current_step="method_selection",
         step_completed_flag=method_selected_flag, 

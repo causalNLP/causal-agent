@@ -157,6 +157,14 @@ class MethodInfo(BaseModel):
     # Add alternative methods if it should be part of the standard info passed around
     alternative_methods: Optional[List[str]] = Field(default_factory=list)
 
+class ControlsSelectorInput(BaseModel):
+    """Input structure for the controls selector tool."""
+    method_name: str = Field(..., description="Selected causal inference method name")
+    variables: Variables
+    dataset_analysis: DatasetAnalysis
+    dataset_description: Optional[str] = None
+    original_query: Optional[str] = None
+
 class MethodValidatorInput(BaseModel):
     """Input structure for the method validator tool."""
     method_info: MethodInfo

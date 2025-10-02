@@ -225,7 +225,7 @@ Constraints:
 """
 
 
-def build_iv_user_prompt(validation_result: Dict[str, Any], variables: Dict[str, Any]) -> str:
+def build_iv_user_prompt(validation_result: Dict[str, Any], variables: Dict[str, Any], data_description: Optional[str] = None) -> str:
     """Fill the IV user-only prompt with values from validation_result/variables."""
     fst = (validation_result.get("evidence", {})
                              .get("iv", {})
@@ -235,6 +235,7 @@ def build_iv_user_prompt(validation_result: Dict[str, Any], variables: Dict[str,
         treatment_variable  = variables.get("treatment_variable"),
         instrument_variable = variables.get("instrument_variable"),
         covariates          = variables.get("covariates", []),
+        data_description    = data_description or "Not provided",
         first_stage_F       = fst.get("first_stage_F"),
         first_stage_F_p     = fst.get("first_stage_F_p"),
         weak_iv_flag        = fst.get("weak_iv_flag"),)
@@ -566,8 +567,8 @@ def recommend_alternative(method: str, concerns: List[str], alternatives: List[s
     # If regression adjustment is also problematic, use propensity score matching
     return "propensity_score_matching" 
 
-def validate_method(method_info: Dict[str, Any], dataset_analysis: Dict[str, Any], 
-                    variables: Dict[str, Any]) -> Dict[str, Any]:
+def validate_method(method_info: Dict[str, Any], dataset_analysis: Dict[str, Any],
+                    variables: Dict[str, Any], dataset_description: Optional[str] = None) -> Dict[str, Any]:
     """
     Validate the selected causal method against dataset characteristics.
     
@@ -634,7 +635,7 @@ def validate_method(method_info: Dict[str, Any], dataset_analysis: Dict[str, Any
         validation_result["recommended_method"] = recommend_alternative(
             method, validation_result["concerns"], method_info.get("alternatives", [])
         )
-    user_prompt = build_iv_user_prompt(validation_result, variables)
+    user_prompt = build_iv_user_prompt(validation_result, variables, dataset_description)
     client = get_llm_client()
     res = client.invoke(user_prompt)
     

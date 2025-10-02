@@ -30,6 +30,7 @@ from cais.tools.input_parser_tool import input_parser_tool
 from cais.tools.dataset_analyzer_tool import dataset_analyzer_tool
 from cais.tools.query_interpreter_tool import query_interpreter_tool
 from cais.tools.method_selector_tool import method_selector_tool
+from cais.tools.controls_selector_tool import controls_selector_tool
 from cais.tools.method_validator_tool import method_validator_tool
 from cais.tools.method_executor_tool import method_executor_tool
 from cais.tools.explanation_generator_tool import explanation_generator_tool
@@ -184,10 +185,11 @@ You must follow this exact workflow, selecting the appropriate tool for each ste
 2. THEN use `dataset_analyzer_tool` to analyze the dataset
 3. THEN use `query_interpreter_tool` to identify variables (output includes `variables` and `dataset_analysis`)
 4. THEN use `method_selector_tool` (input requires `variables` and `dataset_analysis` from previous step)
-5. THEN use `method_validator_tool` (input requires `method_info` and `variables` from previous step)
-6. THEN use `method_executor_tool` (input requires `method`, `variables`, `dataset_path`)
-7. THEN use `explanation_generator_tool` (input requires results, method_info, variables, etc.)
-8. FINALLY use `output_formatter_tool` to return the results 
+5. THEN use `controls_selector_tool` (input requires `method_name`, `variables`, and `dataset_analysis` to select control variables)
+6. THEN use `method_validator_tool` (input requires `method_info` and `variables` from previous step)
+7. THEN use `method_executor_tool` (input requires `method`, `variables`, `dataset_path`)
+8. THEN use `explanation_generator_tool` (input requires results, method_info, variables, etc.)
+9. FINALLY use `output_formatter_tool` to return the results 
 
 REASONING PROCESS:
 ------------------
@@ -231,6 +233,7 @@ def create_causal_agent(llm: BaseChatModel) -> AgentExecutor:
         dataset_analyzer_tool,
         query_interpreter_tool,
         method_selector_tool,
+        controls_selector_tool,
         method_validator_tool,
         method_executor_tool,
         explanation_generator_tool,
@@ -341,6 +344,21 @@ def run_causal_analysis(query: str, dataset_path: str,
             dataset_description=input_parsing_result["dataset_description"],
             original_query = input_parsing_result["original_query"],
             excluded_methods=None)
+
+        # NEW: Select control variables based on chosen method
+        method_name = method_selector_output['method_info']['selected_method']
+        controls_selector_output = controls_selector_tool.func(
+            method_name=method_name,
+            variables=query_interpreter_output,
+            dataset_analysis=dataset_analysis_result,
+            dataset_description=input_parsing_result["dataset_description"],
+            original_query=input_parsing_result["original_query"]
+        )
+
+        # Update variables with selected controls
+        from cais.models import Variables
+        query_interpreter_output = Variables(**controls_selector_output['variables'])
+
         method_info = MethodInfo(
             **method_selector_output['method_info']
         )
