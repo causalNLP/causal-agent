@@ -1,7 +1,7 @@
 Causal Inference Methods
 ========================
 
-CAIS supports a comprehensive range of causal inference methods, from experimental designs to observational studies. This section provides detailed documentation for each method, including when to use them, their assumptions, and implementation details.
+Causal Agent supports a comprehensive range of causal inference methods, from experimental designs to observational studies. This section provides detailed documentation for each method, including when to use them, their assumptions, and implementation details.
 
 .. toctree::
    :maxdepth: 2
@@ -16,10 +16,10 @@ CAIS supports a comprehensive range of causal inference methods, from experiment
 Method Selection Guide
 ----------------------
 
-Not sure which method to use? CAIS can automatically select the most appropriate method based on your data and research design. However, understanding the different approaches will help you make informed decisions and interpret results correctly.
+Not sure which method to use? Causal Agent can automatically select the most appropriate method based on your data and research design. However, understanding the different approaches will help you make informed decisions and interpret results correctly.
 
 **Start Here**
-   * :doc:`overview` - Introduction to causal inference and CAIS methods
+   * :doc:`overview` - Introduction to causal inference and Causal Agent methods
    * :doc:`decision_tree` - Interactive guide to method selection
 
 **Method Categories**
@@ -95,4 +95,4 @@ The choice of causal inference method depends on several factors:
 4. **Available Variables**: Instruments, covariates, time dimensions
 5. **Assumptions**: Which identifying assumptions are plausible
 
-CAIS automatically evaluates these factors and recommends the most appropriate method, but understanding the trade-offs helps you make informed decisions about your analysis strategy.
+Causal Agent automatically evaluates these factors and recommends the most appropriate method, but understanding the trade-offs helps you make informed decisions about your analysis strategy.

@@ -48,7 +48,7 @@ The most common use case is analyzing a single dataset with a specific causal qu
 Understanding Results
 ~~~~~~~~~~~~~~~~~~~~
 
-CAIS returns a structured dictionary with comprehensive analysis results:
+Causal Agent returns a structured dictionary with comprehensive analysis results:
 
 .. code-block:: python
 
@@ -178,17 +178,18 @@ Extracting Key Information
     # Get the main causal effect estimate
     effect = result['results']['results']['effect_estimate']
     se = result['results']['results']['standard_error']
-    ci = result['results']['results']['confidence_interval']
-    
+    ci = result['results']['results'].get('confidence_interval', None)
+
     # Check statistical significance
     p_value = result['results']['results']['p_value']
     is_significant = p_value < 0.05
-    
+
     # Get variable information
     variables = result['results']['variables']
     treatment = variables['treatment_variable']
     outcome = variables['outcome_variable']
     covariates = variables.get('covariates', [])
+
 
 Interpreting Diagnostics
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -196,7 +197,7 @@ Interpreting Diagnostics
 .. code-block:: python
 
     # Access diagnostic information
-    diagnostics = result['results']['diagnostics']
+    diagnostics = result['results']['results']['diagnostics']
     
     # For propensity score methods
     if 'balance_statistics' in diagnostics:

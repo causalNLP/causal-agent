@@ -1,0 +1,225 @@
+name: Documentation Monitoring
+
+on:
+  schedule:
+    # Run daily at 6 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:  # Allow manual triggering
+  push:
+    branches: [ main ]
+    paths: [ 'docs/**' ]
+
+jobs:
+  monitor-docs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install -r docs/requirements.txt
+        pip install -r requirements.txt
+        pip install requests flask
+    
+    - name: Build documentation
+      run: |
+        cd docs
+        make html
+    
+    - name: Run documentation monitoring
+      run: |
+        cd docs
+        python monitor_documentation.py --full-report
+    
+    - name: Generate analytics report
+      run: |
+        cd docs
+        python analytics_dashboard.py --static-report --output monitoring_report.html
+    
+    - name: Upload monitoring artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: monitoring-reports
+        path: |
+          docs/docs_monitoring_report.json
+          docs/monitoring_report.html
+          docs/docs_monitoring.log
+        retention-days: 30
+    
+    - name: Check for critical issues
+      run: |
+        cd docs
+        python -c "
+        import json
+        with open('docs_monitoring_report.json', 'r') as f:
+            report = json.load(f)
+        
+        critical_issues = []
+        
+        # Check build health
+        if not report['build_health']['build_exists']:
+            critical_issues.append('Documentation build does not exist')
+        
+        # Check for too many broken links
+        broken_links = report['link_check']['summary']['broken_links']
+        if broken_links > 10:
+            critical_issues.append(f'Too many broken links: {broken_links}')
+        
+        # Check for missing critical pages
+        if report['content_analysis']['summary']['total_pages'] < 5:
+            critical_issues.append('Too few documentation pages')
+        
+        if critical_issues:
+            print('CRITICAL ISSUES FOUND:')
+            for issue in critical_issues:
+                print(f'- {issue}')
+            exit(1)
+        else:
+            print('No critical issues found')
+        "
+    
+    - name: Create issue for broken links
+      if: failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          
+          try {
+            const report = JSON.parse(fs.readFileSync('docs/docs_monitoring_report.json', 'utf8'));
+            const brokenLinks = report.link_check.broken_links;
+            
+            if (brokenLinks.length > 0) {
+              const issueBody = `
+              ## 🔗 Broken Links Detected
+              
+              The automated documentation monitoring has detected ${brokenLinks.length} broken links:
+              
+              ${brokenLinks.slice(0, 10).map(link => 
+                `- **${link.url}**\n  - Source: ${link.source_file}\n  - Error: ${link.error}`
+              ).join('\n\n')}
+              
+              ${brokenLinks.length > 10 ? `\n... and ${brokenLinks.length - 10} more broken links.` : ''}
+              
+              ## Recommendations
+              
+              ${report.recommendations.map(rec => `- **${rec.priority.toUpperCase()}**: ${rec.message}`).join('\n')}
+              
+              ---
+              *This issue was automatically created by the documentation monitoring system.*
+              *Report generated: ${report.generated_at}*
+              `;
+              
+              // Check if similar issue already exists
+              const { data: issues } = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: 'documentation,broken-links',
+                state: 'open'
+              });
+              
+              if (issues.length === 0) {
+                await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: `Documentation: ${brokenLinks.length} broken links detected`,
+                  body: issueBody,
+                  labels: ['documentation', 'broken-links', 'automated']
+                });
+              }
+            }
+          } catch (error) {
+            console.log('Could not create issue:', error.message);
+          }
+
+  link-checker:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Check external links
+      uses: lycheeverse/lychee-action@v1.8.0
+      with:
+        args: --verbose --no-progress 'docs/source/**/*.rst' 'docs/source/**/*.md' --exclude-mail
+        fail: false  # Don't fail the workflow, just report
+    
+    - name: Upload link check results
+      uses: actions/upload-artifact@v3
+      with:
+        name: link-check-results
+        path: lychee/out.md
+        retention-days: 30
+
+  performance-check:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install -r docs/requirements.txt
+        pip install lighthouse-python-plus
+    
+    - name: Build documentation
+      run: |
+        cd docs
+        make html
+    
+    - name: Start local server
+      run: |
+        cd docs/build/html
+        python -m http.server 8000 &
+        sleep 5
+      
+    - name: Run Lighthouse performance audit
+      run: |
+        npx lighthouse http://localhost:8000 --output json --output-path lighthouse-report.json --chrome-flags="--headless --no-sandbox"
+    
+    - name: Upload performance report
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-report
+        path: lighthouse-report.json
+        retention-days: 30
+    
+    - name: Check performance scores
+      run: |
+        python -c "
+        import json
+        with open('lighthouse-report.json', 'r') as f:
+            report = json.load(f)
+        
+        scores = report['categories']
+        performance = scores['performance']['score'] * 100
+        accessibility = scores['accessibility']['score'] * 100
+        seo = scores['seo']['score'] * 100
+        
+        print(f'Performance: {performance}%')
+        print(f'Accessibility: {accessibility}%')
+        print(f'SEO: {seo}%')
+        
+        if performance < 80:
+            print('WARNING: Performance score below 80%')
+        if accessibility < 90:
+            print('WARNING: Accessibility score below 90%')
+        if seo < 90:
+            print('WARNING: SEO score below 90%')
+        "

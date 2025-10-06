@@ -1,0 +1,129 @@
+<!-- Google Analytics 4 (GA4) -->
+{% if google_analytics_id %}
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ google_analytics_id }}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', '{{ google_analytics_id }}', {
+    'anonymize_ip': true,
+    'cookie_flags': 'SameSite=None;Secure',
+    'custom_map': {
+      'custom_parameter_1': 'documentation_section',
+      'custom_parameter_2': 'user_type'
+    }
+  });
+
+  // Enhanced tracking for documentation usage
+  gtag('event', 'page_view', {
+    'page_title': document.title,
+    'page_location': window.location.href,
+    'documentation_section': getDocumentationSection(),
+    'user_type': getUserType()
+  });
+
+  function getDocumentationSection() {
+    const path = window.location.pathname;
+    if (path.includes('/getting_started/')) return 'getting_started';
+    if (path.includes('/user_guide/')) return 'user_guide';
+    if (path.includes('/tutorials/')) return 'tutorials';
+    if (path.includes('/api/')) return 'api';
+    if (path.includes('/methods/')) return 'methods';
+    if (path.includes('/theory/')) return 'theory';
+    if (path.includes('/development/')) return 'development';
+    if (path.includes('/about/')) return 'about';
+    return 'homepage';
+  }
+
+  function getUserType() {
+    // Simple heuristic based on pages visited
+    const visitedPages = sessionStorage.getItem('visited_pages') || '';
+    if (visitedPages.includes('api/')) return 'developer';
+    if (visitedPages.includes('getting_started/')) return 'new_user';
+    if (visitedPages.includes('methods/')) return 'researcher';
+    return 'general';
+  }
+
+  // Track visited pages for user type classification
+  const visitedPages = sessionStorage.getItem('visited_pages') || '';
+  const currentPage = window.location.pathname;
+  if (!visitedPages.includes(currentPage)) {
+    sessionStorage.setItem('visited_pages', visitedPages + ',' + currentPage);
+  }
+</script>
+{% endif %}
+
+{% if google_tag_manager_id %}
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','{{ google_tag_manager_id }}');</script>
+<!-- End Google Tag Manager -->
+{% endif %}
+
+<!-- Documentation-specific event tracking -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Track search usage
+  const searchInput = document.querySelector('input[name="q"]');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      if (this.value.length > 2) {
+        gtag('event', 'search', {
+          'search_term': this.value,
+          'documentation_section': getDocumentationSection()
+        });
+      }
+    });
+  }
+
+  // Track code copy events
+  document.querySelectorAll('.highlight pre').forEach(function(codeBlock) {
+    codeBlock.addEventListener('click', function() {
+      gtag('event', 'code_copy', {
+        'code_language': this.className.match(/language-(\w+)/)?.[1] || 'unknown',
+        'documentation_section': getDocumentationSection()
+      });
+    });
+  });
+
+  // Track external link clicks
+  document.querySelectorAll('a[href^="http"]').forEach(function(link) {
+    if (!link.href.includes(window.location.hostname)) {
+      link.addEventListener('click', function() {
+        gtag('event', 'click', {
+          'event_category': 'external_link',
+          'event_label': this.href,
+          'documentation_section': getDocumentationSection()
+        });
+      });
+    }
+  });
+
+  // Track notebook downloads
+  document.querySelectorAll('a[href$=".ipynb"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      gtag('event', 'download', {
+        'event_category': 'notebook',
+        'event_label': this.href,
+        'documentation_section': getDocumentationSection()
+      });
+    });
+  });
+
+  // Track time spent on page
+  let startTime = Date.now();
+  window.addEventListener('beforeunload', function() {
+    const timeSpent = Math.round((Date.now() - startTime) / 1000);
+    gtag('event', 'timing_complete', {
+      'name': 'page_read_time',
+      'value': timeSpent,
+      'documentation_section': getDocumentationSection()
+    });
+  });
+});
+</script>

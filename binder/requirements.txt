@@ -1,0 +1,25 @@
+# Binder requirements for CAIS tutorial notebooks
+# Core dependencies
+pandas>=1.3.0
+numpy>=1.21.0
+matplotlib>=3.5.0
+seaborn>=0.11.0
+scipy>=1.7.0
+scikit-learn>=1.0.0
+
+# Jupyter and notebook dependencies
+jupyter>=1.0.0
+notebook>=6.4.0
+jupyterlab>=3.0.0
+ipywidgets>=7.6.0
+
+# CAIS package (install from local directory)
+-e .
+
+# Additional analysis libraries
+statsmodels>=0.13.0
+plotly>=5.0.0
+
+# Optional: For enhanced notebook experience
+nbconvert>=6.0.0
+nbformat>=5.0.0

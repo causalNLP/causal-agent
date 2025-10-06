@@ -58,8 +58,8 @@ html_static_path = ['_static']
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    'analytics_id': '',  # Provided by you
-    'analytics_anonymize_ip': False,
+    'analytics_id': 'G-XXXXXXXXXX',  # Replace with actual Google Analytics ID
+    'analytics_anonymize_ip': True,
     'logo_only': False,
     'display_version': True,
     'prev_next_buttons_location': 'bottom',
@@ -72,6 +72,12 @@ html_theme_options = {
     'navigation_depth': 4,
     'includehidden': True,
     'titles_only': False
+}
+
+# Google Analytics configuration
+html_context = {
+    'google_analytics_id': 'G-XXXXXXXXXX',  # Replace with actual GA4 ID
+    'google_tag_manager_id': 'GTM-XXXXXXX',  # Optional: Google Tag Manager
 }
 
 # Search configuration
@@ -229,6 +235,7 @@ def setup(app):
     # Add custom CSS and JavaScript
     app.add_css_file('custom.css')
     app.add_js_file('search_enhancements.js')
+    app.add_js_file('feedback.js')
     
     # Connect to build events for sitemap generation
     app.connect('build-finished', generate_sitemap)
@@ -323,6 +330,8 @@ html_css_files = [
 html_js_files = [
     'search_enhancements.js',
     'accessibility_enhancements.js',
+    'feedback.js',
+    'analytics_dashboard.js',
 ]
 
 # Additional files to copy

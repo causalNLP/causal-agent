@@ -52,7 +52,7 @@ class TestDecisionTreeLLMEngine(unittest.TestCase):
         })
         rct_variables = self.mock_variables.copy()
         rct_variables["covariates"] = []
-        result = self.engine.select_method(
+        result = self.engine.select_method_llm(
             self.mock_dataset_analysis, rct_variables, is_rct=True, llm=self.mock_llm
         )
         self.assertEqual(result["selected_method"], DIFF_IN_MEANS)
@@ -66,7 +66,7 @@ class TestDecisionTreeLLMEngine(unittest.TestCase):
             "method_justification": "LLM: RCT with covariates, Linear Regression for precision.",
             "alternative_methods": []
         })
-        result = self.engine.select_method(
+        result = self.engine.select_method_llm(
             self.mock_dataset_analysis, self.mock_variables, is_rct=True, llm=self.mock_llm
         )
         self.assertEqual(result["selected_method"], LINEAR_REGRESSION)
@@ -79,7 +79,7 @@ class TestDecisionTreeLLMEngine(unittest.TestCase):
             "method_justification": "LLM: Observational with temporal data, DiD selected.",
             "alternative_methods": [INSTRUMENTAL_VARIABLE]
         })
-        result = self.engine.select_method(
+        result = self.engine.select_method_llm(
             self.mock_dataset_analysis, self.mock_variables, is_rct=False, llm=self.mock_llm
         )
         self.assertEqual(result["selected_method"], DIFF_IN_DIFF)
@@ -97,7 +97,7 @@ class TestDecisionTreeLLMEngine(unittest.TestCase):
             "method_justification": "LLM: Observational with instrument, IV selected.",
             "alternative_methods": []
         })
-        result = self.engine.select_method(
+        result = self.engine.select_method_llm(
             no_temporal_analysis, self.mock_variables, is_rct=False, llm=self.mock_llm
         )
         self.assertEqual(result["selected_method"], INSTRUMENTAL_VARIABLE)
@@ -117,7 +117,7 @@ class TestDecisionTreeLLMEngine(unittest.TestCase):
             "method_justification": "LLM: Running var and cutoff, RDD selected.",
             "alternative_methods": []
         })
-        result = self.engine.select_method(
+        result = self.engine.select_method_llm(
             rdd_analysis, rdd_variables, is_rct=False, llm=self.mock_llm
         )
         self.assertEqual(result["selected_method"], REGRESSION_DISCONTINUITY)
@@ -135,7 +135,7 @@ class TestDecisionTreeLLMEngine(unittest.TestCase):
             "method_justification": "LLM: Observational with covariates, PSM.",
             "alternative_methods": []
         })
-        result = self.engine.select_method(
+        result = self.engine.select_method_llm(
             psm_analysis, psm_variables, is_rct=False, llm=self.mock_llm
         )
         self.assertEqual(result["selected_method"], PROPENSITY_SCORE_MATCHING)
@@ -143,7 +143,7 @@ class TestDecisionTreeLLMEngine(unittest.TestCase):
         self.assertEqual(result["method_assumptions"], METHOD_ASSUMPTIONS[PROPENSITY_SCORE_MATCHING])
 
     def test_select_method_no_llm_provided_defaults_to_correlation(self):
-        result = self.engine.select_method(
+        result = self.engine.select_method_llm(
             self.mock_dataset_analysis, self.mock_variables, is_rct=False, llm=None
         )
         self.assertEqual(result["selected_method"], CORRELATION_ANALYSIS)
@@ -152,7 +152,7 @@ class TestDecisionTreeLLMEngine(unittest.TestCase):
 
     def test_select_method_llm_returns_malformed_json_defaults_to_correlation(self):
         self._create_mock_llm_raw_response("This is not a valid JSON")
-        result = self.engine.select_method(
+        result = self.engine.select_method_llm(
             self.mock_dataset_analysis, self.mock_variables, is_rct=False, llm=self.mock_llm
         )
         self.assertEqual(result["selected_method"], CORRELATION_ANALYSIS)
@@ -166,7 +166,7 @@ class TestDecisionTreeLLMEngine(unittest.TestCase):
             "method_justification": "LLM thinks this is best.",
             "alternative_methods": []
         })
-        result = self.engine.select_method(
+        result = self.engine.select_method_llm(
             self.mock_dataset_analysis, self.mock_variables, is_rct=False, llm=self.mock_llm
         )
         self.assertEqual(result["selected_method"], CORRELATION_ANALYSIS)
@@ -175,7 +175,7 @@ class TestDecisionTreeLLMEngine(unittest.TestCase):
 
     def test_select_method_llm_call_raises_exception_defaults_to_correlation(self):
         self.mock_llm.invoke = MagicMock(side_effect=Exception("LLM API Error"))
-        result = self.engine.select_method(
+        result = self.engine.select_method_llm(
             self.mock_dataset_analysis, self.mock_variables, is_rct=False, llm=self.mock_llm
         )
         self.assertEqual(result["selected_method"], CORRELATION_ANALYSIS)
@@ -201,7 +201,7 @@ class TestDecisionTreeLLMEngine(unittest.TestCase):
             self._create_mock_llm_response({ # Need a mock response for the select_method to run
                 "selected_method": DIFF_IN_DIFF, "method_justification": "Test", "alternative_methods": []
             })
-            self.engine.select_method(self.mock_dataset_analysis, self.mock_variables, False, self.mock_llm)
+            self.engine.select_method_llm(self.mock_dataset_analysis, self.mock_variables, False, self.mock_llm)
             
             mock_construct_prompt.assert_called_once_with(self.mock_dataset_analysis, self.mock_variables, False)
             
@@ -229,7 +229,7 @@ Some conversational text before the JSON.
 And some text after.
         """
         self._create_mock_llm_raw_response(raw_response)
-        result = self.engine.select_method(self.mock_dataset_analysis, self.mock_variables, False, self.mock_llm)
+        result = self.engine.select_method_llm(self.mock_dataset_analysis, self.mock_variables, False, self.mock_llm)
         self.assertEqual(result["selected_method"], DIFF_IN_DIFF)
         self.assertEqual(result["method_justification"], "LLM reasoned and selected DiD.")
 
@@ -244,7 +244,7 @@ And some text after.
 ```
         """
         self._create_mock_llm_raw_response(raw_response)
-        result = self.engine.select_method(self.mock_dataset_analysis, self.mock_variables, False, self.mock_llm)
+        result = self.engine.select_method_llm(self.mock_dataset_analysis, self.mock_variables, False, self.mock_llm)
         self.assertEqual(result["selected_method"], DIFF_IN_DIFF)
         self.assertEqual(result["method_justification"], "LLM reasoned and selected DiD with only triple backticks.")
 
@@ -258,7 +258,7 @@ And some text after.
 }
         """
         self._create_mock_llm_raw_response(raw_response)
-        result = self.engine.select_method(self.mock_dataset_analysis, self.mock_variables, False, self.mock_llm)
+        result = self.engine.select_method_llm(self.mock_dataset_analysis, self.mock_variables, False, self.mock_llm)
         self.assertEqual(result["selected_method"], DIFF_IN_DIFF)
         self.assertEqual(result["method_justification"], "LLM reasoned and selected DiD plain JSON.")
 

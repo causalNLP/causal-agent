@@ -63,16 +63,16 @@ Method Details
    * **Strengths**: Simple, interpretable, widely understood
    * **Limitations**: Strong functional form assumptions
 
-Implementation in CAIS
+Implementation in Causal Agent
 -----------------------
 
-CAIS automatically selects and implements appropriate observational methods:
+Causal Agent automatically selects and implements appropriate observational methods:
 
 .. code-block:: python
 
    from causal_agent import CausalAgent
    
-   # CAIS selects best observational method
+   # Causal Agent selects best observational method
    agent = CausalAgent()
    result = agent.analyze(
        data=observational_data,
@@ -82,7 +82,7 @@ CAIS automatically selects and implements appropriate observational methods:
    )
 
 **Automatic Method Selection**
-   CAIS chooses methods based on:
+   Causal Agent chooses methods based on:
    * Data characteristics (sample size, covariate richness)
    * Treatment assignment patterns
    * Outcome variable type

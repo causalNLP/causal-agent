@@ -553,7 +553,8 @@ def _call_llm_for_var(llm: BaseChatModel, prompt: str, pydantic_model: BaseModel
     """Helper to call LLM with structured output and handle errors."""
     try:
         messages = [HumanMessage(content=prompt)]
-        structured_llm = llm.with_structured_output(pydantic_model)
+        # Use function_calling method to avoid json_schema compatibility issues with older models
+        structured_llm = llm.with_structured_output(pydantic_model, method='function_calling')
         parsed_result = structured_llm.invoke(messages)
         return parsed_result
     except (OutputParserException, ValidationError) as e:

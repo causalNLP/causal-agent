@@ -63,16 +63,16 @@ Method Details
    * **Strengths**: Transparent counterfactual construction
    * **Limitations**: Requires good pre-treatment fit
 
-Implementation in CAIS
+Implementation in Causal Agent
 -----------------------
 
-CAIS automatically detects quasi-experimental designs and applies appropriate methods:
+Causal Agent automatically detects quasi-experimental designs and applies appropriate methods:
 
 .. code-block:: python
 
    from causal_agent import CausalAgent
    
-   # CAIS detects DiD design from panel structure
+   # Causal Agent detects DiD design from panel structure
    agent = CausalAgent()
    result = agent.analyze(
        data=panel_data,
@@ -83,7 +83,7 @@ CAIS automatically detects quasi-experimental designs and applies appropriate me
    )
 
 **Automatic Method Selection**
-   CAIS identifies quasi-experimental opportunities by analyzing:
+   Causal Agent identifies quasi-experimental opportunities by analyzing:
    * Data structure (panel, cross-sectional, time series)
    * Treatment assignment patterns
    * Available instrumental variables

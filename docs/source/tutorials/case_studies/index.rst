@@ -1,7 +1,7 @@
 Case Studies
 ============
 
-Comprehensive case studies demonstrating CAIS in real-world scenarios across different domains. Each case study includes complete analysis workflows, from data preparation to result interpretation.
+Comprehensive case studies demonstrating Causal Agent in real-world scenarios across different domains. Each case study includes complete analysis workflows, from data preparation to result interpretation.
 
 .. toctree::
    :maxdepth: 2
@@ -29,7 +29,7 @@ Featured Case Studies
 ---------------------
 
 **Education Policy Analysis: Learning Mindset Intervention**
-   Comprehensive walkthrough of how CAIS analyzes a randomized educational intervention, showing complete agent decision-making process.
+   Comprehensive walkthrough of how Causal Agent analyzes a randomized educational intervention, showing complete agent decision-making process.
    
    * **Domain**: Education research
    * **Method**: Linear Regression with Covariates
@@ -38,7 +38,7 @@ Featured Case Studies
    * **Agent Focus**: How randomization simplifies method selection, robustness checking across specifications
 
 **Healthcare Treatment Effects: Hospital Treatment Analysis**
-   Detailed analysis of observational healthcare data showing how CAIS handles selection bias and validates propensity score methods.
+   Detailed analysis of observational healthcare data showing how Causal Agent handles selection bias and validates propensity score methods.
    
    * **Domain**: Medical research
    * **Method**: Propensity Score Matching
@@ -47,7 +47,7 @@ Featured Case Studies
    * **Agent Focus**: Method exclusion logic, comprehensive robustness analysis, clinical interpretation
 
 **Economic Policy Impact: Minimum Wage Analysis**
-   Complete regression discontinuity analysis showing how CAIS identifies and exploits policy discontinuities for causal identification.
+   Complete regression discontinuity analysis showing how Causal Agent identifies and exploits policy discontinuities for causal identification.
    
    * **Domain**: Labor economics
    * **Method**: Regression Discontinuity Design
@@ -56,7 +56,7 @@ Featured Case Studies
    * **Agent Focus**: Geographic discontinuity identification, assumption testing, policy interpretation
 
 **Marketing Campaign Evaluation: Instrumental Variables Analysis**
-   Comprehensive IV analysis demonstrating how CAIS identifies valid instruments and handles endogeneity in marketing data.
+   Comprehensive IV analysis demonstrating how Causal Agent identifies valid instruments and handles endogeneity in marketing data.
    
    * **Domain**: Marketing analytics
    * **Method**: Instrumental Variables
@@ -65,7 +65,7 @@ Featured Case Studies
    * **Agent Focus**: Instrument detection and validation, first-stage analysis, business ROI interpretation
 
 **Technology Product Features: A/B Testing Analysis**
-   Complete A/B test analysis showing how CAIS optimizes experimental analysis for precision and business decision-making.
+   Complete A/B test analysis showing how Causal Agent optimizes experimental analysis for precision and business decision-making.
    
    * **Domain**: Product analytics
    * **Method**: Linear Regression with Covariates
@@ -80,7 +80,7 @@ After completing these case studies, you will be able to:
 
 * Identify appropriate causal inference methods for different research contexts
 * Understand how to prepare and validate data for causal analysis
-* Implement complete analysis workflows using CAIS
+* Implement complete analysis workflows using Causal Agent
 * Interpret results correctly and communicate findings effectively
 * Recognize limitations and potential biases in causal analyses
 * Apply best practices for reproducible causal inference research

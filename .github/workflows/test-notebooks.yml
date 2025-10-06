@@ -1,0 +1,74 @@
+name: Test Jupyter Notebooks
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'docs/source/tutorials/notebooks/**'
+      - '.github/workflows/test-notebooks.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'docs/source/tutorials/notebooks/**'
+      - '.github/workflows/test-notebooks.yml'
+
+jobs:
+  test-notebooks:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, '3.10']
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install jupyter nbconvert nbformat pytest
+        pip install pandas numpy matplotlib seaborn scipy scikit-learn
+        # Install CAIS package
+        pip install -e .
+    
+    - name: Install notebook testing dependencies
+      run: |
+        pip install nbval pytest-xdist
+    
+    - name: Test notebook syntax and structure
+      run: |
+        python -m pytest --nbval-lax docs/source/tutorials/notebooks/ -v
+    
+    - name: Test notebooks can be converted
+      run: |
+        jupyter nbconvert --to python docs/source/tutorials/notebooks/*.ipynb --output-dir /tmp/notebook_tests/
+    
+    - name: Run notebook smoke tests
+      run: |
+        python scripts/test_notebooks.py
+    
+    - name: Generate notebook execution report
+      if: always()
+      run: |
+        python scripts/generate_notebook_report.py > notebook_test_report.txt
+    
+    - name: Upload notebook test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: notebook-test-results-${{ matrix.python-version }}
+        path: |
+          notebook_test_report.txt
+          /tmp/notebook_tests/

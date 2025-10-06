@@ -1,15 +1,15 @@
-Causal AI Scientist (CAIS) Documentation
+Causal Agent Documentation
 ========================================
 
-Welcome to the Causal AI Scientist (CAIS) documentation! CAIS is an intelligent system that helps researchers and practitioners conduct rigorous causal inference analysis by automatically selecting appropriate causal inference methods, validating assumptions, and providing interpretable results.
+Welcome to the Causal-Agent is an intelligent system that helps researchers and practitioners conduct rigorous causal inference analysis by automatically selecting appropriate causal inference methods, validating assumptions, and providing interpretable results.
 
 .. note::
-   CAIS is designed to democratize causal inference by making advanced statistical methods accessible to users with varying levels of statistical expertise.
+   Causal Agent is designed to democratize causal inference by making advanced statistical methods accessible to users with varying levels of statistical expertise.
 
-What is CAIS?
+What is causal-agent?
 -------------
 
-The Causal AI Scientist is an AI-powered tool that:
+The Causal Agent is an AI-powered tool that:
 
 * **Automatically selects** the most appropriate causal inference method based on your data and research question
 * **Validates assumptions** required for causal identification and provides diagnostic feedback
@@ -38,11 +38,11 @@ Key Features
 Quick Start
 -----------
 
-Get started with CAIS in just a few steps:
+Get started with Causal Agent in just a few steps:
 
-1. **Install CAIS**: ``pip install causal-agent``
+1. **Install Causal Agent**: ``pip install causal-agent``
 2. **Load your data**: Import your dataset in CSV or pandas DataFrame format
-3. **Run analysis**: Let CAIS automatically select and execute the appropriate causal inference method
+3. **Run analysis**: Let Causal Agent automatically select and execute the appropriate causal inference method
 4. **Interpret results**: Review the generated causal effect estimates and explanations
 
 .. code-block:: python
@@ -124,13 +124,13 @@ Community & Support
 Citation
 --------
 
-If you use CAIS in your research, please cite:
+If you use Causal Agent in your research, please cite:
 
 .. code-block:: bibtex
 
    @software{causal_ai_scientist,
      title={Causal AI Scientist: Automated Causal Inference Analysis},
-     author={CAIS Team},
+     author={Causal Agent Team},
      year={2024},
      url={https://github.com/your-org/causal-ai-scientist}
    }

@@ -1,7 +1,7 @@
 Tutorials & Examples
 ===================
 
-Learn CAIS through hands-on tutorials, comprehensive case studies, and practical examples. This section provides interactive learning materials for users at all levels.
+Learn Causal Agent through hands-on tutorials, comprehensive case studies, and practical examples. This section provides interactive learning materials for users at all levels.
 
 All tutorials include downloadable Jupyter notebooks that you can run locally or in cloud environments like Google Colab or Binder.
 
@@ -9,7 +9,6 @@ All tutorials include downloadable Jupyter notebooks that you can run locally or
    :maxdepth: 2
    :caption: Learning Materials
 
-   interactive_examples
    notebooks/index
    case_studies/index
    examples/index
@@ -18,9 +17,8 @@ Learning Path
 -------------
 
 **For Beginners**
-   1. Start with :doc:`notebooks/index` for interactive step-by-step tutorials
-   2. Review basic :doc:`examples/index` for common use cases
-   3. Explore simple :doc:`case_studies/index` to see complete analyses
+   1. Review basic :doc:`examples/index` for common use cases
+   2. Explore simple :doc:`case_studies/index` to see complete analyses
 
 **For Intermediate Users**
    1. Work through domain-specific :doc:`case_studies/index`
@@ -54,10 +52,3 @@ Tutorial Categories
    * Intermediate: Multi-step analyses with diagnostics
    * Advanced: Complex scenarios and method comparisons
 
-Interactive Features
---------------------
-
-* **Jupyter Notebooks**: Run code interactively in your browser
-* **Binder Integration**: Launch tutorials in cloud environments
-* **Downloadable Datasets**: Practice with real-world data
-* **Solution Notebooks**: Compare your results with expected outcomes

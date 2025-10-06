@@ -1,9 +1,9 @@
 User Guide
 ==========
 
-This comprehensive user guide covers everything you need to know about using CAIS effectively in your research and analysis workflows.
+This comprehensive user guide covers everything you need to know about using Causal Agent effectively in your research and analysis workflows.
 
-Whether you're conducting a single analysis or processing multiple datasets, this guide provides detailed instructions, best practices, and configuration options to help you get the most out of CAIS.
+Whether you're conducting a single analysis or processing multiple datasets, this guide provides detailed instructions, best practices, and configuration options to help you get the most out of Causal Agent.
 
 .. toctree::
    :maxdepth: 2
@@ -18,7 +18,7 @@ Guide Overview
 --------------
 
 **Basic Usage**
-   Learn the fundamental workflows for conducting causal analysis with CAIS, including data preparation, method selection, and result interpretation.
+   Learn the fundamental workflows for conducting causal analysis with Causal Agent, including data preparation, method selection, and result interpretation.
 
 **Advanced Usage**
    Explore advanced features like custom method selection, assumption validation, and integration with existing analysis pipelines.
@@ -27,7 +27,7 @@ Guide Overview
    Process multiple datasets efficiently with automated workflows and parallel processing capabilities.
 
 **Configuration**
-   Customize CAIS behavior, configure LLM providers, and set up your analysis environment for optimal performance.
+   Customize Causal Agent behavior, configure LLM providers, and set up your analysis environment for optimal performance.
 
 Common Workflows
 ----------------
@@ -35,7 +35,7 @@ Common Workflows
 * **Single Dataset Analysis**: Standard workflow for analyzing one dataset
 * **Comparative Analysis**: Comparing results across different methods
 * **Sensitivity Analysis**: Testing robustness of causal conclusions
-* **Production Integration**: Embedding CAIS in automated analysis pipelines
+* **Production Integration**: Embedding Causal Agent in automated analysis pipelines
 
 Best Practices
 --------------

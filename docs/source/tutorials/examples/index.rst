@@ -1,7 +1,7 @@
 Code Examples
 =============
 
-Quick, focused examples demonstrating specific CAIS features and common use cases. These examples are designed to be copy-and-paste ready for your own projects.
+Quick, focused examples demonstrating specific Causal Agent features and common use cases. These examples are designed to be copy-and-paste ready for your own projects.
 
 .. toctree::
    :maxdepth: 2
@@ -37,7 +37,7 @@ Example Categories
    Simple, straightforward examples for common tasks:
    
    * Loading data and running basic analysis
-   * Interpreting CAIS output
+   * Interpreting Causal Agent output
    * Saving and loading results
    * Basic visualization of results
 
@@ -52,14 +52,14 @@ Example Categories
 **Method-Specific Examples**
    Examples for each causal inference method:
    
-   * RCT analysis with CAIS
+   * RCT analysis with Causal Agent
    * Difference-in-Differences implementation
    * Instrumental Variables analysis
    * Regression Discontinuity Design
    * Propensity Score methods
 
 **Configuration Examples**
-   Customizing CAIS for your needs:
+   Customizing Causal Agent for your needs:
    
    * LLM provider configuration
    * Custom method selection
@@ -67,7 +67,7 @@ Example Categories
    * Performance optimization
 
 **Integration Examples**
-   Using CAIS with other tools and workflows:
+   Using Causal Agent with other tools and workflows:
    
    * Pandas DataFrame integration
    * Scikit-learn pipeline integration
@@ -87,7 +87,7 @@ Quick Start Examples
    # Load your data
    data = pd.read_csv('your_data.csv')
    
-   # Initialize CAIS
+   # Initialize Causal Agent
    agent = CausalAgent()
    
    # Run analysis

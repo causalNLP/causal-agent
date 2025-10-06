@@ -1,7 +1,7 @@
 Quickstart Tutorial
 ==================
 
-Get up and running with CAIS in under 10 minutes! This tutorial will walk you through your first causal analysis using the Causal AI Scientist.
+Get up and running with Causal Agent in under 10 minutes! This tutorial will walk you through your first causal analysis using the Causal AI Scientist.
 
 .. contents:: Quick Navigation
    :local:
@@ -12,7 +12,7 @@ Overview
 
 In this quickstart, you'll learn how to:
 
-1. Set up CAIS with your API key
+1. Set up Causal Agent with your API key
 2. Load a sample dataset
 3. Run your first causal analysis
 4. Interpret the results
@@ -22,7 +22,7 @@ Prerequisites
 
 Before starting, make sure you have:
 
-* CAIS installed (see :doc:`installation`)
+* Causal Agent installed (see :doc:`installation`)
 * An OpenAI API key (or other supported LLM provider)
 * Basic familiarity with Python
 
@@ -51,7 +51,7 @@ For this tutorial, we'll use a sample dataset about job training programs. You c
 
    import pandas as pd
    
-   # Option 1: Use CAIS sample data
+   # Option 1: Use Causal Agent sample data
    from causal_agent.synthetic import load_sample_data
    
    # Load a sample job training dataset
@@ -102,23 +102,23 @@ Now let's run a causal analysis to answer: *"Does participating in job training 
 Step 4: Understanding the Results
 ---------------------------------
 
-CAIS returns a comprehensive result object. Let's explore what it contains:
+Causal Agent returns a comprehensive result object. Let's explore what it contains:
 
 .. code-block:: python
 
    # Print the main results
    print("=== CAUSAL ANALYSIS RESULTS ===")
    print(f"Query: {result['query']}")
-   print(f"Method Used: {result['results']['method_used']}")
-   print(f"Treatment Variable: {result['results']['treatment_variable']}")
-   print(f"Outcome Variable: {result['results']['outcome_variable']}")
-   print(f"Causal Effect: {result['results']['effect_estimate']}")
-   print(f"Standard Error: {result['results']['standard_error']}")
-   print(f"P-value: {result['results']['p_value']}")
+   print(f"Method Used: {result['results']['results']['method_used']}")
+   print(f"Treatment Variable: {result['results']['variables']['treatment_variable']}")
+   print(f"Outcome Variable: {result['results']['variables']['outcome_variable']}")
+   print(f"Causal Effect: {result['results']['results']['effect_estimate']}")
+   print(f"Standard Error: {result['results']['results']['standard_error']}")
+   print(f"P-value: {result['results']['results']['p_value']}")
    
    # Print the interpretation
    print("\n=== INTERPRETATION ===")
-   print(result['results']['interpretation'])
+   print(result['explanation']['final_explanation_text'])
 
 **Sample Output:**
 
@@ -161,9 +161,8 @@ Try different causal questions with the same dataset:
            dataset_description="Job training dataset with demographic and outcome variables"
        )
        
-       print(f"Method: {result['results']['method_used']}")
-       print(f"Effect: {result['results']['effect_estimate']}")
-       print(f"Interpretation: {result['results']['interpretation'][:200]}...")
+       print(f"Method: {result['results']['results']['method_used']}")
+       print(f"Effect: {result['results']['results']['effect_estimate']}")
 
 Step 6: Working with Your Own Data
 ----------------------------------
@@ -227,7 +226,7 @@ Here are some example queries you can try with different types of data:
 Understanding Method Selection
 ------------------------------
 
-CAIS automatically selects the most appropriate causal inference method based on your data characteristics:
+Causal Agent automatically selects the most appropriate causal inference method based on your data characteristics:
 
 .. code-block:: python
 
@@ -235,7 +234,7 @@ CAIS automatically selects the most appropriate causal inference method based on
    print(f"Selected Method: {result['results']['method_used']}")
    print(f"Method Reasoning: {result['results'].get('method_reasoning', 'Not available')}")
    
-   # Common methods CAIS might select:
+   # Common methods Causal Agent might select:
    # - Randomized Controlled Trial (RCT) analysis
    # - Propensity Score Matching
    # - Difference-in-Differences (DiD)
@@ -246,7 +245,7 @@ CAIS automatically selects the most appropriate causal inference method based on
 Next Steps
 ----------
 
-Congratulations! You've completed your first causal analysis with CAIS. Here's what to explore next:
+Congratulations! You've completed your first causal analysis with Causal Agent. Here's what to explore next:
 
 **Immediate Next Steps:**
 

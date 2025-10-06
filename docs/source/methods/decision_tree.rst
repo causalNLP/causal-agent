@@ -1,20 +1,12 @@
 Method Selection Decision Tree
 ==============================
 
-CAIS uses a sophisticated decision tree algorithm to automatically select the most appropriate causal inference method based on your data characteristics and research design. This page provides comprehensive documentation of the decision logic, interactive tools, and step-by-step walkthroughs to help you understand why CAIS recommends specific methods.
+Causal Agent uses a sophisticated decision tree algorithm to automatically select the most appropriate causal inference method based on your data characteristics and research design. This page provides comprehensive documentation of the decision logic, interactive tools, and step-by-step walkthroughs to help you understand why Causal Agent recommends specific methods.
 
 .. contents:: Table of Contents
    :local:
    :depth: 3
 
-Overview of the Decision Process
---------------------------------
-
-The CAIS decision tree follows a hierarchical approach that prioritizes methods with stronger causal identification:
-
-1. **Experimental Methods** (Highest Priority): When randomization is present
-2. **Quasi-Experimental Methods** (High Priority): Natural experiments and design-based identification
-3. **Observational Methods** (Medium Priority): Statistical adjustment methods
 
 The algorithm considers multiple data characteristics simultaneously and provides both primary recommendations and alternative methods for robustness checking.
 
@@ -93,564 +85,561 @@ Complete Decision Tree Algorithm
        class B,C,D,E,I,J,L,N,O,P,R,S,W,Y,BB,EE decision
        class A special
 
-Interactive Method Selection Tool
----------------------------------
 
-Use this interactive tool to walk through the decision tree logic with your own data characteristics:
 
-.. raw:: html
+.. .. raw:: html
 
-   <div id="interactive-decision-tree">
-       <div class="decision-tool-header">
-           <h3>🔍 Interactive Method Selection</h3>
-           <p>Answer the questions below to see how CAIS would select a method for your data:</p>
-       </div>
+..    <div id="interactive-decision-tree">
+..        <div class="decision-tool-header">
+..            <h3>🔍 Interactive Method Selection</h3>
+..            <p>Answer the questions below to see how Causal Agent would select a method for your data:</p>
+..        </div>
        
-       <div class="decision-steps">
-           <div class="step active" id="step-1">
-               <h4>Step 1: Study Design</h4>
-               <div class="question">
-                   <label>Is your data from a randomized controlled trial (RCT)?</label>
-                   <div class="options">
-                       <button class="option-btn" data-value="yes" onclick="selectOption('rct', 'yes')">
-                           ✅ Yes - Participants were randomly assigned to treatment/control
-                       </button>
-                       <button class="option-btn" data-value="no" onclick="selectOption('rct', 'no')">
-                           ❌ No - Observational data or natural experiment
-                       </button>
-                   </div>
-               </div>
-           </div>
+..        <div class="decision-steps">
+..            <div class="step active" id="step-1">
+..                <h4>Step 1: Study Design</h4>
+..                <div class="question">
+..                    <label>Is your data from a randomized controlled trial (RCT)?</label>
+..                    <div class="options">
+..                        <button class="option-btn" data-value="yes" onclick="selectOption('rct', 'yes')">
+..                            ✅ Yes - Participants were randomly assigned to treatment/control
+..                        </button>
+..                        <button class="option-btn" data-value="no" onclick="selectOption('rct', 'no')">
+..                            ❌ No - Observational data or natural experiment
+..                        </button>
+..                    </div>
+..                </div>
+..            </div>
            
-           <div class="step" id="step-2" style="display: none;">
-               <h4>Step 2: Data Structure</h4>
-               <div class="question" id="rct-questions" style="display: none;">
-                   <label>Do you have covariates (pre-treatment variables)?</label>
-                   <div class="options">
-                       <button class="option-btn" data-value="yes" onclick="selectOption('covariates', 'yes')">
-                           ✅ Yes - I have background variables
-                       </button>
-                       <button class="option-btn" data-value="no" onclick="selectOption('covariates', 'no')">
-                           ❌ No - Only treatment and outcome
-                       </button>
-                   </div>
-               </div>
+..            <div class="step" id="step-2" style="display: none;">
+..                <h4>Step 2: Data Structure</h4>
+..                <div class="question" id="rct-questions" style="display: none;">
+..                    <label>Do you have covariates (pre-treatment variables)?</label>
+..                    <div class="options">
+..                        <button class="option-btn" data-value="yes" onclick="selectOption('covariates', 'yes')">
+..                            ✅ Yes - I have background variables
+..                        </button>
+..                        <button class="option-btn" data-value="no" onclick="selectOption('covariates', 'no')">
+..                            ❌ No - Only treatment and outcome
+..                        </button>
+..                    </div>
+..                </div>
                
-               <div class="question" id="obs-questions" style="display: none;">
-                   <label>What type of data structure do you have?</label>
-                   <div class="options">
-                       <button class="option-btn" data-value="panel" onclick="selectOption('structure', 'panel')">
-                           📊 Panel data - Multiple time periods
-                       </button>
-                       <button class="option-btn" data-value="rdd" onclick="selectOption('structure', 'rdd')">
-                           📈 Running variable - Sharp cutoff for treatment
-                       </button>
-                       <button class="option-btn" data-value="cross" onclick="selectOption('structure', 'cross')">
-                           📋 Cross-sectional - Single time period
-                       </button>
-                   </div>
-               </div>
-           </div>
+..                <div class="question" id="obs-questions" style="display: none;">
+..                    <label>What type of data structure do you have?</label>
+..                    <div class="options">
+..                        <button class="option-btn" data-value="panel" onclick="selectOption('structure', 'panel')">
+..                            📊 Panel data - Multiple time periods
+..                        </button>
+..                        <button class="option-btn" data-value="rdd" onclick="selectOption('structure', 'rdd')">
+..                            📈 Running variable - Sharp cutoff for treatment
+..                        </button>
+..                        <button class="option-btn" data-value="cross" onclick="selectOption('structure', 'cross')">
+..                            📋 Cross-sectional - Single time period
+..                        </button>
+..                    </div>
+..                </div>
+..            </div>
            
-           <div class="step" id="step-3" style="display: none;">
-               <h4>Step 3: Additional Variables</h4>
-               <div class="question" id="instrument-question" style="display: none;">
-                   <label>Do you have an instrumental variable?</label>
-                   <div class="options">
-                       <button class="option-btn" data-value="yes" onclick="selectOption('instrument', 'yes')">
-                           ✅ Yes - Variable that affects treatment but not outcome directly
-                       </button>
-                       <button class="option-btn" data-value="no" onclick="selectOption('instrument', 'no')">
-                           ❌ No - No valid instrument available
-                       </button>
-                   </div>
-               </div>
+..            <div class="step" id="step-3" style="display: none;">
+..                <h4>Step 3: Additional Variables</h4>
+..                <div class="question" id="instrument-question" style="display: none;">
+..                    <label>Do you have an instrumental variable?</label>
+..                    <div class="options">
+..                        <button class="option-btn" data-value="yes" onclick="selectOption('instrument', 'yes')">
+..                            ✅ Yes - Variable that affects treatment but not outcome directly
+..                        </button>
+..                        <button class="option-btn" data-value="no" onclick="selectOption('instrument', 'no')">
+..                            ❌ No - No valid instrument available
+..                        </button>
+..                    </div>
+..                </div>
                
-               <div class="question" id="treatment-type-question" style="display: none;">
-                   <label>What type of treatment variable do you have?</label>
-                   <div class="options">
-                       <button class="option-btn" data-value="binary" onclick="selectOption('treatment_type', 'binary')">
-                           🔘 Binary - Treatment vs Control (0/1)
-                       </button>
-                       <button class="option-btn" data-value="continuous" onclick="selectOption('treatment_type', 'continuous')">
-                           📏 Continuous - Dose or intensity level
-                       </button>
-                       <button class="option-btn" data-value="categorical" onclick="selectOption('treatment_type', 'categorical')">
-                           📂 Categorical - Multiple treatment types
-                       </button>
-                   </div>
-               </div>
-           </div>
+..                <div class="question" id="treatment-type-question" style="display: none;">
+..                    <label>What type of treatment variable do you have?</label>
+..                    <div class="options">
+..                        <button class="option-btn" data-value="binary" onclick="selectOption('treatment_type', 'binary')">
+..                            🔘 Binary - Treatment vs Control (0/1)
+..                        </button>
+..                        <button class="option-btn" data-value="continuous" onclick="selectOption('treatment_type', 'continuous')">
+..                            📏 Continuous - Dose or intensity level
+..                        </button>
+..                        <button class="option-btn" data-value="categorical" onclick="selectOption('treatment_type', 'categorical')">
+..                            📂 Categorical - Multiple treatment types
+..                        </button>
+..                    </div>
+..                </div>
+..            </div>
            
-           <div class="step" id="step-4" style="display: none;">
-               <h4>Step 4: Covariate Assessment</h4>
-               <div class="question" id="covariate-richness-question" style="display: none;">
-                   <label>How many pre-treatment covariates do you have?</label>
-                   <div class="options">
-                       <button class="option-btn" data-value="rich" onclick="selectOption('covariate_richness', 'rich')">
-                           📚 Rich - Many relevant background variables
-                       </button>
-                       <button class="option-btn" data-value="limited" onclick="selectOption('covariate_richness', 'limited')">
-                           📖 Limited - Few background variables
-                       </button>
-                   </div>
-               </div>
+..            <div class="step" id="step-4" style="display: none;">
+..                <h4>Step 4: Covariate Assessment</h4>
+..                <div class="question" id="covariate-richness-question" style="display: none;">
+..                    <label>How many pre-treatment covariates do you have?</label>
+..                    <div class="options">
+..                        <button class="option-btn" data-value="rich" onclick="selectOption('covariate_richness', 'rich')">
+..                            📚 Rich - Many relevant background variables
+..                        </button>
+..                        <button class="option-btn" data-value="limited" onclick="selectOption('covariate_richness', 'limited')">
+..                            📖 Limited - Few background variables
+..                        </button>
+..                    </div>
+..                </div>
                
-               <div class="question" id="overlap-question" style="display: none;">
-                   <label>How is the covariate overlap between treatment groups?</label>
-                   <div class="options">
-                       <button class="option-btn" data-value="good" onclick="selectOption('overlap', 'good')">
-                           ✅ Good - Similar distributions across groups
-                       </button>
-                       <button class="option-btn" data-value="poor" onclick="selectOption('overlap', 'poor')">
-                           ⚠️ Poor - Different distributions across groups
-                       </button>
-                   </div>
-               </div>
-           </div>
+..                <div class="question" id="overlap-question" style="display: none;">
+..                    <label>How is the covariate overlap between treatment groups?</label>
+..                    <div class="options">
+..                        <button class="option-btn" data-value="good" onclick="selectOption('overlap', 'good')">
+..                            ✅ Good - Similar distributions across groups
+..                        </button>
+..                        <button class="option-btn" data-value="poor" onclick="selectOption('overlap', 'poor')">
+..                            ⚠️ Poor - Different distributions across groups
+..                        </button>
+..                    </div>
+..                </div>
+..            </div>
            
-           <div class="step" id="results" style="display: none;">
-               <h4>🎯 Recommended Method</h4>
-               <div id="method-recommendation">
-                   <!-- Results will be populated here -->
-               </div>
-               <button class="reset-btn" onclick="resetDecisionTree()">🔄 Start Over</button>
-           </div>
-       </div>
+..            <div class="step" id="results" style="display: none;">
+..                <h4>🎯 Recommended Method</h4>
+..                <div id="method-recommendation">
+..                    <!-- Results will be populated here -->
+..                </div>
+..                <button class="reset-btn" onclick="resetDecisionTree()">🔄 Start Over</button>
+..            </div>
+..        </div>
        
-       <div class="decision-path">
-           <h4>📍 Your Decision Path</h4>
-           <div id="path-display">
-               <p>Start answering questions to see your decision path...</p>
-           </div>
-       </div>
-   </div>
+..        <div class="decision-path">
+..            <h4>📍 Your Decision Path</h4>
+..            <div id="path-display">
+..                <p>Start answering questions to see your decision path...</p>
+..            </div>
+..        </div>
+..    </div>
 
-   <script>
-   // Interactive Decision Tree Logic
-   let decisionState = {};
-   let currentStep = 1;
+..    <script>
+..    // Interactive Decision Tree Logic
+..    let decisionState = {};
+..    let currentStep = 1;
    
-   function selectOption(key, value) {
-       decisionState[key] = value;
-       updateDecisionPath();
-       nextStep();
-   }
+..    function selectOption(key, value) {
+..        decisionState[key] = value;
+..        updateDecisionPath();
+..        nextStep();
+..    }
    
-   function nextStep() {
-       // Hide current step
-       document.getElementById(`step-${currentStep}`).style.display = 'none';
-       document.getElementById(`step-${currentStep}`).classList.remove('active');
+..    function nextStep() {
+..        // Hide current step
+..        document.getElementById(`step-${currentStep}`).style.display = 'none';
+..        document.getElementById(`step-${currentStep}`).classList.remove('active');
        
-       currentStep++;
+..        currentStep++;
        
-       // Show next step based on previous answers
-       if (currentStep === 2) {
-           showStep2();
-       } else if (currentStep === 3) {
-           showStep3();
-       } else if (currentStep === 4) {
-           showStep4();
-       } else {
-           showResults();
-       }
-   }
+..        // Show next step based on previous answers
+..        if (currentStep === 2) {
+..            showStep2();
+..        } else if (currentStep === 3) {
+..            showStep3();
+..        } else if (currentStep === 4) {
+..            showStep4();
+..        } else {
+..            showResults();
+..        }
+..    }
    
-   function showStep2() {
-       const step2 = document.getElementById('step-2');
-       step2.style.display = 'block';
-       step2.classList.add('active');
+..    function showStep2() {
+..        const step2 = document.getElementById('step-2');
+..        step2.style.display = 'block';
+..        step2.classList.add('active');
        
-       if (decisionState.rct === 'yes') {
-           document.getElementById('rct-questions').style.display = 'block';
-           document.getElementById('obs-questions').style.display = 'none';
-       } else {
-           document.getElementById('rct-questions').style.display = 'none';
-           document.getElementById('obs-questions').style.display = 'block';
-       }
-   }
+..        if (decisionState.rct === 'yes') {
+..            document.getElementById('rct-questions').style.display = 'block';
+..            document.getElementById('obs-questions').style.display = 'none';
+..        } else {
+..            document.getElementById('rct-questions').style.display = 'none';
+..            document.getElementById('obs-questions').style.display = 'block';
+..        }
+..    }
    
-   function showStep3() {
-       const step3 = document.getElementById('step-3');
-       step3.style.display = 'block';
-       step3.classList.add('active');
+..    function showStep3() {
+..        const step3 = document.getElementById('step-3');
+..        step3.style.display = 'block';
+..        step3.classList.add('active');
        
-       // Show relevant questions based on previous answers
-       if (decisionState.rct === 'yes' || decisionState.structure === 'cross') {
-           document.getElementById('instrument-question').style.display = 'block';
-       }
+..        // Show relevant questions based on previous answers
+..        if (decisionState.rct === 'yes' || decisionState.structure === 'cross') {
+..            document.getElementById('instrument-question').style.display = 'block';
+..        }
        
-       if (decisionState.structure === 'cross') {
-           document.getElementById('treatment-type-question').style.display = 'block';
-       }
+..        if (decisionState.structure === 'cross') {
+..            document.getElementById('treatment-type-question').style.display = 'block';
+..        }
        
-       // Skip to step 4 if no questions needed
-       if (decisionState.structure === 'panel' || decisionState.structure === 'rdd') {
-           currentStep++;
-           showResults();
-           return;
-       }
-   }
+..        // Skip to step 4 if no questions needed
+..        if (decisionState.structure === 'panel' || decisionState.structure === 'rdd') {
+..            currentStep++;
+..            showResults();
+..            return;
+..        }
+..    }
    
-   function showStep4() {
-       const step4 = document.getElementById('step-4');
+..    function showStep4() {
+..        const step4 = document.getElementById('step-4');
        
-       // Only show step 4 for cross-sectional observational data
-       if (decisionState.structure === 'cross' && decisionState.instrument === 'no') {
-           step4.style.display = 'block';
-           step4.classList.add('active');
-           document.getElementById('covariate-richness-question').style.display = 'block';
+..        // Only show step 4 for cross-sectional observational data
+..        if (decisionState.structure === 'cross' && decisionState.instrument === 'no') {
+..            step4.style.display = 'block';
+..            step4.classList.add('active');
+..            document.getElementById('covariate-richness-question').style.display = 'block';
            
-           if (decisionState.covariate_richness === 'rich') {
-               document.getElementById('overlap-question').style.display = 'block';
-           }
-       } else {
-           currentStep++;
-           showResults();
-       }
-   }
+..            if (decisionState.covariate_richness === 'rich') {
+..                document.getElementById('overlap-question').style.display = 'block';
+..            }
+..        } else {
+..            currentStep++;
+..            showResults();
+..        }
+..    }
    
-   function showResults() {
-       const resultsStep = document.getElementById('results');
-       resultsStep.style.display = 'block';
-       resultsStep.classList.add('active');
+..    function showResults() {
+..        const resultsStep = document.getElementById('results');
+..        resultsStep.style.display = 'block';
+..        resultsStep.classList.add('active');
        
-       const recommendation = getMethodRecommendation();
-       document.getElementById('method-recommendation').innerHTML = recommendation;
-   }
+..        const recommendation = getMethodRecommendation();
+..        document.getElementById('method-recommendation').innerHTML = recommendation;
+..    }
    
-   function getMethodRecommendation() {
-       let method, justification, assumptions, alternatives;
+..    function getMethodRecommendation() {
+..        let method, justification, assumptions, alternatives;
        
-       if (decisionState.rct === 'yes') {
-           if (decisionState.instrument === 'yes') {
-               method = 'Instrumental Variables (Encouragement Design)';
-               justification = 'You have an RCT with an instrument different from treatment assignment. This encouragement design allows for strong causal identification.';
-               assumptions = ['Instrument relevance', 'Exclusion restriction', 'Monotonicity'];
-               alternatives = ['Linear Regression with Covariates'];
-           } else if (decisionState.covariates === 'yes') {
-               method = 'Linear Regression with Covariates';
-               justification = 'You have an RCT with covariates. Including covariates improves precision while maintaining causal identification from randomization.';
-               assumptions = ['Randomization validity', 'Correct model specification'];
-               alternatives = ['Difference in Means'];
-           } else {
-               method = 'Difference in Means';
-               justification = 'You have a pure RCT without covariates. Simple difference in means provides unbiased causal estimates.';
-               assumptions = ['Randomization validity', 'No spillover effects'];
-               alternatives = ['Linear Regression'];
-           }
-       } else {
-           if (decisionState.structure === 'panel') {
-               method = 'Difference-in-Differences';
-               justification = 'You have panel data with treatment timing variation. DiD can control for time-invariant confounders.';
-               assumptions = ['Parallel trends', 'No anticipation effects', 'Stable composition'];
-               alternatives = ['Linear Regression with Fixed Effects'];
-           } else if (decisionState.structure === 'rdd') {
-               method = 'Regression Discontinuity Design';
-               justification = 'You have a running variable with sharp cutoff. RDD provides credible causal identification around the cutoff.';
-               assumptions = ['Continuity at cutoff', 'No manipulation of running variable'];
-               alternatives = ['Linear Regression'];
-           } else if (decisionState.instrument === 'yes') {
-               method = 'Instrumental Variables';
-               justification = 'You have an instrumental variable available. IV can handle unmeasured confounding.';
-               assumptions = ['Instrument relevance', 'Exclusion restriction', 'Independence'];
-               alternatives = ['Propensity Score Methods'];
-           } else if (decisionState.covariate_richness === 'rich') {
-               if (decisionState.overlap === 'good') {
-                   method = 'Propensity Score Matching';
-                   justification = 'You have rich covariates with good overlap. Matching creates balanced comparison groups.';
-                   assumptions = ['Unconfoundedness', 'Common support', 'Correct propensity score model'];
-                   alternatives = ['Propensity Score Weighting'];
-               } else {
-                   method = 'Propensity Score Weighting';
-                   justification = 'You have rich covariates but poor overlap. Weighting can handle limited overlap better than matching.';
-                   assumptions = ['Unconfoundedness', 'Correct propensity score model', 'Appropriate weights'];
-                   alternatives = ['Linear Regression with Controls'];
-               }
-           } else {
-               method = 'Linear Regression with Controls';
-               justification = 'You have limited covariates available. Linear regression provides a baseline approach with available controls.';
-               assumptions = ['No unmeasured confounders', 'Correct model specification', 'Linear relationships'];
-               alternatives = ['Correlation Analysis'];
-           }
-       }
+..        if (decisionState.rct === 'yes') {
+..            if (decisionState.instrument === 'yes') {
+..                method = 'Instrumental Variables (Encouragement Design)';
+..                justification = 'You have an RCT with an instrument different from treatment assignment. This encouragement design allows for strong causal identification.';
+..                assumptions = ['Instrument relevance', 'Exclusion restriction', 'Monotonicity'];
+..                alternatives = ['Linear Regression with Covariates'];
+..            } else if (decisionState.covariates === 'yes') {
+..                method = 'Linear Regression with Covariates';
+..                justification = 'You have an RCT with covariates. Including covariates improves precision while maintaining causal identification from randomization.';
+..                assumptions = ['Randomization validity', 'Correct model specification'];
+..                alternatives = ['Difference in Means'];
+..            } else {
+..                method = 'Difference in Means';
+..                justification = 'You have a pure RCT without covariates. Simple difference in means provides unbiased causal estimates.';
+..                assumptions = ['Randomization validity', 'No spillover effects'];
+..                alternatives = ['Linear Regression'];
+..            }
+..        } else {
+..            if (decisionState.structure === 'panel') {
+..                method = 'Difference-in-Differences';
+..                justification = 'You have panel data with treatment timing variation. DiD can control for time-invariant confounders.';
+..                assumptions = ['Parallel trends', 'No anticipation effects', 'Stable composition'];
+..                alternatives = ['Linear Regression with Fixed Effects'];
+..            } else if (decisionState.structure === 'rdd') {
+..                method = 'Regression Discontinuity Design';
+..                justification = 'You have a running variable with sharp cutoff. RDD provides credible causal identification around the cutoff.';
+..                assumptions = ['Continuity at cutoff', 'No manipulation of running variable'];
+..                alternatives = ['Linear Regression'];
+..            } else if (decisionState.instrument === 'yes') {
+..                method = 'Instrumental Variables';
+..                justification = 'You have an instrumental variable available. IV can handle unmeasured confounding.';
+..                assumptions = ['Instrument relevance', 'Exclusion restriction', 'Independence'];
+..                alternatives = ['Propensity Score Methods'];
+..            } else if (decisionState.covariate_richness === 'rich') {
+..                if (decisionState.overlap === 'good') {
+..                    method = 'Propensity Score Matching';
+..                    justification = 'You have rich covariates with good overlap. Matching creates balanced comparison groups.';
+..                    assumptions = ['Unconfoundedness', 'Common support', 'Correct propensity score model'];
+..                    alternatives = ['Propensity Score Weighting'];
+..                } else {
+..                    method = 'Propensity Score Weighting';
+..                    justification = 'You have rich covariates but poor overlap. Weighting can handle limited overlap better than matching.';
+..                    assumptions = ['Unconfoundedness', 'Correct propensity score model', 'Appropriate weights'];
+..                    alternatives = ['Linear Regression with Controls'];
+..                }
+..            } else {
+..                method = 'Linear Regression with Controls';
+..                justification = 'You have limited covariates available. Linear regression provides a baseline approach with available controls.';
+..                assumptions = ['No unmeasured confounders', 'Correct model specification', 'Linear relationships'];
+..                alternatives = ['Correlation Analysis'];
+..            }
+..        }
        
-       return `
-           <div class="method-result">
-               <div class="method-name">
-                   <h3>🎯 ${method}</h3>
-               </div>
-               <div class="method-details">
-                   <div class="justification">
-                       <h4>Why this method?</h4>
-                       <p>${justification}</p>
-                   </div>
-                   <div class="assumptions">
-                       <h4>Key Assumptions</h4>
-                       <ul>
-                           ${assumptions.map(assumption => `<li>${assumption}</li>`).join('')}
-                       </ul>
-                   </div>
-                   <div class="alternatives">
-                       <h4>Alternative Methods</h4>
-                       <p>${alternatives.join(', ')}</p>
-                   </div>
-               </div>
-           </div>
-       `;
-   }
+..        return `
+..            <div class="method-result">
+..                <div class="method-name">
+..                    <h3>🎯 ${method}</h3>
+..                </div>
+..                <div class="method-details">
+..                    <div class="justification">
+..                        <h4>Why this method?</h4>
+..                        <p>${justification}</p>
+..                    </div>
+..                    <div class="assumptions">
+..                        <h4>Key Assumptions</h4>
+..                        <ul>
+..                            ${assumptions.map(assumption => `<li>${assumption}</li>`).join('')}
+..                        </ul>
+..                    </div>
+..                    <div class="alternatives">
+..                        <h4>Alternative Methods</h4>
+..                        <p>${alternatives.join(', ')}</p>
+..                    </div>
+..                </div>
+..            </div>
+..        `;
+..    }
    
-   function updateDecisionPath() {
-       const pathDisplay = document.getElementById('path-display');
-       let pathSteps = [];
+..    function updateDecisionPath() {
+..        const pathDisplay = document.getElementById('path-display');
+..        let pathSteps = [];
        
-       if (decisionState.rct) {
-           pathSteps.push(`Study Design: ${decisionState.rct === 'yes' ? 'Randomized Controlled Trial' : 'Observational Study'}`);
-       }
+..        if (decisionState.rct) {
+..            pathSteps.push(`Study Design: ${decisionState.rct === 'yes' ? 'Randomized Controlled Trial' : 'Observational Study'}`);
+..        }
        
-       if (decisionState.covariates) {
-           pathSteps.push(`Covariates: ${decisionState.covariates === 'yes' ? 'Available' : 'Not Available'}`);
-       }
+..        if (decisionState.covariates) {
+..            pathSteps.push(`Covariates: ${decisionState.covariates === 'yes' ? 'Available' : 'Not Available'}`);
+..        }
        
-       if (decisionState.structure) {
-           const structureMap = {
-               'panel': 'Panel Data Structure',
-               'rdd': 'Regression Discontinuity Design',
-               'cross': 'Cross-sectional Data'
-           };
-           pathSteps.push(`Data Structure: ${structureMap[decisionState.structure]}`);
-       }
+..        if (decisionState.structure) {
+..            const structureMap = {
+..                'panel': 'Panel Data Structure',
+..                'rdd': 'Regression Discontinuity Design',
+..                'cross': 'Cross-sectional Data'
+..            };
+..            pathSteps.push(`Data Structure: ${structureMap[decisionState.structure]}`);
+..        }
        
-       if (decisionState.instrument) {
-           pathSteps.push(`Instrumental Variable: ${decisionState.instrument === 'yes' ? 'Available' : 'Not Available'}`);
-       }
+..        if (decisionState.instrument) {
+..            pathSteps.push(`Instrumental Variable: ${decisionState.instrument === 'yes' ? 'Available' : 'Not Available'}`);
+..        }
        
-       if (decisionState.treatment_type) {
-           pathSteps.push(`Treatment Type: ${decisionState.treatment_type.charAt(0).toUpperCase() + decisionState.treatment_type.slice(1)}`);
-       }
+..        if (decisionState.treatment_type) {
+..            pathSteps.push(`Treatment Type: ${decisionState.treatment_type.charAt(0).toUpperCase() + decisionState.treatment_type.slice(1)}`);
+..        }
        
-       if (decisionState.covariate_richness) {
-           pathSteps.push(`Covariate Richness: ${decisionState.covariate_richness.charAt(0).toUpperCase() + decisionState.covariate_richness.slice(1)}`);
-       }
+..        if (decisionState.covariate_richness) {
+..            pathSteps.push(`Covariate Richness: ${decisionState.covariate_richness.charAt(0).toUpperCase() + decisionState.covariate_richness.slice(1)}`);
+..        }
        
-       if (decisionState.overlap) {
-           pathSteps.push(`Covariate Overlap: ${decisionState.overlap.charAt(0).toUpperCase() + decisionState.overlap.slice(1)}`);
-       }
+..        if (decisionState.overlap) {
+..            pathSteps.push(`Covariate Overlap: ${decisionState.overlap.charAt(0).toUpperCase() + decisionState.overlap.slice(1)}`);
+..        }
        
-       pathDisplay.innerHTML = pathSteps.length > 0 ? 
-           `<ol>${pathSteps.map(step => `<li>${step}</li>`).join('')}</ol>` :
-           '<p>Start answering questions to see your decision path...</p>';
-   }
+..        pathDisplay.innerHTML = pathSteps.length > 0 ? 
+..            `<ol>${pathSteps.map(step => `<li>${step}</li>`).join('')}</ol>` :
+..            '<p>Start answering questions to see your decision path...</p>';
+..    }
    
-   function resetDecisionTree() {
-       decisionState = {};
-       currentStep = 1;
+..    function resetDecisionTree() {
+..        decisionState = {};
+..        currentStep = 1;
        
-       // Hide all steps
-       for (let i = 2; i <= 4; i++) {
-           document.getElementById(`step-${i}`).style.display = 'none';
-           document.getElementById(`step-${i}`).classList.remove('active');
-       }
-       document.getElementById('results').style.display = 'none';
-       document.getElementById('results').classList.remove('active');
+..        // Hide all steps
+..        for (let i = 2; i <= 4; i++) {
+..            document.getElementById(`step-${i}`).style.display = 'none';
+..            document.getElementById(`step-${i}`).classList.remove('active');
+..        }
+..        document.getElementById('results').style.display = 'none';
+..        document.getElementById('results').classList.remove('active');
        
-       // Show first step
-       document.getElementById('step-1').classList.add('active');
+..        // Show first step
+..        document.getElementById('step-1').classList.add('active');
        
-       // Reset path display
-       document.getElementById('path-display').innerHTML = '<p>Start answering questions to see your decision path...</p>';
+..        // Reset path display
+..        document.getElementById('path-display').innerHTML = '<p>Start answering questions to see your decision path...</p>';
        
-       // Reset button states
-       document.querySelectorAll('.option-btn').forEach(btn => {
-           btn.classList.remove('selected');
-       });
-   }
+..        // Reset button states
+..        document.querySelectorAll('.option-btn').forEach(btn => {
+..            btn.classList.remove('selected');
+..        });
+..    }
    
-   // Add click styling
-   document.addEventListener('click', function(e) {
-       if (e.target.classList.contains('option-btn')) {
-           // Remove selected class from siblings
-           e.target.parentNode.querySelectorAll('.option-btn').forEach(btn => {
-               btn.classList.remove('selected');
-           });
-           // Add selected class to clicked button
-           e.target.classList.add('selected');
-       }
-   });
-   </script>
+..    // Add click styling
+..    document.addEventListener('click', function(e) {
+..        if (e.target.classList.contains('option-btn')) {
+..            // Remove selected class from siblings
+..            e.target.parentNode.querySelectorAll('.option-btn').forEach(btn => {
+..                btn.classList.remove('selected');
+..            });
+..            // Add selected class to clicked button
+..            e.target.classList.add('selected');
+..        }
+..    });
+..    </script>
 
-   <style>
-   #interactive-decision-tree {
-       background: #f8f9fa;
-       border: 1px solid #dee2e6;
-       border-radius: 8px;
-       padding: 20px;
-       margin: 20px 0;
-   }
+..    <style>
+..    #interactive-decision-tree {
+..        background: #f8f9fa;
+..        border: 1px solid #dee2e6;
+..        border-radius: 8px;
+..        padding: 20px;
+..        margin: 20px 0;
+..    }
    
-   .decision-tool-header {
-       text-align: center;
-       margin-bottom: 30px;
-   }
+..    .decision-tool-header {
+..        text-align: center;
+..        margin-bottom: 30px;
+..    }
    
-   .decision-tool-header h3 {
-       color: #2c3e50;
-       margin-bottom: 10px;
-   }
+..    .decision-tool-header h3 {
+..        color: #2c3e50;
+..        margin-bottom: 10px;
+..    }
    
-   .step {
-       background: white;
-       border: 1px solid #e9ecef;
-       border-radius: 6px;
-       padding: 20px;
-       margin-bottom: 20px;
-   }
+..    .step {
+..        background: white;
+..        border: 1px solid #e9ecef;
+..        border-radius: 6px;
+..        padding: 20px;
+..        margin-bottom: 20px;
+..    }
    
-   .step.active {
-       border-color: #007bff;
-       box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
-   }
+..    .step.active {
+..        border-color: #007bff;
+..        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+..    }
    
-   .step h4 {
-       color: #495057;
-       margin-bottom: 15px;
-       border-bottom: 2px solid #e9ecef;
-       padding-bottom: 10px;
-   }
+..    .step h4 {
+..        color: #495057;
+..        margin-bottom: 15px;
+..        border-bottom: 2px solid #e9ecef;
+..        padding-bottom: 10px;
+..    }
    
-   .question {
-       margin-bottom: 20px;
-   }
+..    .question {
+..        margin-bottom: 20px;
+..    }
    
-   .question label {
-       display: block;
-       font-weight: 600;
-       margin-bottom: 15px;
-       color: #343a40;
-   }
+..    .question label {
+..        display: block;
+..        font-weight: 600;
+..        margin-bottom: 15px;
+..        color: #343a40;
+..    }
    
-   .options {
-       display: flex;
-       flex-direction: column;
-       gap: 10px;
-   }
+..    .options {
+..        display: flex;
+..        flex-direction: column;
+..        gap: 10px;
+..    }
    
-   .option-btn {
-       background: white;
-       border: 2px solid #dee2e6;
-       border-radius: 6px;
-       padding: 15px;
-       text-align: left;
-       cursor: pointer;
-       transition: all 0.2s ease;
-       font-size: 14px;
-   }
+..    .option-btn {
+..        background: white;
+..        border: 2px solid #dee2e6;
+..        border-radius: 6px;
+..        padding: 15px;
+..        text-align: left;
+..        cursor: pointer;
+..        transition: all 0.2s ease;
+..        font-size: 14px;
+..    }
    
-   .option-btn:hover {
-       border-color: #007bff;
-       background: #f8f9ff;
-   }
+..    .option-btn:hover {
+..        border-color: #007bff;
+..        background: #f8f9ff;
+..    }
    
-   .option-btn.selected {
-       border-color: #007bff;
-       background: #e7f3ff;
-       color: #0056b3;
-   }
+..    .option-btn.selected {
+..        border-color: #007bff;
+..        background: #e7f3ff;
+..        color: #0056b3;
+..    }
    
-   .decision-path {
-       background: white;
-       border: 1px solid #e9ecef;
-       border-radius: 6px;
-       padding: 20px;
-       margin-top: 20px;
-   }
+..    .decision-path {
+..        background: white;
+..        border: 1px solid #e9ecef;
+..        border-radius: 6px;
+..        padding: 20px;
+..        margin-top: 20px;
+..    }
    
-   .decision-path h4 {
-       color: #495057;
-       margin-bottom: 15px;
-   }
+..    .decision-path h4 {
+..        color: #495057;
+..        margin-bottom: 15px;
+..    }
    
-   .decision-path ol {
-       margin: 0;
-       padding-left: 20px;
-   }
+..    .decision-path ol {
+..        margin: 0;
+..        padding-left: 20px;
+..    }
    
-   .decision-path li {
-       margin-bottom: 8px;
-       color: #6c757d;
-   }
+..    .decision-path li {
+..        margin-bottom: 8px;
+..        color: #6c757d;
+..    }
    
-   .method-result {
-       background: white;
-       border: 1px solid #28a745;
-       border-radius: 6px;
-       padding: 20px;
-   }
+..    .method-result {
+..        background: white;
+..        border: 1px solid #28a745;
+..        border-radius: 6px;
+..        padding: 20px;
+..    }
    
-   .method-name h3 {
-       color: #28a745;
-       margin-bottom: 20px;
-   }
+..    .method-name h3 {
+..        color: #28a745;
+..        margin-bottom: 20px;
+..    }
    
-   .method-details > div {
-       margin-bottom: 20px;
-   }
+..    .method-details > div {
+..        margin-bottom: 20px;
+..    }
    
-   .method-details h4 {
-       color: #495057;
-       margin-bottom: 10px;
-       font-size: 16px;
-   }
+..    .method-details h4 {
+..        color: #495057;
+..        margin-bottom: 10px;
+..        font-size: 16px;
+..    }
    
-   .justification p {
-       color: #6c757d;
-       line-height: 1.6;
-   }
+..    .justification p {
+..        color: #6c757d;
+..        line-height: 1.6;
+..    }
    
-   .assumptions ul {
-       margin: 0;
-       padding-left: 20px;
-   }
+..    .assumptions ul {
+..        margin: 0;
+..        padding-left: 20px;
+..    }
    
-   .assumptions li {
-       color: #6c757d;
-       margin-bottom: 5px;
-   }
+..    .assumptions li {
+..        color: #6c757d;
+..        margin-bottom: 5px;
+..    }
    
-   .alternatives p {
-       color: #6c757d;
-       font-style: italic;
-   }
+..    .alternatives p {
+..        color: #6c757d;
+..        font-style: italic;
+..    }
    
-   .reset-btn {
-       background: #6c757d;
-       color: white;
-       border: none;
-       border-radius: 4px;
-       padding: 10px 20px;
-       cursor: pointer;
-       margin-top: 20px;
-   }
+..    .reset-btn {
+..        background: #6c757d;
+..        color: white;
+..        border: none;
+..        border-radius: 4px;
+..        padding: 10px 20px;
+..        cursor: pointer;
+..        margin-top: 20px;
+..    }
    
-   .reset-btn:hover {
-       background: #5a6268;
-   }
+..    .reset-btn:hover {
+..        background: #5a6268;
+..    }
    
-   @media (max-width: 768px) {
-       #interactive-decision-tree {
-           padding: 15px;
-       }
+..    @media (max-width: 768px) {
+..        #interactive-decision-tree {
+..            padding: 15px;
+..        }
        
-       .step {
-           padding: 15px;
-       }
+..        .step {
+..            padding: 15px;
+..        }
        
-       .option-btn {
-           padding: 12px;
-           font-size: 13px;
-       }
-   }
-   </style>
+..        .option-btn {
+..            padding: 12px;
+..            font-size: 13px;
+..        }
+..    }
+..    </style>
 
 Dataset Property Influence Visualization
 ----------------------------------------
@@ -727,7 +716,7 @@ Decision Criteria Explained
 
 **Why it matters**: Randomization is the gold standard for causal inference because it eliminates confounding by design. If you have randomized data, you can use simpler methods with stronger causal identification.
 
-**How CAIS detects**:
+**How Causal Agent detects**:
 - User specification of ``is_rct=True``
 - Analysis of treatment assignment patterns
 - Detection of balanced covariates across treatment groups
@@ -829,7 +818,7 @@ Multiple treatment levels:
 Step-by-Step Decision Walkthroughs
 -----------------------------------
 
-This section provides detailed walkthroughs of the decision process for different types of datasets, showing exactly how CAIS analyzes data characteristics and selects methods.
+This section provides detailed walkthroughs of the decision process for different types of datasets, showing exactly how Causal Agent analyzes data characteristics and selects methods.
 
 Walkthrough 1: Randomized Controlled Trial
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1167,7 +1156,7 @@ Each method recommendation includes a confidence score:
 
 **Recommendation Uncertainty**:
 
-When multiple methods have similar priority scores, CAIS provides:
+When multiple methods have similar priority scores, Causal Agent provides:
 
 1. **Primary recommendation** with highest score
 2. **Alternative methods** for robustness checking  
@@ -1799,7 +1788,7 @@ Understanding Method Recommendations
 Priority Ordering
 ~~~~~~~~~~~~~~~~~
 
-When multiple methods are applicable, CAIS prioritizes based on:
+When multiple methods are applicable, Causal Agent prioritizes based on:
 
 1. **Strength of identification**: Methods with weaker assumptions ranked higher
 2. **Data requirements**: Methods that fully utilize available data structure
@@ -1823,7 +1812,7 @@ When multiple methods are applicable, CAIS prioritizes based on:
 Alternative Methods
 ~~~~~~~~~~~~~~~~~~~
 
-CAIS also suggests alternative methods for robustness checking:
+Causal Agent also suggests alternative methods for robustness checking:
 
 **Primary recommendation**: Best method given data and assumptions
 **Alternatives**: Other plausible methods for sensitivity analysis
@@ -1870,7 +1859,7 @@ You can also specify a particular method:
 Validating Method Choice
 ------------------------
 
-After method selection, CAIS provides:
+After method selection, Causal Agent provides:
 
 **Assumption Checking**:
 - Tests of key identifying assumptions
@@ -2151,7 +2140,7 @@ Validate whether your data meets the assumptions for specific methods:
 Decision Tree Algorithm Implementation
 --------------------------------------
 
-For developers interested in the technical implementation, here's how the decision tree algorithm works in CAIS:
+For developers interested in the technical implementation, here's how the decision tree algorithm works in Causal Agent:
 
 **Core Algorithm Structure**:
 

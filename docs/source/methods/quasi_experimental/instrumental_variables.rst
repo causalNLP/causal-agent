@@ -131,7 +131,7 @@ Local Average Treatment Effect (LATE)
 
 **Interpretation**: LATE may differ from ATE if treatment effects are heterogeneous.
 
-Implementation in CAIS
+Implementation in Causal Agent
 ----------------------
 
 Basic IV Analysis
@@ -141,7 +141,7 @@ Basic IV Analysis
 
    from causal_agent import CausalAgent
    
-   # CAIS automatically detects IV setup
+   # Causal Agent automatically detects IV setup
    agent = CausalAgent()
    result = agent.analyze(
        data=iv_data,

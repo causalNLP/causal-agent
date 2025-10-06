@@ -1,12 +1,7 @@
-Interactive Examples
-===================
-
-This page demonstrates the interactive features available in the CAIS documentation.
-
 Method Selection Decision Tree
 ------------------------------
 
-CAIS uses a systematic decision tree to automatically select the most appropriate causal inference method for your dataset. The decision tree is available in the :doc:`../methods/decision_tree` section.
+causal-agent uses a systematic decision tree to automatically select the most appropriate causal inference method for your dataset. The decision tree is available in the :doc:`../methods/decision_tree` section.
 
 **Quick Reference:**
 
@@ -18,7 +13,7 @@ The decision process follows this hierarchy:
 
 **View the Complete Decision Tree:**
 
-For the full interactive decision tree with detailed logic, see: :doc:`../methods/decision_tree`
+For the full decision tree with detailed logic, see: :doc:`../methods/decision_tree`
 
 Code Examples with Copy Functionality
 --------------------------------------
@@ -27,7 +22,7 @@ All code examples in the documentation include copy-to-clipboard functionality. 
 
 .. code-block:: python
 
-   # Example: Basic CAIS usage
+   # Example: Basic causal-agent usage
    from causal_agent import CausalAgent
    
    # Initialize the agent
@@ -110,77 +105,4 @@ For large datasets, consider these optimization strategies:
        </div>
    </div>
 
-Tooltips for Technical Terms
------------------------------
 
-Technical terms throughout the documentation include helpful tooltips. Hover over or focus on terms like :term:`causal inference`, :term:`treatment effect`, or :term:`confounding` to see their definitions.
-
-The CAIS system uses sophisticated :term:`propensity score` methods when randomization is not available. It can also leverage :term:`instrumental variable` approaches when suitable instruments are identified in your data.
-
-For panel data, :term:`difference-in-differences` methods are often preferred, while :term:`regression discontinuity` designs work well when treatment assignment follows a cutoff rule.
-
-Feedback System
----------------
-
-We value your feedback! Use the feedback widget in the bottom-right corner to:
-
-* Rate the helpfulness of this page
-* Provide detailed comments about your experience
-* Report issues or suggest improvements
-* Request additional examples or clarification
-
-You can also provide quick feedback using the buttons at the bottom of each page, or click the 💬 icon next to section headers for section-specific feedback.
-
-Interactive Code Examples
---------------------------
-
-Some code examples include interactive elements. Click on code blocks to highlight them:
-
-.. raw:: html
-
-   <div class="interactive-example">
-
-.. code-block:: python
-
-   # Interactive example: Click to highlight
-   import pandas as pd
-   from causal_agent import CausalAgent
-   
-   # This code block is interactive
-   agent = CausalAgent()
-   
-   # Load sample data
-   data = pd.read_csv('sample_data.csv')
-   
-   # Define treatment and outcome
-   treatment = 'policy_intervention'
-   outcome = 'economic_indicator'
-   
-   # Run analysis
-   results = agent.analyze(
-       data=data,
-       treatment=treatment,
-       outcome=outcome,
-       method='auto'  # Let CAIS choose the best method
-   )
-
-.. raw:: html
-
-   </div>
-
-Accessibility Features
-----------------------
-
-The interactive features include comprehensive accessibility support:
-
-* **Keyboard Navigation**: All interactive elements can be navigated using the keyboard
-* **Screen Reader Support**: ARIA labels and roles are provided for assistive technologies
-* **High Contrast Mode**: Styles adapt automatically for users with high contrast preferences
-* **Reduced Motion**: Animations are disabled for users who prefer reduced motion
-* **Skip Links**: Quick navigation links are available for keyboard users
-
-Try navigating this page using only your keyboard (Tab, Enter, Space, Arrow keys) to experience the accessibility features.
-
-.. note::
-   
-   The interactive features on this page demonstrate the enhanced user experience available throughout the CAIS documentation. These features are designed to make complex causal inference concepts more accessible and engaging for users of all backgrounds.

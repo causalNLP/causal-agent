@@ -21,7 +21,7 @@ Learning Path
    Start with :doc:`causal_inference_basics` to understand fundamental concepts like causation vs. correlation, confounding, and the potential outcomes framework, with a focus on how automated analysis systems approach these challenges.
 
 **For Understanding the Agent**
-   Read :doc:`agent_architecture` to understand how the CAIS autonomous agent works, from data analysis to result interpretation, and :doc:`llm_integration` to learn how Large Language Models enable sophisticated decision-making in causal analysis.
+   Read :doc:`agent_architecture` to understand how the Causal Agent autonomous agent works, from data analysis to result interpretation, and :doc:`llm_integration` to learn how Large Language Models enable sophisticated decision-making in causal analysis.
 
 **For Practitioners**
    Review :doc:`method_selection` to understand how the agent selects appropriate methods based on data characteristics and identification strategy strength.
@@ -33,7 +33,7 @@ Key Concepts
 ------------
 
 **Autonomous Agent Decision-Making**
-   The CAIS agent combines Large Language Models with rigorous statistical methods to automatically select appropriate causal inference methods, test assumptions, and interpret results. Understanding this process helps you trust and validate the agent's decisions.
+   The Causal Agent agent combines Large Language Models with rigorous statistical methods to automatically select appropriate causal inference methods, test assumptions, and interpret results. Understanding this process helps you trust and validate the agent's decisions.
 
 **Fundamental Problem of Causal Inference**
    We can never observe both potential outcomes for the same unit. The agent addresses this limitation by systematically identifying the best available identification strategy for your data.

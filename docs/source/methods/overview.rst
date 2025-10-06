@@ -3,7 +3,7 @@ Overview of Causal Inference Methods
 
 Causal inference is the process of determining whether and how one variable causes changes in another. Unlike correlation analysis, which only identifies statistical relationships, causal inference methods help us understand the underlying causal mechanisms and estimate the magnitude of causal effects.
 
-CAIS (Causal AI Scientist) implements a comprehensive suite of causal inference methods, from gold-standard experimental designs to sophisticated observational study techniques. This overview introduces the key concepts and method categories available in CAIS.
+Causal Agent (Causal AI Scientist) implements a comprehensive suite of causal inference methods, from gold-standard experimental designs to sophisticated observational study techniques. This overview introduces the key concepts and method categories available in Causal Agent.
 
 What is Causal Inference?
 -------------------------
@@ -29,7 +29,7 @@ Different causal inference methods address this problem through various identifi
 3. **Controlling for Confounders**: Adjusting for observed variables that affect both treatment and outcome
 4. **Instrumental Variables**: Using variables that affect treatment but not outcome directly
 
-Method Categories in CAIS
+Method Categories in Causal Agent
 -------------------------
 
 Experimental Methods
@@ -74,10 +74,10 @@ When no natural experiment exists, observational methods control for confounding
 *Advantages*: Can be applied to many datasets, relatively straightforward
 *Limitations*: Relies on strong assumptions about unobserved confounders
 
-How CAIS Selects Methods
+How Causal Agent Selects Methods
 ------------------------
 
-CAIS automatically analyzes your data and research question to recommend the most appropriate causal inference method. The selection process considers:
+Causal Agent automatically analyzes your data and research question to recommend the most appropriate causal inference method. The selection process considers:
 
 **Data Characteristics:**
 * Experimental vs. observational data
@@ -98,7 +98,7 @@ CAIS automatically analyzes your data and research question to recommend the mos
 The Decision Tree Process
 -------------------------
 
-CAIS uses a systematic decision tree to guide method selection:
+Causal Agent uses a systematic decision tree to guide method selection:
 
 1. **Is this a randomized experiment?**
    

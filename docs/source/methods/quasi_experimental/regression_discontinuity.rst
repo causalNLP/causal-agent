@@ -133,7 +133,7 @@ Fuzzy RDD
 *First Stage:* :math:`D_i = \\alpha_0 + \\alpha_1 \\mathbf{1}(X_i \\geq c) + f(X_i) + \\epsilon_i$
 *Second Stage:* :math:`Y_i = \\beta_0 + \\tau \\hat{D_i} + g(X_i) + u_i$
 
-Implementation in CAIS
+Implementation in Causal Agent
 ----------------------
 
 Sharp RDD Analysis
@@ -143,7 +143,7 @@ Sharp RDD Analysis
 
    from causal_agent import CausalAgent
    
-   # CAIS automatically detects RDD design
+   # Causal Agent automatically detects RDD design
    agent = CausalAgent()
    result = agent.analyze(
        data=rdd_data,

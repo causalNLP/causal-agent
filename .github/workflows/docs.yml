@@ -1,0 +1,60 @@
+name: Documentation Build
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'docs/**'
+      - '.readthedocs.yaml'
+      - 'causal_agent/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'docs/**'
+      - '.readthedocs.yaml'
+      - 'causal_agent/**'
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r docs/requirements.txt
+        pip install -e .
+    
+    - name: Build documentation
+      run: |
+        cd docs
+        make html
+    
+    - name: Check for broken links
+      run: |
+        cd docs
+        make linkcheck
+    
+    - name: Upload documentation artifacts
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: documentation-html
+        path: docs/build/html/
+        retention-days: 7
+    
+    - name: Deploy to GitHub Pages (on main branch)
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs/build/html
+        cname: docs.causal-ai-scientist.org  # Optional: custom domain

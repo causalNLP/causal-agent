@@ -1,0 +1,142 @@
+name: Documentation Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs-validation.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs-validation.yml'
+
+jobs:
+  validate-docs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-docs-${{ hashFiles('docs/requirements.txt', 'docs/test_requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-docs-
+    
+    - name: Install documentation dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r docs/requirements.txt
+        pip install -r docs/test_requirements.txt
+    
+    - name: Install project dependencies
+      run: |
+        pip install -e .
+    
+    - name: Build documentation
+      run: |
+        cd docs
+        make clean
+        make html
+    
+    - name: Run documentation validation tests
+      run: |
+        python docs/test_all_validation.py docs
+    
+    - name: Upload validation reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: validation-reports
+        path: |
+          docs/validation_report.json
+          docs/link_check_report.json
+          docs/spell_grammar_report.json
+          docs/code_examples_report.json
+    
+    - name: Upload built documentation
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: built-docs
+        path: docs/build/html/
+    
+    - name: Comment PR with validation results
+      uses: actions/github-script@v6
+      if: github.event_name == 'pull_request' && always()
+      with:
+        script: |
+          const fs = require('fs');
+          const path = 'docs/validation_report.json';
+          
+          if (fs.existsSync(path)) {
+            const report = JSON.parse(fs.readFileSync(path, 'utf8'));
+            
+            const summary = `## 📚 Documentation Validation Results
+            
+            **Overall Status:** ${report.summary.overall_status === 'PASS' ? '✅ PASS' : '❌ FAIL'}
+            **Duration:** ${report.total_duration.toFixed(1)}s
+            **Tests:** ${report.summary.passed}/${report.summary.total_tests} passed
+            
+            ### Test Results:
+            ${Object.entries(report.results).map(([test, result]) => 
+              `- ${result.passed ? '✅' : '❌'} **${test}**: ${result.status} (${result.duration.toFixed(1)}s)`
+            ).join('\n')}
+            
+            ${report.summary.overall_status !== 'PASS' ? 
+              '\n⚠️ Some validation tests failed. Check the detailed reports in the workflow artifacts.' : 
+              '\n🎉 All documentation validation tests passed!'}
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
+          }
+
+  # Separate job for link checking (can be flaky with external links)
+  link-check:
+    runs-on: ubuntu-latest
+    continue-on-error: true  # Don't fail the workflow for external link issues
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r docs/requirements.txt
+        pip install -r docs/test_requirements.txt
+    
+    - name: Build documentation
+      run: |
+        cd docs
+        make clean
+        make html
+    
+    - name: Check external links only
+      run: |
+        python docs/test_link_checker.py docs/build/html
+    
+    - name: Upload link check report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: link-check-report
+        path: docs/link_check_report.json

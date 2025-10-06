@@ -141,13 +141,14 @@ Step 4: Understanding the Results
 .. code-block:: python
 
    # Extract key results
-   method_used = result['results']['method_used']
-   treatment_var = result['results']['treatment_variable']
-   outcome_var = result['results']['outcome_variable']
-   effect_estimate = result['results']['effect_estimate']
-   std_error = result['results']['standard_error']
-   p_value = result['results']['p_value']
-   confidence_interval = result['results'].get('confidence_interval', 'Not available')
+   method_used = result['results']['results']['method_used']
+    treatment_var = result['results']['variables']['treatment_variable']
+    outcome_var = result['results']['variables']['outcome_variable']
+    effect_estimate = result['results']['results']['effect_estimate']
+    std_error = result['results']['results']['standard_error']
+    p_value = result['results']['results']['p_value']
+    confidence_interval = result['results']['results'].get('confidence_interval', 'Not available')
+
    
    print("=== ANALYSIS RESULTS ===")
    print(f"Method Selected: {method_used}")
@@ -182,7 +183,7 @@ Step 5: Interpreting the Results
 .. code-block:: python
 
    # Get the AI interpretation
-   interpretation = result['results']['interpretation']
+   interpretation = result['explanation']['final_explanation_text']
    print("\n=== AI INTERPRETATION ===")
    print(interpretation)
    
@@ -407,56 +408,7 @@ Now that you've completed your first analysis, here are suggested next steps:
 2. **Domain tutorials:** :doc:`../tutorials/index` - See examples in your field
 3. **Configuration options:** :doc:`../user_guide/advanced_usage` - Customize CAIS behavior
 
-**Best Practices:**
 
-.. code-block:: python
-
-   # Template for systematic causal analysis
-   def systematic_causal_analysis(query, data_path, description):
-       """Template for thorough causal analysis"""
-       
-       # 1. Pre-analysis
-       print("=== PRE-ANALYSIS ===")
-       data = pd.read_csv(data_path)
-       print(f"Data shape: {data.shape}")
-       print(f"Missing data: {data.isnull().sum().sum()}")
-       
-       # 2. Run analysis
-       print("\n=== ANALYSIS ===")
-       result = run_causal_analysis(query, data_path, description)
-       
-       # 3. Validate results
-       print("\n=== VALIDATION ===")
-       effect = result['results']['effect_estimate']
-       p_val = result['results']['p_value']
-       print(f"Effect: {effect}, P-value: {p_val}")
-       
-       # 4. Interpret
-       print("\n=== INTERPRETATION ===")
-       print(result['results']['interpretation'])
-       
-       return result
-
-**Research Workflow Integration:**
-
-.. code-block:: python
-
-   # Integrate CAIS into your research workflow
-   research_questions = [
-       "Does treatment A improve outcome X?",
-       "What is the effect of policy B on metric Y?",
-       "How does intervention C affect behavior Z?"
-   ]
-   
-   results = {}
-   for question in research_questions:
-       print(f"\nAnalyzing: {question}")
-       # Run your analysis here
-       # results[question] = run_causal_analysis(...)
-   
-   # Compare results across questions
-   # Generate research report
-   # Plan follow-up studies
 
 Congratulations! You've completed your first comprehensive causal analysis with CAIS. You're now ready to tackle more complex analyses and explore advanced features.
 

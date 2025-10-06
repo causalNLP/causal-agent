@@ -157,7 +157,7 @@ Stratification Matching
 **Advantages**: Simple, uses all observations, easy to implement
 **Disadvantages**: Coarse matching, may not achieve balance within strata
 
-Implementation in CAIS
+Implementation in Causal Agent
 ----------------------
 
 Basic PSM Analysis
@@ -167,7 +167,7 @@ Basic PSM Analysis
 
    from causal_agent import CausalAgent
    
-   # CAIS automatically implements PSM
+   # Causal Agent automatically implements PSM
    agent = CausalAgent()
    result = agent.analyze(
        data=observational_data,

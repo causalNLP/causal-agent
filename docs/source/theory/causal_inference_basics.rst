@@ -1,7 +1,7 @@
 Causal Inference Basics
 =======================
 
-This guide introduces the fundamental concepts of causal inference with a focus on how automated analysis systems like CAIS approach causal questions. Whether you're new to causal inference or want to understand how AI agents make causal decisions, this section provides the essential foundation.
+This guide introduces the fundamental concepts of causal inference with a focus on how automated analysis systems like Causal Agent approach causal questions. Whether you're new to causal inference or want to understand how AI agents make causal decisions, this section provides the essential foundation.
 
 What is Causal Inference?
 -------------------------
@@ -32,7 +32,7 @@ This is where the **Potential Outcomes Framework** comes in:
 How Automated Systems Approach This Problem
 -------------------------------------------
 
-AI agents like CAIS solve this fundamental problem by:
+AI agents like Causal Agent solve this fundamental problem by:
 
 1. **Identifying Comparable Groups**: Finding units that are similar except for treatment status
 2. **Leveraging Natural Experiments**: Using random or quasi-random variation in treatment
@@ -56,7 +56,7 @@ A **confounder** is a variable that affects both the treatment and the outcome, 
 * Temperature → Ice cream sales (hot weather increases sales)
 * Temperature → Drowning deaths (hot weather increases swimming)
 
-**How CAIS Handles This**: The agent automatically identifies potential confounders in your dataset and selects methods that control for them.
+**How Causal Agent Handles This**: The agent automatically identifies potential confounders in your dataset and selects methods that control for them.
 
 Selection Bias
 ~~~~~~~~~~~~~~
@@ -69,7 +69,7 @@ Selection Bias
 * This motivation affects both college attendance and later outcomes
 * Simple comparison would overestimate the effect of college
 
-**How CAIS Handles This**: The agent detects selection bias patterns and chooses methods like instrumental variables or regression discontinuity that address this issue.
+**How Causal Agent Handles This**: The agent detects selection bias patterns and chooses methods like instrumental variables or regression discontinuity that address this issue.
 
 Treatment Assignment Mechanisms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -80,22 +80,22 @@ The way treatment is assigned determines which causal inference method is approp
    * Treatment is randomly assigned
    * Creates comparable groups
    * Gold standard for causal inference
-   * **CAIS Response**: Automatically detects randomized data and uses experimental methods
+   * **Causal Agent Response**: Automatically detects randomized data and uses experimental methods
 
 **As-Good-As-Random Assignment (Quasi-Experiments)**
    * Treatment assignment has random component
    * Examples: Policy changes, natural disasters, lotteries
-   * **CAIS Response**: Identifies quasi-experimental variation and uses methods like difference-in-differences or regression discontinuity
+   * **Causal Agent Response**: Identifies quasi-experimental variation and uses methods like difference-in-differences or regression discontinuity
 
 **Non-Random Assignment (Observational)**
    * Treatment is chosen by individuals or assigned based on characteristics
    * Requires strong assumptions to identify causal effects
-   * **CAIS Response**: Uses methods that control for selection, like propensity score matching
+   * **Causal Agent Response**: Uses methods that control for selection, like propensity score matching
 
 The Agent's Decision-Making Process
 ----------------------------------
 
-When you provide data to CAIS, the agent follows this logical process:
+When you provide data to Causal Agent, the agent follows this logical process:
 
 1. **Data Exploration**
    
@@ -159,7 +159,7 @@ Different research questions require different approaches:
    * Focus on heterogeneous treatment effects
    * **Example**: Which patients benefit most from a treatment?
 
-**CAIS Capability**: The agent can handle all these question types and automatically selects appropriate methods for each.
+**Causal Agent Capability**: The agent can handle all these question types and automatically selects appropriate methods for each.
 
 Common Misconceptions
 --------------------
@@ -174,7 +174,7 @@ Common Misconceptions
 
 **"Randomized experiments are always better"**
    * **Nuanced**: Experiments have high internal validity but may lack external validity
-   * **CAIS Approach**: Considers both internal and external validity in method selection
+   * **Causal Agent Approach**: Considers both internal and external validity in method selection
 
 **"Big data solves the causation problem"**
    * **Wrong**: More data doesn't solve fundamental identification problems
@@ -182,7 +182,7 @@ Common Misconceptions
 
 **"Machine learning can discover causal relationships automatically"**
    * **Partially true**: ML can help with prediction and pattern detection
-   * **CAIS Innovation**: Combines ML capabilities with rigorous causal inference methods
+   * **Causal Agent Innovation**: Combines ML capabilities with rigorous causal inference methods
 
 Why Automated Causal Analysis Matters
 -------------------------------------
@@ -194,7 +194,7 @@ Traditional causal inference requires:
 * Ability to match methods to data characteristics
 * Expertise in assumption testing and validation
 
-**CAIS democratizes this process by**:
+**Causal Agent democratizes this process by**:
 
 * Automatically selecting appropriate methods
 * Testing assumptions systematically

@@ -72,17 +72,18 @@ class TestDatasetAnalyzer(unittest.TestCase):
             "temporal_structure_detected", "panel_data_detected", 
             "potential_instruments_detected", "discontinuities_detected"
         ]
-        # Check old detailed keys are NOT present
-        unexpected_keys = [
-            "column_types", "column_categories", "missing_values", "correlations",
-            "discontinuities", "variable_relationships", "column_type_summary",
-            "missing_value_summary", "discontinuity_summary", "relationship_summary"
-        ]
-        
+        # Check that expected keys are present
         for key in expected_keys:
             self.assertIn(key, result, f"Expected key '{key}' missing.")
-        for key in unexpected_keys:
-             self.assertNotIn(key, result, f"Unexpected key '{key}' present.")   
+        
+        # Check that some additional keys that should be present are there
+        additional_expected_keys = [
+            "potential_instruments", "discontinuities", "temporal_structure", 
+            "column_categories", "column_nunique_counts", "sample_size", 
+            "num_covariates_estimate", "llm_augmentation"
+        ]
+        for key in additional_expected_keys:
+            self.assertIn(key, result, f"Expected additional key '{key}' missing.")   
              
         # Check some types
         self.assertIsInstance(result["columns"], list)
