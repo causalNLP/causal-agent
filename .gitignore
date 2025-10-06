@@ -70,6 +70,8 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/build/
+docs/preview/
 
 # PyBuilder
 .pybuilder/
@@ -219,3 +221,53 @@ tests/output/
 # Demo notebooks with API keys
 cais_demo.ipynb
 *demo*.ipynb 
+
+# Documentation build artifacts and temporary files
+docs/build/
+docs/preview/
+docs/_build/
+docs/source/_build/
+*.doctree
+.doctrees/
+
+# Documentation monitoring and analytics
+docs/docs_analytics.db
+docs/docs_monitoring.log
+docs/docs_monitoring_report.json
+docs/monitoring_report.html
+docs/analytics_report.html
+docs/monitoring_config.json
+
+# Sphinx temporary files
+docs/source/api/modules/*.rst
+docs/source/_autosummary/
+docs/source/_static/nbsphinx-code-cells.css
+
+# Documentation test outputs
+docs/spell_grammar_report.json
+docs/code_examples_report.json
+docs/validation_report.json
+docs/analysis_results.pkl
+docs/analysis_cache/
+docs/logs/
+
+# ReadTheDocs build files
+.readthedocs-build/
+
+# Jupyter notebook outputs (if any in docs)
+docs/**/*.ipynb_checkpoints/
+docs/**/output_*.png
+docs/**/output_*.jpg
+docs/**/output_*.svg
+
+# Generated HTML files (temporary previews)
+*.html
+!docs/source/_templates/*.html
+!docs/source/_static/*.html
+
+# Documentation performance reports
+lighthouse-report.json
+lychee/
+
+# Kiro IDE files
+.kiro/
