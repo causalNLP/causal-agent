@@ -32,6 +32,7 @@ sphinxcontrib-spelling>=8.0.0
 
 # For better search and SEO
 sphinx-sitemap>=2.5.0
+causal-agent>=0.1.2
 
 # LangChain dependencies for autodoc imports
 langchain>=0.3.26
