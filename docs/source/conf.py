@@ -145,17 +145,30 @@ autodoc_typehints_description_target = 'documented'
 autodoc_typehints_format = 'short'
 autodoc_preserve_defaults = True
 autodoc_mock_imports = [
+    'langchain',
     'langchain_core',
     'langchain_openai', 
     'langchain_anthropic',
     'langchain_google_genai',
     'langchain_deepseek',
     'langchain_together',
+    'langchain.tools',
+    'langchain.agents',
+    'langchain.agents.react',
+    'langchain.agents.react.agent',
     'openai',
     'vertexai',
     'google.cloud.aiplatform',
     'docker',
     'together',
+    'dowhy',
+    'linearmodels',
+    'linearmodels.iv',
+    'rdd',
+    'causal_learn',
+    'cvxpy',
+    'numba',
+    'llvmlite',
 ]
 
 # Autosummary settings
