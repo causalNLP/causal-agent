@@ -47,9 +47,9 @@ jiter==0.9.0
 joblib==1.4.2
 jsonpatch==1.33
 ## Moved to baselines/docker_dependencies.txt for containerized code execution
-# dowhy
+dowhy==0.12
 # econml
 matplotlib==3.10.1
-langchain==0.3.26
+langchain>=0.3.26,<0.4
 
 

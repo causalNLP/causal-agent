@@ -19,8 +19,8 @@ sys.path.insert(0, os.path.abspath('../../'))
 project = 'Causal AI Scientist'
 copyright = '2024, CAIS Team'
 author = 'CAIS Team'
-version = '0.1.1'
-release = '0.1.1'
+version = '0.1.2'
+release = '0.1.2'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -144,7 +144,19 @@ autodoc_typehints = 'description'
 autodoc_typehints_description_target = 'documented'
 autodoc_typehints_format = 'short'
 autodoc_preserve_defaults = True
-autodoc_mock_imports = []
+autodoc_mock_imports = [
+    'langchain_core',
+    'langchain_openai', 
+    'langchain_anthropic',
+    'langchain_google_genai',
+    'langchain_deepseek',
+    'langchain_together',
+    'openai',
+    'vertexai',
+    'google.cloud.aiplatform',
+    'docker',
+    'together',
+]
 
 # Autosummary settings
 autosummary_generate = True

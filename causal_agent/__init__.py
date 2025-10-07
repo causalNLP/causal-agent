@@ -29,7 +29,7 @@ The module supports various causal inference methods including:
 - Linear Regression with controls
 """
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 # Import components
 from causal_agent.components import (

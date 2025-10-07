@@ -1,13 +1,41 @@
 Changelog
 =========
 
-This document tracks all notable changes to the Causal AI Scientist (CAIS) project. 
-We follow `Semantic Versioning <https://semver.org/>`_ principles.
+This document tracks all notable changes to the Causal Agent  project. 
 
-Version 0.1.1 (Current)
+
+Version 0.1.2 (Current)
 ------------------------
 
-*Released: December 2024*
+*Released: October 2025*
+
+**Improvements**
+
+* **Build System Enhancement**: Fixed scipy version compatibility issues with statsmodels
+* **Documentation Build**: Resolved langchain import dependencies for ReadTheDocs builds
+* **Package Distribution**: Improved wheel and source distribution generation for PyPI
+* **Testing Infrastructure**: Enhanced local build testing and validation processes
+* **Dependency Management**: Added proper autodoc mock imports for documentation generation
+
+**Bug Fixes**
+
+* Fixed scipy version constraint to prevent conflicts with statsmodels (scipy>=1.10,<1.15)
+* Resolved langchain import errors during documentation builds
+* Fixed missing dependencies in docs/requirements.txt for proper Sphinx builds
+* Corrected autodoc configuration to handle unavailable imports gracefully
+
+**Technical Improvements**
+
+* Enhanced pyproject.toml configuration for better package metadata
+* Improved build process reliability for both wheel and source distributions
+* Added comprehensive local testing workflow before PyPI releases
+* Better error handling for missing optional dependencies
+* **Critical Fix**: Added missing `langchain>=0.3.26` dependency to prevent import errors
+* **Dependency Update**: Updated dowhy to version 0.12 for better compatibility
+
+Version 0.1.1
+--------------
+
 
 **New Features**
 
@@ -49,8 +77,6 @@ Version 0.1.1 (Current)
 Version 0.1.0
 -------------
 
-*Released: September 2024*
-
 **Initial Release**
 
 This is the first public release of the Causal AI Scientist, featuring:
@@ -69,8 +95,6 @@ This is the first public release of the Causal AI Scientist, featuring:
   
   * Randomized Controlled Trials (RCT)
   * Difference in Means
-
-* **Quasi-Experimental Methods**
   
   * Difference-in-Differences (DiD)
   * Instrumental Variables (IV)
@@ -99,111 +123,8 @@ This is the first public release of the Causal AI Scientist, featuring:
 * **Tutorials**: Jupyter notebook tutorials for different domains
 * **Case Studies**: Real-world examples across education, healthcare, and economics
 
-Development Milestones
-----------------------
 
-**Pre-Release Development** (January 2024 - August 2024)
 
-* **Research Phase**: Literature review and method selection
-* **Architecture Design**: Agent-based system design and LLM integration patterns
-* **Core Implementation**: Basic method implementations and decision tree logic
-* **Testing Framework**: Initial testing infrastructure and synthetic data generation
-* **Alpha Testing**: Internal testing and validation with synthetic datasets
-* **Beta Testing**: External testing with real datasets and user feedback
-
-**Future Roadmap**
-------------------
-
-**Version 0.2.0** (Planned: Q1 2025)
-
-* **Advanced Methods**: Support for mediation analysis and sensitivity analysis
-* **Enhanced LLM Integration**: Improved prompt engineering and response processing
-* **Web Interface**: Browser-based interface for non-technical users
-* **Cloud Integration**: Native support for cloud data sources and processing
-* **Performance Improvements**: Optimizations for very large datasets
-
-**Version 0.3.0** (Planned: Q2 2025)
-
-* **Causal Discovery**: Automated causal graph discovery from data
-* **Time Series Methods**: Support for time series causal inference
-* **Multi-Treatment Analysis**: Enhanced support for multiple treatments
-* **Advanced Diagnostics**: Expanded diagnostic tests and assumption checking
-* **Integration APIs**: REST API for integration with other tools
-
-**Long-term Vision**
-
-* **Domain-Specific Modules**: Specialized modules for healthcare, economics, education
-* **Real-time Analysis**: Support for streaming data and real-time causal inference
-* **Collaborative Features**: Multi-user collaboration and analysis sharing
-* **Educational Platform**: Interactive learning platform for causal inference
-* **Enterprise Features**: Advanced security, audit trails, and compliance features
-
-Migration Guides
------------------
-
-**Migrating from 0.1.0 to 0.1.1**
-
-**API Changes**
-
-.. code-block:: python
-
-   # Old way (deprecated but still works)
-   from causal_agent import CausalAgent
-   agent = CausalAgent(config_file="config.yaml")
-   
-   # New way (recommended)
-   from causal_agent import Agent
-   agent = Agent.from_config("config.yaml")
-
-**Configuration Changes**
-
-The LLM provider configuration format has changed:
-
-.. code-block:: yaml
-
-   # Old format (still supported with warnings)
-   llm:
-     provider: "openai"
-     api_key: "your-key"
-   
-   # New format (recommended)
-   llm_providers:
-     openai:
-       api_key: "your-key"
-       model: "gpt-4"
-     anthropic:
-       api_key: "your-key"
-       model: "claude-3"
-
-**Method Registration**
-
-Custom method registration has been simplified:
-
-.. code-block:: python
-
-   # Old way (no longer supported)
-   agent.register_method("custom_method", CustomMethodClass)
-   
-   # New way
-   from causal_agent.methods import register_method
-   register_method("custom_method", CustomMethodClass)
-
-Known Issues
-------------
-
-**Current Known Issues** (Version 0.1.1)
-
-* **Large Dataset Performance**: Processing datasets with >1M rows may be slow
-* **Memory Usage**: High memory usage with certain propensity score methods
-* **Windows Compatibility**: Some visualization features may not work on Windows
-* **Jupyter Lab**: Interactive features may not work in JupyterLab (use Jupyter Notebook)
-
-**Workarounds**
-
-* For large datasets, consider using the batch processing mode
-* Monitor memory usage and consider data sampling for very large datasets
-* Use WSL on Windows for full feature compatibility
-* Use Jupyter Notebook instead of JupyterLab for interactive features
 
 Contributing to Changelog
 --------------------------

@@ -32,3 +32,11 @@ sphinxcontrib-spelling>=8.0.0
 
 # For better search and SEO
 sphinx-sitemap>=2.5.0
+
+# LangChain dependencies for autodoc imports
+langchain>=0.3.26
+langchain-core>=0.3.0
+langchain-openai>=0.3.0
+langchain-anthropic>=0.3.0
+langchain-google-genai>=0.3.0
+langchain-deepseek>=0.1.0
