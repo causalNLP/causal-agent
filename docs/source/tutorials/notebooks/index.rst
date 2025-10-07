@@ -56,9 +56,9 @@ Running the Notebooks
    * Standard data science libraries (pandas, numpy, matplotlib, seaborn, scipy)
    * LLM provider API key (for full functionality)
 
-.. |binder-badge| image:: https://mybinder.org/badge_logo.svg
-   :target: https://mybinder.org/v2/gh/causal-ai-scientist/causal-ai-scientist/main?filepath=docs/source/tutorials/notebooks/
-   :alt: Launch Binder
+.. .. |binder-badge| image:: https://mybinder.org/badge_logo.svg
+..    :target: https://mybinder.org/v2/gh/causal-ai-scientist/causal-ai-scientist/main?filepath=docs/source/tutorials/notebooks/
+..    :alt: Launch Binder
 
 Notebook Features
 -----------------

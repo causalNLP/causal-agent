@@ -116,7 +116,7 @@ Documentation Structure
 Community & Support
 -------------------
 
-* **GitHub Repository**: `causal-ai-scientist <https://github.com/your-org/causal-ai-scientist>`_
+* **GitHub Repository**: `causal-agent <https://github.com/causalNLP/causal-agent>`_
 * **Issue Tracker**: Report bugs and request features
 * **Discussions**: Join the community discussions
 * **Contributing**: See our :doc:`development/contributing` guide
@@ -128,11 +128,11 @@ If you use Causal Agent in your research, please cite:
 
 .. code-block:: bibtex
 
-   @software{causal_ai_scientist,
-     title={Causal AI Scientist: Automated Causal Inference Analysis},
-     author={Causal Agent Team},
-     year={2024},
-     url={https://github.com/your-org/causal-ai-scientist}
+   @software{causal_agent,
+     title={Causal Agent: Automated Causal Inference Analysis},
+     author={vishal verma, sawal acharya, samuel simko, devansh bhardwaj, anahita haghighat, zhijing jin},
+     year={2025},
+     url={https://github.com/causalNLP/causal-agent}
    }
 
 Indices and Tables

@@ -1,7 +1,7 @@
 Citation Information
 ====================
 
-If you use the Causal AI Scientist (CAIS) in your research, please cite it using one of the formats below. Proper citation helps support the project and allows others to find and use this tool.
+If you use the Causal Agent in your research, please cite it using one of the formats below. Proper citation helps support the project and allows others to find and use this tool.
 
 BibTeX Format
 -------------
@@ -10,12 +10,12 @@ For LaTeX documents and reference managers that support BibTeX:
 
 .. code-block:: bibtex
 
-   @software{causal_ai_scientist,
-     title = {Causal AI Scientist: An Autonomous Agent for Causal Inference},
-     author = {CAIS Development Team},
-     year = {2024},
-     url = {https://github.com/your-org/causal-ai-scientist},
-     version = {0.1.1},
+   @software{causal_agent,
+     title = {Causal Agent: An Autonomous Agent for Causal Inference},
+     author = {vishal verma, sawal acharya, samuel simko, devansh bhardwaj, anahita haghighat, zhijing jin},
+     year = {2025},
+     url = {https://github.com/causalNLP/causal-agent},
+     version = {0.1.2},
      note = {Python package for automated causal inference analysis}
    }
 
