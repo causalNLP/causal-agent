@@ -38,7 +38,6 @@ extensions = [
     'sphinx_sitemap',
     'sphinxcontrib.mermaid',
     'myst_parser',
-    'sphinx_rtd_theme',
     'nbsphinx',
     'sphinxext.opengraph',
 ]
@@ -51,7 +50,14 @@ exclude_patterns = [
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'sphinx_rtd_theme'
+# Try to use RTD theme, fall back to default if not available
+try:
+    import sphinx_rtd_theme
+    html_theme = 'sphinx_rtd_theme'
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+except ImportError:
+    html_theme = 'default'
+
 html_static_path = ['_static']
 
 # Theme options are theme-specific and customize the look and feel of a theme
