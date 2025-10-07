@@ -31,5 +31,4 @@ recommonmark>=0.7.1
 sphinxcontrib-spelling>=8.0.0
 
 # For better search and SEO
-sphinx-search>=0.2.0
 sphinx-sitemap>=2.5.0
