@@ -2,8 +2,8 @@
 
 This repository contains 56 datasets from real-world studies and research, organized into two main categories:
 
-- **Real-World Studies** (19 datasets): Classic datasets from influential studies in political science, labor economics, public health, and public policy
-- **QRData** (37 datasets): Datasets from Liu et al. (2024) for benchmarking quantitative reasoning with data
+- **Real-World Studies** : Classic datasets from influential studies in political science, labor economics, public health, and public policy
+- **QRData** : Datasets from Liu et al. (2024) for benchmarking quantitative and causal reasoning with data
 
 ## Dataset Information
 
