@@ -22,6 +22,7 @@ def _call_llm_for_var(llm: BaseChatModel, prompt: str, pydantic_model: BaseModel
         messages = [HumanMessage(content=prompt)]
         structured_llm = llm.with_structured_output(pydantic_model)
         parsed_result = structured_llm.invoke(messages)
+        print(f"LLM parsed result: {parsed_result}")
         return parsed_result
     except (OutputParserException, ValidationError) as e:
         logger.error(f"LLM call failed parsing/validation for {pydantic_model.__name__}: {e}")
@@ -68,7 +69,8 @@ def identify_controls(treatment_variable: str, outcome_variable:str, method_name
 
     # 2. Use LLM 
     if llm:
-        logger.info("Using LLM to refine covariate list for controls selection")
+        print("Using LLM to refine covariate list for controls selection")
+        print("Method Name: ", method_name)
         prompt = CONTROLS_IDENTIFICATION_PROMPT_TEMPLATE.format(query=query_text, description=dataset_description, 
                                                                  column_info=", ".join(usable_controls), 
                                                                  treatment=treatment_variable, outcome=outcome_variable, 
@@ -82,7 +84,7 @@ def identify_controls(treatment_variable: str, outcome_variable:str, method_name
             if len(valid_llm_controls) < len(llm_selection.covariates):
                  logger.warning("LLM suggested controls not found in initial usable list.")
             if valid_llm_controls: # Use LLM selection if it's valid and non-empty
-                 logger.info(f"LLM refined controls to: {valid_llm_controls}")
+                 print(f"LLM refined controls to: {valid_llm_controls}")
                  return valid_llm_controls
             else:
                  logger.warning("LLM refinement failed or returned empty/invalid list. Using heuristically chosen controls.")
@@ -90,9 +92,9 @@ def identify_controls(treatment_variable: str, outcome_variable:str, method_name
              logger.warning("LLM refinement call failed or returned no controls. Using heuristically chosen controls")
 
     # 3. Choose heuristically if LLM not used or failed
-    logger.info(f"Using heuristically determined controls (capped at 10): {usable_controls[:10]}")
+    print(f"Using heuristically determined controls: {usable_controls}")
 
-    return usable_controls[:10]  # Limit to first 10 for practicality
+    return usable_controls
 
 def select_controls(method_name, variables, columns, column_categories, query, description, llm):
     """

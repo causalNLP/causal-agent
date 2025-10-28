@@ -46,7 +46,7 @@ from cais.prompts.method_identification_prompts import (
 
 
 logger = logging.getLogger(__name__)
-
+logging.basicConfig(level=logging.INFO)
 def infer_treatment_variable_type(treatment_variable: str, column_categories: Dict[str, str],
                                   dataset_analysis: Dict[str, Any]) -> str:
     """
@@ -125,7 +125,7 @@ def determine_treatment_reference_level(is_rct: Optional[bool], llm: Optional[Ba
                 df = pd.read_csv(file_path)
                 if treatment_variable in df.columns:
                     unique_vals = df[treatment_variable].unique()
-                    treatment_values_sample = [item.item() if hasattr(item, 'item') else item for item in unique_vals][:10]
+                    treatment_values_sample = [item.item() if hasattr(item, 'item') else item for item in unique_vals]
                     if treatment_values_sample:
                         logger.info(f"Successfully read treatment values sample from dataset at '{file_path}' for variable '{treatment_variable}'.")
                     else:
@@ -209,7 +209,7 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
         Dict containing identified variables (treatment, outcome, covariates, etc., and is_rct).
     """
 
-    logger.info("Interpreting query with hybrid approach...")
+    print("Interpreting query with hybrid approach...")
     llm = get_llm_client()
     
     query_text = query_info.get("query_text", "")
@@ -252,7 +252,7 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
     confounders = _identify_covariates_hybrid("confounders", treatment_variable=treatment_variable, outcome_variable=outcome_variable,
                                               columns=columns, column_categories=column_categories, query_hints=confounder_hints,
                                               query_text=query_text, dataset_description=dataset_description, llm=llm)
-    logger.info(f"Identified Confounders: {confounders}")
+    print(f"Identified Confounders: {confounders}")
 
     # --- Identify Time/Group (from dataset analysis) --- 
     time_variable = None
@@ -530,15 +530,15 @@ def _identify_covariates_hybrid(role, treatment_variable: Optional[str], outcome
                  logger.warning("LLM suggested covariates not found in initial usable list.")
             if valid_llm_covs: # Use LLM selection if it's valid and non-empty
                  logger.info(f"LLM refined covariates to: {valid_llm_covs}")
-                 return valid_llm_covs[:10] # Cap at 10
+                 return valid_llm_covs # Cap at 10
             else:
                  logger.warning("LLM refinement failed or returned empty/invalid list. Falling back.")
         else:
              logger.warning("LLM refinement call failed or returned no covariates. Falling back.")
 
     # 3. Fallback to Programmatic List (Capped)
-    logger.info(f"Using programmatically determined covariates (capped at 10): {usable_covariates[:10]}")
-    return usable_covariates[:10]
+    logger.info(f"Using programmatically determined covariates (capped at 10): {usable_covariates}")
+    return usable_covariates
 
 def _create_identify_prompt(target: str, query: str, description: Optional[str], columns: List[str], 
                             categories: Dict[str,str], treatment: Optional[str], outcome: Optional[str]) -> str:

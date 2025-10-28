@@ -57,6 +57,8 @@ from langchain_core.exceptions import OutputParserException
 
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
+from cais.tools.dataset_cleaner_tool import dataset_cleaner_tool
+
 
 FINAL_ANSWER_ACTION = "Final Answer:"
 MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE = (
@@ -326,7 +328,7 @@ def run_causal_analysis(query: str, dataset_path: str,
         input_text += "Please perform the causal analysis following the workflow."
         
         # Log the constructed input text
-        logger.info(f"Constructed input for agent: \n{input_text}")
+        print(f"Constructed input for agent: \n{input_text}")
 
         input_parsing_result = input_parser_tool(input_text)
         dataset_analysis_result = dataset_analyzer_tool.func(dataset_path=input_parsing_result["dataset_path"], dataset_description=input_parsing_result["dataset_description"], original_query=input_parsing_result["original_query"]).analysis_results
@@ -346,19 +348,6 @@ def run_causal_analysis(query: str, dataset_path: str,
             excluded_methods=None)
 
         # NEW: Select control variables based on chosen method
-        method_name = method_selector_output['method_info']['selected_method']
-        controls_selector_output = controls_selector_tool.func(
-            method_name=method_name,
-            variables=query_interpreter_output,
-            dataset_analysis=dataset_analysis_result,
-            dataset_description=input_parsing_result["dataset_description"],
-            original_query=input_parsing_result["original_query"]
-        )
-
-        # Update variables with selected controls
-        from cais.models import Variables
-        query_interpreter_output = Variables(**controls_selector_output['variables'])
-
         method_info = MethodInfo(
             **method_selector_output['method_info']
         )
@@ -370,9 +359,44 @@ def run_causal_analysis(query: str, dataset_path: str,
             original_query = input_parsing_result["original_query"]
         )
         method_validator_output = method_validator_tool.func(method_validator_input)
-        method_executor_input = MethodExecutorInput(
-            **method_validator_output
+        # method_validator_output['method'] = "linear_regression"
+        method_name = method_validator_output['method']
+        controls_selector_output = controls_selector_tool.func(
+            method_name=method_name,
+            variables=query_interpreter_output,
+            dataset_analysis=dataset_analysis_result,
+            dataset_description=input_parsing_result["dataset_description"],
+            original_query=input_parsing_result["original_query"]
         )
+        # Update variables with selected controls
+        from cais.models import Variables
+        query_interpreter_output = Variables(**controls_selector_output['variables'])
+        print(f"Selected controls: {query_interpreter_output}")
+        print('Started Dataset Cleaning... ')
+
+        original_path = dataset_analysis_result.dataset_info.file_path 
+        cleaning_output = dataset_cleaner_tool.func(
+            dataset_path=original_path,
+            variables=query_interpreter_output.model_dump(),
+            dataset_description=input_parsing_result["dataset_description"],
+            original_query=input_parsing_result["original_query"],
+            causal_method = method_name
+        )
+        cleaned_path = cleaning_output.get("cleaned_dataset_path", original_path)
+        print("----------Cleaned Dataset Path-----------")
+        print(cleaned_path)
+
+        method_executor_input = MethodExecutorInput(
+            method = method_name,
+            variables=query_interpreter_output,
+            dataset_path=cleaned_path,
+            dataset_analysis=dataset_analysis_result,
+            dataset_description=input_parsing_result["dataset_description"],
+            # validation_info=method_validator_output,
+            original_query = input_parsing_result["original_query"]
+        )
+        print("----------Method Executor Input-----------")
+        print(method_executor_input)
         method_executor_output = method_executor_tool.func(method_executor_input, original_query = input_parsing_result["original_query"])
         explainer_output = explanation_generator_tool.func(            method_info=method_info,
             validation_info=method_validator_output,
@@ -385,6 +409,7 @@ def run_causal_analysis(query: str, dataset_path: str,
         result['results']['results']["method_used"] = method_validator_output['method']
         logger.info(result)
         logger.info("Causal analysis run finished.")
+        
         
         # Ensure result is a dict and extract the 'output' part
         if isinstance(result, dict):

@@ -68,6 +68,8 @@ def method_executor_tool(inputs: MethodExecutorInput, original_query: Optional[s
         treatment = variables_dict.get("treatment_variable")
         outcome = variables_dict.get("outcome_variable")
         covariates = variables_dict.get("covariates", [])
+        if method in ["propensity_score_matching", "propensity_score_weighting", "generalized_propensity_score"]:
+            covariates = variables_dict.get("confounders", [])
         query_str = original_query if original_query is not None else inputs.original_query
         
         if not all([treatment, outcome]):

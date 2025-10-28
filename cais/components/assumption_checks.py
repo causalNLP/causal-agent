@@ -9,7 +9,7 @@ from rddensity import rddensity
 
 # Try to import optimal_bandwidth from rdd package
 try:
-    from rdd import optimal_bandwidth
+    from rdd.rdd import optimal_bandwidth
     _has_rdd_optimal_bandwidth = True
 except ImportError:
     _has_rdd_optimal_bandwidth = False

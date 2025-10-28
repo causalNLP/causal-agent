@@ -334,7 +334,13 @@ def validate_regression_discontinuity(validation_result: Dict[str, Any],
         )
 
     # 2) Visual inspection prep: outcome vs running near cutoff
-    win = rdd_window_summary(df, running_variable, outcome, cutoff_value, h=None)
+    try:
+        win = rdd_window_summary(df, running_variable, outcome, cutoff_value, h=None)
+
+    except Exception as e:
+        validation_result['valid'] = False
+        validation_result["concerns"].append(f"RDD check failed: {str(e)}")
+        return
     validation_result["evidence"]["rdd_window"] = win
     if (win.get("n_left", 0) < 5) or (win.get("n_right", 0) < 5):
         validation_result["concerns"].append("Too few observations near cutoff for reliable visual inspection.")

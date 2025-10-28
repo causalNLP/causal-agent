@@ -10,7 +10,7 @@ class LLMSelectedVariable(BaseModel):
 class LLMSelectedCovariates(BaseModel):
     """Pydantic model for selecting a list of covariates."""
     covariates: List[str] = Field(default_factory=list, description="The list of selected covariate column names.")
-
+    reasoning: Optional[str] = Field(None, description="The identified estimand")
 class LLMIVars(BaseModel):
     """Pydantic model for identifying IVs."""
     instrument_variable: Optional[str] = Field(None, description="The identified instrumental variable column name.")
@@ -128,6 +128,7 @@ class Variables(BaseModel):
     treatment_reference_level: Optional[str] = Field(None, description="The specified reference/control level for a multi-valued treatment variable.")
     interaction_term_suggested: Optional[bool] = Field(False, description="Whether the query or context suggests an interaction term with the treatment might be relevant.")
     interaction_variable_candidate: Optional[str] = Field(None, description="The covariate identified as a candidate for interaction with the treatment.")
+    confounders: Optional[List[str]] = Field(default_factory=list)
     
 class QueryInterpreterOutput(BaseModel):
     """Structured output for the query interpreter tool."""
@@ -246,3 +247,9 @@ class RelevantParamInfo(BaseModel):
 class LLMIdentifiedRelevantParams(BaseModel):
     identified_params: List[RelevantParamInfo] = Field(description="A list of parameters identified as relevant to the query or representing all treatment effects for a general query.")
     all_parameters_successfully_identified: bool = Field(description="True if LLM is confident it identified all necessary params based on query type (e.g., all levels for a general query).") 
+
+class DatasetCleanerInput(BaseModel):
+    dataset_path: str
+    variables: Variables                      # treatment, outcome, covariates, time_variable (from Query Interpreter + Controls)
+    dataset_description: Optional[str] = None
+    original_query: Optional[str] = None

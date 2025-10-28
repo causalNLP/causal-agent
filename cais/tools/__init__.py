@@ -12,6 +12,7 @@ from cais.tools.method_validator_tool import method_validator_tool
 from cais.tools.method_executor_tool import method_executor_tool
 from cais.tools.explanation_generator_tool import explanation_generator_tool
 from cais.tools.output_formatter_tool import output_formatter_tool
+from cais.tools.dataset_cleaner_tool import dataset_cleaner_tool
 
 __all__ = [
     "input_parser_tool",
@@ -23,4 +24,5 @@ __all__ = [
     "method_executor_tool",
     "explanation_generator_tool",
     "output_formatter_tool",
+    "dataset_cleaner_tool"
 ]
