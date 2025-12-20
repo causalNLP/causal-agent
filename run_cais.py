@@ -1,4 +1,4 @@
-import os, re, io, time, json, logging, contextlib, textwrap
+import os, time, json, logging
 from typing import Dict, Any
 import pandas as pd
 import argparse
@@ -11,23 +11,81 @@ def run_caia(desc, question, df):
     return run_causal_analysis(query=question, dataset_path=df, dataset_description=desc)
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Run batch causal analysis.")
-    parser.add_argument("--csv_path", type=str, required=True, help="CSV file with queries, descriptions, and file names.")
-    parser.add_argument("--data_folder", type=str, required=True, help="Folder containing data CSVs.")
-    parser.add_argument("--data_category", type=str, required=True, help="Dataset category (e.g., real, qrdata, synthetic).")
-    parser.add_argument("--output_folder", type=str, required=True, help="Folder to save output.")
-    parser.add_argument("--llm_name", type=str, required=True, help="Name of the LLM used.")
-    parser.add_argument("--llm_provider", type=str, required=True, help="Name of the LLM used.")
-    return parser.parse_args()
+    parser = argparse.ArgumentParser(description="Run batch causal analysis (CAIS).")
+
+    # Preferred flags (match README.md)
+    parser.add_argument(
+        "--metadata_path",
+        type=str,
+        required=False,
+        help="Path to the metadata CSV (columns: natural_language_query, data_description, data_files, etc.)",
+    )
+    parser.add_argument("--data_dir", type=str, required=False, help="Folder containing dataset CSV files.")
+    parser.add_argument("--output_dir", type=str, required=False, help="Folder to save outputs.")
+    parser.add_argument("--output_name", type=str, required=False, help="Output JSON filename (with or without .json).")
+    parser.add_argument("--llm_name", type=str, required=False, help="LLM model name (e.g., gpt-4o-mini).")
+    parser.add_argument("--llm_provider", type=str, required=False, help="LLM provider (e.g., openai, anthropic).")
+
+    # Back-compat aliases (older/other scripts)
+    parser.add_argument("--csv_path", type=str, required=False, help=argparse.SUPPRESS)
+    parser.add_argument("--data_folder", type=str, required=False, help=argparse.SUPPRESS)
+    parser.add_argument("--output_folder", type=str, required=False, help=argparse.SUPPRESS)
+    parser.add_argument("--output_json", type=str, required=False, help=argparse.SUPPRESS)
+    parser.add_argument("--csv_meta", type=str, required=False, help=argparse.SUPPRESS)
+    parser.add_argument("--data_dir_legacy", dest="data_dir", type=str, required=False, help=argparse.SUPPRESS)
+    parser.add_argument("--output_dir_legacy", dest="output_dir", type=str, required=False, help=argparse.SUPPRESS)
+
+    # Kept for compatibility; not used by this script.
+    parser.add_argument("--data_category", type=str, required=False, help=argparse.SUPPRESS)
+
+    args = parser.parse_args()
+
+    # Normalize/resolve aliases
+    if not args.metadata_path:
+        args.metadata_path = args.csv_path or args.csv_meta
+    if not args.data_dir:
+        args.data_dir = args.data_folder
+    if not args.output_dir:
+        args.output_dir = args.output_folder
+
+    # Allow direct output_json path, otherwise build from output_dir + output_name.
+    if args.output_json:
+        args.output_file = args.output_json
+    else:
+        output_name = args.output_name
+        if output_name and not output_name.endswith(".json"):
+            output_name = f"{output_name}.json"
+        args.output_file = os.path.join(args.output_dir or "", output_name or "")
+
+    missing = []
+    if not args.metadata_path:
+        missing.append("--metadata_path")
+    if not args.data_dir:
+        missing.append("--data_dir")
+    if not args.output_json:
+        if not args.output_dir:
+            missing.append("--output_dir")
+        if not args.output_name:
+            missing.append("--output_name")
+    if not args.output_file:
+        missing.append("--output_json or (--output_dir + --output_name)")
+    if not args.llm_name:
+        missing.append("--llm_name")
+    if not args.llm_provider:
+        missing.append("--llm_provider")
+    if missing:
+        parser.error("Missing required arguments: " + ", ".join(missing))
+
+    return args
 
 def main():
     
     args = parse_args()
-    csv_meta = args.csv_meta
+    csv_meta = args.metadata_path
     data_dir = args.data_dir
-    output_json = args.output_json
+    output_json = args.output_file
     os.environ["LLM_MODEL"] = args.llm_name
-    os.environ["LLM_PROVIDER"] = args.llm_name
+    os.environ["LLM_PROVIDER"] = args.llm_provider
     print("[main] Starting batch processing…")
 
     if not os.path.exists(csv_meta):
@@ -74,16 +132,14 @@ def main():
                 }
             }
             results[idx] = formatted_result
-            print(type(res))
-            print(res)
-            print(f"[main] Formatted result for row {idx+1}:", formatted_result)
+            print(f"[main] Formatted result for row {idx+1}")
         except Exception as e:
             logging.error(f"[{idx+1}] Error: {e}")
             results[idx] = {"answer": str(e)}
 
         time.sleep(RATE_LIMIT_SECONDS)
 
-    os.makedirs(os.path.dirname(output_json), exist_ok=True)
+    os.makedirs(os.path.dirname(output_json) or ".", exist_ok=True)
     with open(output_json, "w") as f:
         json.dump(results, f, indent=2)
     print(f"[main] Done. Predictions saved to {output_json}")

@@ -32,4 +32,26 @@ Instructions:
 
 Respond ONLY with a valid JSON object matching this Pydantic model schema:
 {llm_response_schema_json}
-""" 
+"""
+
+LLM_RESULT_INTERPRETATION_PROMPT_TEMPLATE = """
+You are a research assistant. Interpret causal inference results in the context of the original question.
+
+Context (JSON; do not assume anything not in this context):
+{context_json}
+
+Instructions:
+1. Answer the user's query using the reported effect estimate, standard error, confidence interval, and p-value.
+2. State statistical significance using p < 0.05 as the threshold (or "unclear" if p is missing).
+3. Judge whether the selected method is plausible given the dataset and validation evidence.
+4. Use the decision tree details to explain why this method was selected and why alternatives were not prioritized, if provided.
+5. Identify the most important threats to identification validity given the method assumptions and diagnostics.
+6. Provide limitations/caveats separately from the core interpretation.
+
+Return a single concise explanation (3-6 sentences). Include:
+- the estimated effect with uncertainty (SE/CI) and significance,
+- a brief method plausibility statement,
+- why this method was selected (mention decision tree if provided),
+- 1–2 key identification threats or caveats.
+Do NOT return JSON or bullet lists.
+"""

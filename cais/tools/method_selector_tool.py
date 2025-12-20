@@ -144,7 +144,8 @@ def method_selector_tool(
          "method_name": method_selection_dict.get("selected_method", "").replace("_", " ").title() if method_selected_flag else None, 
          "method_justification": method_selection_dict.get("method_justification"),
          "method_assumptions": method_selection_dict.get("method_assumptions", []),
-         "alternative_methods": method_selection_dict.get("alternatives", []) # Include alternatives
+         "alternative_methods": method_selection_dict.get("alternatives", []), # Include alternatives
+         "decision_tree": method_selection_dict.get("decision_tree", {})
     }
     
     # Create the final output dictionary for the agent

@@ -6,6 +6,7 @@ structured output for presentation to the user.
 """
 
 from typing import Dict, List, Any, Optional
+import numbers
 import json 
 
 from cais.models import FormattedOutput
@@ -39,6 +40,24 @@ def format_output(
     confidence_interval = results.get("confidence_interval")
     p_value = results.get("p_value")
     effect_se = results.get("standard_error") # Get SE if available
+
+    def _normalize_single_value(value: Any) -> Any:
+        if isinstance(value, dict) and len(value) == 1:
+            return next(iter(value.values()))
+        return value
+
+    def _format_stat_value(value: Any, precision: int = 4) -> str:
+        value = _normalize_single_value(value)
+        if isinstance(value, numbers.Number):
+            return f"{float(value):.{precision}f}"
+        if isinstance(value, (list, tuple)) and len(value) == 2 and all(isinstance(v, numbers.Number) for v in value):
+            return f"[{float(value[0]):.{precision}f}, {float(value[1]):.{precision}f}]"
+        if isinstance(value, dict):
+            parts = []
+            for key, item in value.items():
+                parts.append(f"{key}: {_format_stat_value(item, precision)}")
+            return "; ".join(parts)
+        return "N/A"
     
     # Format method name for readability
     method_name_formatted = _format_method_name(method)
@@ -50,16 +69,28 @@ def format_output(
     limitations = explanation.get("limitations", [])
     assumptions_discussion = explanation.get("assumptions", "") # Assuming key is 'assumptions'
     practical_implications = explanation.get("practical_implications", "")
+    interpretation_text = explanation.get("interpretation_text", "")
     # Add back final_explanation_text if explainer provides it
     # final_explanation_text = explanation.get("final_explanation_text")
 
     # Create summary using numerical results
-    ci_text = ""
-    if confidence_interval and confidence_interval[0] is not None and confidence_interval[1] is not None:
-        ci_text = f" (95% CI: [{confidence_interval[0]:.4f}, {confidence_interval[1]:.4f}])"
-        
-    p_value_text = f", p={p_value:.4f}" if p_value is not None else ""
-    effect_text = f"{effect_estimate:.4f}" if effect_estimate is not None else "N/A"
+    normalized_ci = _normalize_single_value(confidence_interval)
+    if isinstance(normalized_ci, (list, tuple)) and len(normalized_ci) == 2:
+        ci_text = f" (95% CI: {_format_stat_value(normalized_ci)})"
+    elif isinstance(confidence_interval, dict) and confidence_interval:
+        ci_text = f" (95% CI by level: {_format_stat_value(confidence_interval)})"
+    else:
+        ci_text = ""
+
+    normalized_p_value = _normalize_single_value(p_value)
+    if isinstance(normalized_p_value, numbers.Number):
+        p_value_text = f", p={float(normalized_p_value):.4f}"
+    elif isinstance(p_value, dict) and p_value:
+        p_value_text = f", p-values by level: {_format_stat_value(p_value)}"
+    else:
+        p_value_text = ""
+
+    effect_text = _format_stat_value(effect_estimate) if effect_estimate is not None else "N/A"
     
     summary = (
         f"Based on {method_name_formatted}, the estimated causal effect is {effect_text}"
@@ -81,6 +112,7 @@ def format_output(
         "limitations": limitations,
         "assumptions": assumptions_discussion,
         "practical_implications": practical_implications,
+        "interpretation_text": interpretation_text,
         # "full_explanation_text": final_explanation_text # Optionally include combined text
     }
     final_results_dict = {key : results_dict[key] for key in {"query", "method_used", "causal_effect", "standard_error", "confidence_interval"}}
@@ -117,8 +149,13 @@ def _create_effect_interpretation(effect: Optional[float], p_value: Optional[flo
     """Create a basic interpretation of the effect."""
     if effect is None:
         return "Effect estimate not available."
-        
+
+    if isinstance(effect, dict):
+        return "Effect estimates are provided by level; see details below."
+
     significance = ""
+    if isinstance(p_value, dict):
+        return "Statistical significance varies by level; see details below."
     if p_value is not None:
         significance = "statistically significant" if p_value < 0.05 else "not statistically significant"
     

@@ -91,6 +91,62 @@ METHOD_ASSUMPTIONS = {
 }
 
 
+def _get_decision_path(method: str) -> List[str]:
+    decision_paths = {
+        "linear_regression": [
+            "Check if randomized experiment",
+            "Data appears to be from a randomized experiment with covariates",
+        ],
+        "propensity_score_matching": [
+            "Check if randomized experiment",
+            "Data is observational",
+            "Check for sufficient covariate overlap",
+            "Sufficient overlap exists",
+        ],
+        "propensity_score_weighting": [
+            "Check if randomized experiment",
+            "Data is observational",
+            "Check for sufficient covariate overlap",
+            "Low overlap—weighting preferred",
+        ],
+        "backdoor_adjustment": [
+            "Check if randomized experiment",
+            "Data is observational",
+            "Check for sufficient covariate overlap",
+            "Adjusting for covariates",
+        ],
+        "instrumental_variable": [
+            "Check if randomized experiment",
+            "Data is observational",
+            "Check for instrumental variables",
+            "Instrument is available",
+        ],
+        "regression_discontinuity_design": [
+            "Check if randomized experiment",
+            "Data is observational",
+            "Check for discontinuity",
+            "Discontinuity exists",
+        ],
+        "difference_in_differences": [
+            "Check if randomized experiment",
+            "Data is observational",
+            "Check for temporal structure",
+            "Panel data structure exists",
+        ],
+        "frontdoor_adjustment": [
+            "Check if randomized experiment",
+            "Data is observational",
+            "Check front-door criterion",
+            "Front-door path identified",
+        ],
+        "diff_in_means": [
+            "Check if randomized experiment",
+            "Pure RCT without covariates",
+        ],
+    }
+    return decision_paths.get(method, ["Default method selection"])
+
+
 def select_method(dataset_properties: Dict[str, Any], excluded_methods: Optional[List[str]] = None) -> Dict[str, Any]:
     excluded_methods = set(excluded_methods or [])
     logger.info(f"Excluded methods: {sorted(excluded_methods)}")
@@ -248,12 +304,40 @@ def select_method(dataset_properties: Dict[str, Any], excluded_methods: Optional
 
     logger.info(f"Selected method: {selected_method}; alternatives: {alternatives}")
 
+    decision_path = _get_decision_path(selected_method)
+    selection_rule = "lowest priority index among non-excluded candidates"
+    candidate_methods = []
+    for method_name, priority_index in sorted(candidates, key=lambda item: item[1]):
+        excluded = method_name in excluded_methods
+        selected = method_name == selected_method
+        if excluded:
+            reason_not_selected = "excluded_by_validation"
+        elif selected:
+            reason_not_selected = "selected"
+        else:
+            reason_not_selected = "lower_priority_in_tree"
+        candidate_methods.append({
+            "method": method_name,
+            "priority_index": priority_index,
+            "justification": justifications.get(method_name, ""),
+            "assumptions": assumptions.get(method_name, []),
+            "excluded": excluded,
+            "selected": selected,
+            "reason_not_selected": reason_not_selected
+        })
+
     return {
         "selected_method": selected_method,
         "method_justification": justifications[selected_method],
         "method_assumptions": assumptions[selected_method],
         "alternatives": alternatives,
         "excluded_methods": sorted(excluded_methods),
+        "decision_tree": {
+            "decision_path": decision_path,
+            "selection_rule": selection_rule,
+            "candidate_methods": candidate_methods,
+            "excluded_methods": sorted(excluded_methods),
+        },
     }
 
 

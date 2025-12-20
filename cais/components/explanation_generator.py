@@ -6,7 +6,115 @@ what the method does, its assumptions, and how it will be applied to the dataset
 """
 
 from typing import Dict, Any, List, Optional
+import json
+import numbers
 from langchain_core.language_models import BaseChatModel # For LLM type hint
+
+from cais.prompts import LLM_RESULT_INTERPRETATION_PROMPT_TEMPLATE
+
+
+def _extract_results_payload(results: Dict[str, Any]) -> Dict[str, Any]:
+    if isinstance(results, dict) and isinstance(results.get("results"), dict):
+        return results["results"]
+    return results if isinstance(results, dict) else {}
+
+
+def _normalize_single_value(value: Any) -> Any:
+    if isinstance(value, dict) and len(value) == 1:
+        return next(iter(value.values()))
+    return value
+
+
+def _format_stat_value(value: Any, precision: int = 4) -> str:
+    value = _normalize_single_value(value)
+    if isinstance(value, numbers.Number):
+        return f"{float(value):.{precision}f}"
+    if isinstance(value, (list, tuple)) and len(value) == 2 and all(isinstance(v, numbers.Number) for v in value):
+        return f"[{float(value[0]):.{precision}f}, {float(value[1]):.{precision}f}]"
+    if isinstance(value, dict):
+        parts = []
+        for key, item in value.items():
+            parts.append(f"{key}: {_format_stat_value(item, precision)}")
+        return "; ".join(parts)
+    return str(value)
+
+
+def _has_value(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, dict) and not value:
+        return False
+    if isinstance(value, (list, tuple)) and not value:
+        return False
+    return True
+
+
+def _extract_validation_summary(validation_result: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    if not isinstance(validation_result, dict):
+        return {}
+    if isinstance(validation_result.get("validation_info"), dict):
+        return validation_result.get("validation_info", {})
+    return validation_result
+
+
+def _call_llm_for_text(llm: Optional[BaseChatModel], prompt: str) -> str:
+    if llm is None:
+        return ""
+    try:
+        response = llm.invoke(prompt)
+        if hasattr(response, "content") and isinstance(response.content, str):
+            return response.content.strip()
+        if isinstance(response, str):
+            return response.strip()
+        if hasattr(response, "text") and isinstance(response.text, str):
+            return response.text.strip()
+    except Exception as e:
+        print(f"LLM interpretation call failed: {e}")
+    return ""
+
+
+def _generate_llm_interpretation(
+    method_info: Dict[str, Any],
+    validation_result: Optional[Dict[str, Any]],
+    variables: Dict[str, Any],
+    results: Dict[str, Any],
+    dataset_description: Optional[str],
+    original_query: Optional[str],
+    llm: Optional[BaseChatModel]
+) -> Dict[str, Any]:
+    if llm is None:
+        return {}
+
+    results_payload = _extract_results_payload(results)
+    validation_summary = _extract_validation_summary(validation_result)
+
+    context_payload = {
+        "user_query": original_query,
+        "dataset_description": dataset_description,
+        "method_selected": method_info.get("selected_method"),
+        "method_justification": method_info.get("method_justification"),
+        "alternative_methods": method_info.get("alternative_methods", []),
+        "decision_tree": method_info.get("decision_tree", {}),
+        "method_assumptions": method_info.get("method_assumptions", []),
+        "variables": variables,
+        "validation_results": validation_summary,
+        "estimation_results": {
+            "effect_estimate": results_payload.get("effect_estimate"),
+            "standard_error": results_payload.get("standard_error"),
+            "confidence_interval": results_payload.get("confidence_interval"),
+            "p_value": results_payload.get("p_value"),
+            "diagnostics": results_payload.get("diagnostics"),
+            "refutation_results": results_payload.get("refutation_results"),
+        }
+    }
+
+    prompt = LLM_RESULT_INTERPRETATION_PROMPT_TEMPLATE.format(
+        context_json=json.dumps(context_payload, indent=2, default=str)
+    )
+
+    interpretation_text = _call_llm_for_text(llm, prompt)
+    print(f"LLM interpretation raw output: {interpretation_text}")
+    return interpretation_text
 
 
 def generate_explanation(
@@ -49,11 +157,13 @@ def generate_explanation(
     interpretation_guide = generate_interpretation_guide(method, variables.get("treatment_variable"), 
                                                        variables.get("outcome_variable"))
 
+    results_payload = _extract_results_payload(results)
+
     # --- Extract Numerical Results --- 
-    effect_estimate = results.get("effect_estimate")
-    effect_se = results.get("effect_se")
-    ci = results.get("confidence_interval")
-    p_value = results.get("p_value") # Assuming method executor returns p_value
+    effect_estimate = results_payload.get("effect_estimate")
+    effect_se = results_payload.get("effect_se")
+    ci = results_payload.get("confidence_interval")
+    p_value = results_payload.get("p_value") # Assuming method executor returns p_value
 
     # --- Assemble Final Text --- 
     final_text = f"**Method Used:** {method_info.get('method_name', method)}\n\n"
@@ -61,14 +171,14 @@ def generate_explanation(
     
     # Add Results Section
     final_text += "**Results:**\n"
-    if effect_estimate is not None:
-        final_text += f"- Estimated Causal Effect: {effect_estimate:.4f}\n"
-    if effect_se is not None:
-         final_text += f"- Standard Error: {effect_se:.4f}\n"
-    if ci and ci[0] is not None and ci[1] is not None:
-         final_text += f"- 95% Confidence Interval: [{ci[0]:.4f}, {ci[1]:.4f}]\n"
-    if p_value is not None:
-         final_text += f"- P-value: {p_value:.4f}\n"
+    if _has_value(effect_estimate):
+        final_text += f"- Estimated Causal Effect: {_format_stat_value(effect_estimate)}\n"
+    if _has_value(effect_se):
+        final_text += f"- Standard Error: {_format_stat_value(effect_se)}\n"
+    if _has_value(ci):
+        final_text += f"- 95% Confidence Interval: {_format_stat_value(ci)}\n"
+    if _has_value(p_value):
+        final_text += f"- P-value: {_format_stat_value(p_value)}\n"
     final_text += "\n"
     
     final_text += f"**Interpretation Guide:**\n{interpretation_guide}\n\n"
@@ -78,9 +188,19 @@ def generate_explanation(
     final_text += "\n"
     final_text += f"**Limitations:**\n{limitations_explanation}\n\n"
 
+    interpretation_text = _generate_llm_interpretation(
+        method_info=method_info,
+        validation_result=validation_result,
+        variables=variables,
+        results=results,
+        dataset_description=dataset_description,
+        original_query=variables.get("original_query"),
+        llm=llm
+    )
+
     return {
-        "final_explanation_text": final_text
-        # Return only the final text, the tool wrapper adds workflow state
+        "final_explanation_text": final_text,
+        "interpretation_text": interpretation_text,
     }
 
 

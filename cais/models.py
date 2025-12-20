@@ -157,6 +157,7 @@ class MethodInfo(BaseModel):
     method_assumptions: Optional[List[str]] = Field(default_factory=list)
     # Add alternative methods if it should be part of the standard info passed around
     alternative_methods: Optional[List[str]] = Field(default_factory=list)
+    decision_tree: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Decision tree details for method selection.")
 
 class ControlsSelectorInput(BaseModel):
     """Input structure for the controls selector tool."""
@@ -219,6 +220,7 @@ class FormattedOutput(BaseModel):
     limitations: Optional[List[str]] = Field(default_factory=list, description="List of limitations or potential issues with the analysis.")
     assumptions: Optional[str] = Field("", description="Discussion of the key assumptions underlying the method and their validity.")
     practical_implications: Optional[str] = Field("", description="Discussion of the practical implications or significance of the findings.")
+    interpretation_text: Optional[str] = Field("", description="Single-paragraph interpretation of results.")
     # Optionally add dataset_analysis and dataset_description if they should be part of the final structure
     # dataset_analysis: Optional[DatasetAnalysis] = None # Example if using DatasetAnalysis model
     # dataset_description: Optional[str] = None
