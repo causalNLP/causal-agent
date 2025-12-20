@@ -123,7 +123,7 @@ cp .env.example .env
 # Create a new conda environment with Python 3.10
 conda create -n cais python=3.10
 conda activate cais
-pip install -r requirement.txt
+pip install -r requirements.txt
 ```
 
 **Step3: Setup cais library**
