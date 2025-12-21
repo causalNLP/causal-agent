@@ -278,9 +278,10 @@ def create_causal_agent(llm: BaseChatModel) -> AgentExecutor:
     
     return executor
 
-def run_causal_analysis(query: str, dataset_path: str, 
-                        dataset_description: Optional[str] = None, 
-                        api_key: Optional[str] = None) -> Dict[str, Any]:
+def run_causal_analysis(query: str, dataset_path: str,
+                        dataset_description: Optional[str] = None,
+                        api_key: Optional[str] = None,
+                        use_method_validator: bool = True) -> Dict[str, Any]:
     """
     Run causal analysis on a dataset based on a user query.
     
@@ -289,6 +290,7 @@ def run_causal_analysis(query: str, dataset_path: str,
         dataset_path: Path to the dataset
         dataset_description: Optional textual description of the dataset
         api_key: Optional OpenAI API key (DEPRECATED - will be ignored)
+        use_method_validator: Whether to run the method validator step
         
     Returns:
         Dictionary containing the final formatted analysis results from the agent's last step.
@@ -351,16 +353,30 @@ def run_causal_analysis(query: str, dataset_path: str,
         method_info = MethodInfo(
             **method_selector_output['method_info']
         )
-        method_validator_input = MethodValidatorInput(
-            method_info=method_info,
-            variables=query_interpreter_output,
-            dataset_analysis=dataset_analysis_result,
-            dataset_description=input_parsing_result["dataset_description"],
-            original_query = input_parsing_result["original_query"]
-        )
-        method_validator_output = method_validator_tool.func(method_validator_input)
-        # method_validator_output['method'] = "linear_regression"
-        method_name = method_validator_output['method']
+        if use_method_validator:
+            method_validator_input = MethodValidatorInput(
+                method_info=method_info,
+                variables=query_interpreter_output,
+                dataset_analysis=dataset_analysis_result,
+                dataset_description=input_parsing_result["dataset_description"],
+                original_query = input_parsing_result["original_query"]
+            )
+            method_validator_output = method_validator_tool.func(method_validator_input)
+            # method_validator_output['method'] = "linear_regression"
+            method_name = method_validator_output['method']
+        else:
+            method_name = method_info.selected_method
+            method_validator_output = {
+                "method": method_name,
+                "validation_info": {
+                    "original_method": method_info.selected_method,
+                    "recommended_method": method_name,
+                    "assumptions_valid": None,
+                    "failed_assumptions": [],
+                    "warnings": ["Method validation skipped by flag."],
+                    "suggestions": []
+                }
+            }
         controls_selector_output = controls_selector_tool.func(
             method_name=method_name,
             variables=query_interpreter_output,

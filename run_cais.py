@@ -7,8 +7,13 @@ from cais.agent import run_causal_analysis
 # Constants
 RATE_LIMIT_SECONDS = 2
 
-def run_caia(desc, question, df):
-    return run_causal_analysis(query=question, dataset_path=df, dataset_description=desc)
+def run_caia(desc, question, df, use_method_validator: bool = True):
+    return run_causal_analysis(
+        query=question,
+        dataset_path=df,
+        dataset_description=desc,
+        use_method_validator=use_method_validator
+    )
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run batch causal analysis (CAIS).")
@@ -25,6 +30,8 @@ def parse_args():
     parser.add_argument("--output_name", type=str, required=False, help="Output JSON filename (with or without .json).")
     parser.add_argument("--llm_name", type=str, required=False, help="LLM model name (e.g., gpt-4o-mini).")
     parser.add_argument("--llm_provider", type=str, required=False, help="LLM provider (e.g., openai, anthropic).")
+    parser.add_argument("--skip-method-validator", action="store_true", help="Skip method validation step.")
+    parser.add_argument("--use-llm-rule-engine", action="store_true", help="Use LLM-based method selection.")
 
     # Back-compat aliases (older/other scripts)
     parser.add_argument("--csv_path", type=str, required=False, help=argparse.SUPPRESS)
@@ -86,6 +93,8 @@ def main():
     output_json = args.output_file
     os.environ["LLM_MODEL"] = args.llm_name
     os.environ["LLM_PROVIDER"] = args.llm_provider
+    if args.use_llm_rule_engine:
+        os.environ["CAIS_USE_LLM_RULE_ENGINE"] = "1"
     print("[main] Starting batch processing…")
 
     if not os.path.exists(csv_meta):
@@ -106,6 +115,7 @@ def main():
                 desc=row["data_description"],
                 question=row["natural_language_query"],
                 df=data_path,
+                use_method_validator=not args.skip_method_validator
             )
             
             # Format result according to specified structure

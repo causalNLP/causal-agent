@@ -6,6 +6,7 @@ causal inference methods based on dataset characteristics and query details.
 """
 
 import logging
+import os
 from typing import Dict, List, Any, Optional, Union
 from langchain_core.tools import tool 
 
@@ -88,11 +89,13 @@ def method_selector_tool(
         llm_instance = None
         
     # --- Configuration for switching ---
-    USE_LLM_DECISION_TREE = False # Set to False to use the original rule-based tree
+    use_llm_decision_tree = os.getenv("CAIS_USE_LLM_RULE_ENGINE", "").strip().lower() in {
+        "1", "true", "yes", "y", "on"
+    }
         
     # Call the component function
     try:
-        if USE_LLM_DECISION_TREE:
+        if use_llm_decision_tree:
             logger.info("Using LLM-based Decision Tree Engine for method selection.")
             if not llm_instance:
                 logger.warning("LLM instance is required for DecisionTreeLLMEngine but not available. Falling back to rule-based or error.")

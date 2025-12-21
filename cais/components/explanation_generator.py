@@ -11,6 +11,7 @@ import numbers
 from langchain_core.language_models import BaseChatModel # For LLM type hint
 
 from cais.prompts import LLM_RESULT_INTERPRETATION_PROMPT_TEMPLATE
+from cais.components.decision_tree import METHOD_ASSUMPTIONS
 
 
 def _extract_results_payload(results: Dict[str, Any]) -> Dict[str, Any]:
@@ -141,19 +142,32 @@ def generate_explanation(
     Returns:
         Dictionary containing the final explanation text.
     """
-    method = method_info.get("method")
-    
+    selected_method = method_info.get("selected_method") or method_info.get("method")
+    validation_summary = _extract_validation_summary(validation_result)
+    method = selected_method
+
     # Handle potential None for validation_result
-    if validation_result and validation_result.get("valid") is False:
-        method = validation_result.get("recommended_method", method)
+    if validation_summary:
+        assumptions_valid = validation_summary.get("assumptions_valid")
+        valid = validation_summary.get("valid")
+        if assumptions_valid is False or valid is False:
+            method = validation_summary.get("recommended_method", method)
+    if method is None:
+        method = selected_method
     
     # Get components
     method_explanation = get_method_explanation(method)
-    assumption_explanations = explain_assumptions(method_info.get("assumptions", []))
+    assumptions = method_info.get("method_assumptions", [])
+    if method != selected_method:
+        assumptions = METHOD_ASSUMPTIONS.get(method, [])
+    assumption_explanations = explain_assumptions(assumptions)
     application_explanation = explain_application(method, variables.get("treatment_variable"), 
                                                 variables.get("outcome_variable"), 
                                                 variables.get("covariates", []), variables)
-    limitations_explanation = explain_limitations(method, validation_result.get("concerns", []) if validation_result else [])
+    concerns = []
+    if validation_summary:
+        concerns = validation_summary.get("failed_assumptions") or validation_summary.get("concerns") or []
+    limitations_explanation = explain_limitations(method, concerns)
     interpretation_guide = generate_interpretation_guide(method, variables.get("treatment_variable"), 
                                                        variables.get("outcome_variable"))
 
@@ -166,7 +180,11 @@ def generate_explanation(
     p_value = results_payload.get("p_value") # Assuming method executor returns p_value
 
     # --- Assemble Final Text --- 
-    final_text = f"**Method Used:** {method_info.get('method_name', method)}\n\n"
+    if method == selected_method and method_info.get("method_name"):
+        method_display = method_info.get("method_name")
+    else:
+        method_display = method.replace("_", " ").title()
+    final_text = f"**Method Used:** {method_display}\n\n"
     final_text += f"**Method Explanation:**\n{method_explanation}\n\n"
     
     # Add Results Section
