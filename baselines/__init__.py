@@ -6,6 +6,7 @@ from .chatbot import (
     RPCChatbot,
     OpenAIAPIChatbot,
     TogetherAPIChatbot,
+    OpenRouterAPIChatbot,
 )
 from .cais_baseline import CAISBaseline
 

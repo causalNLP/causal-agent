@@ -26,18 +26,20 @@ def main(args):
 
     # Determine the base path for datasets
     if args.data_type == 'qrdata':
-        base_path = 'data/all_data/'
+        base_path = 'CauSciBench/data/all_data/'
     elif args.data_type == 'real':
-        base_path = 'data/real_data/'
+        base_path = 'CauSciBench/data/real_data/'
     elif args.data_type == 'synthetic':
-        base_path = 'data/synthetic_data/'
+        base_path = 'CauSciBench/data/synthetic_data/'
     else:
         raise ValueError(f"Invalid data type: {args.data_type}")
 
     # Load queries based on file type
+    print(queries_path)
     if queries_path.endswith('.csv'):
-        df = pd.read_csv(queries_path)
+        df = pd.read_csv(queries_path, encoding="latin1")
         # Rename columns to match the expected format
+        print(df)
         df = df.rename(columns={
             'natural_language_query': 'query',
             'data_description': 'dataset_description',
@@ -69,6 +71,11 @@ def main(args):
             chatbot = causalscientist.OpenAIAPIChatbot(model=args.model, persistent_mode=args.persistent)
         elif args.api == "together":
             chatbot = causalscientist.TogetherAPIChatbot(model=args.model, persistent_mode=args.persistent)
+        elif args.api == "openrouter":
+            chatbot = causalscientist.OpenRouterAPIChatbot(
+                model=args.model,
+                persistent_mode=args.persistent
+            )
         elif args.api == "local":
             raise NotImplementedError("Local chatbot is not implemented yet.")
         else:
@@ -102,11 +109,13 @@ def main(args):
             args.persistent = False
 
     output = []
-    try:
-        for q in tqdm.tqdm(queries):
+    print(queries)
+    for q in tqdm.tqdm(queries):
+        try:
+            print(q)
             query = q["query"]
             dataset_path = q["dataset_path"]
-            dataset_description = q["dataset_description"]
+            dataset_description = q["description"]
             
             # If in persistent mode, upload the dataset file to the container
             if args.persistent and os.path.exists(dataset_path):
@@ -141,10 +150,22 @@ def main(args):
                 }
             )
             print(result)
-    except Exception as e:
-        print(f"Error occurred: {e}")
-        import traceback
-        traceback.print_exc()
+            with open(args.output, "w") as f:
+                json.dump(output, f, indent=2)
+
+        except Exception as e:
+            # 🔴 DO NOT CRASH — log and continue
+            print(f"[ERROR] Failed on query: {q}")
+            print(e)
+
+            output.append({
+                **q,
+                "result": None,
+                "error": str(e),
+            })
+            with open(args.output, "w") as f:
+                json.dump(output, f, indent=2)
+            continue
 
     # Save the output
     output_dir = os.path.dirname(args.output)
@@ -202,7 +223,7 @@ if __name__ == "__main__":
         "--api",
         type=str,
         default="azure",
-        help="Type of API to use. Options: vertex, azure, test, local, openai, together. Choosing 'local' will use a local chatbot.",
+        help="Type of API to use. Options: vertex, azure, test, local, openai, together, openrouter. Choosing 'local' will use a local chatbot.",
     )
     parser.add_argument(
         "--rpc-address",

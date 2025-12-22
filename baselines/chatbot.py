@@ -314,6 +314,62 @@ class OpenAIAPIChatbot(Chatbot):
 
         return completion.choices[0].message.content
 
+class OpenRouterAPIChatbot(Chatbot):
+    """A conversational chatbot that uses the OpenRouter API (OpenAI-compatible)"""
+
+    def __init__(self, model, persistent_mode=False):
+        self.model = model
+        self.conversation_history = []
+        self.persistent_mode = persistent_mode
+
+        # Load environment variables
+        load_dotenv(find_dotenv())
+
+        api_key = os.getenv("OPENROUTER_API_KEY")
+        if not api_key:
+            raise ValueError("OPENROUTER_API_KEY not found in environment.")
+
+        # OpenRouter is OpenAI-compatible
+        self.client = OpenAI(
+            api_key=api_key,
+            base_url="https://openrouter.ai/api/v1",
+        )
+
+    def ask(self, query):
+        # Add the query to the conversation history
+        self.conversation_history.append({"role": "user", "content": query})
+
+        # Create the system message with persistent mode info if enabled
+        system_content = "You are a helpful assistant."
+        if self.persistent_mode:
+            system_content += (
+                " You have access to a persistent Python environment where variables "
+                "and loaded libraries remain available between code executions. "
+                "You can write and execute code incrementally, inspect intermediate "
+                "results, and build upon previous computations."
+            )
+
+        # Create the messages for the API
+        if not self.conversation_history[:-1]:  # First message
+            messages = [
+                {"role": "system", "content": system_content},
+                {"role": "user", "content": query},
+            ]
+        else:
+            messages = [{"role": "system", "content": system_content}] + self.conversation_history
+
+        completion = completions_with_backoff(
+            client=self.client,
+            model=self.model,
+            messages=messages,
+        )
+
+        self.conversation_history.append(
+            {"role": "assistant", "content": completion.choices[0].message.content}
+        )
+
+        return completion.choices[0].message.content
+
 
 class RPCChatbot(Chatbot):
     """A conversational chatbot that uses an XML-RPC server"""
