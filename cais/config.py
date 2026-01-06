@@ -76,6 +76,12 @@ def get_llm_client(provider: Optional[str] = None, model_name: Optional[str] = N
             if not api_key:
                 raise ValueError("DEEPSEEK_API_KEY not found in environment.")
             return ChatDeepSeek(model=model_name, **kwargs)
+                
+        elif provider == "openrouter":
+            api_key = os.getenv("OPENROUTER_API_KEY")
+            if not api_key:
+                raise ValueError("OPENROUTER_API_KEY not found in environment.")
+            return ChatOpenAI(model=model_name, base_url="https://openrouter.ai/api/v1", api_key=api_key, **kwargs)
             
         # Example for Ollama (ensure langchain_community is installed)
         # elif provider == "ollama":

@@ -104,55 +104,52 @@ def main():
     meta_df = pd.read_csv(csv_meta)
     print(f"[main] Loaded metadata CSV with {len(meta_df)} rows.")
 
-    results: Dict[int, Dict[str, Any]] = {}
-
-    for idx, row in meta_df.iterrows():
-        data_path = os.path.join(data_dir, str(row["data_files"]))
-        print(f"\n[main] Row {idx+1}/{len(meta_df)} → Dataset: {data_path}")
-
-        try:
-            res = run_caia(
-                desc=row["data_description"],
-                question=row["natural_language_query"],
-                df=data_path,
-                use_method_validator=not args.skip_method_validator
-            )
-            
-            # Format result according to specified structure
-            formatted_result = {
-                "query": row["natural_language_query"],
-                "method": row["method"],
-                "answer": row["answer"],
-                "dataset_description": row["data_description"],
-                "dataset_path": data_path,
-                "keywords": row.get("keywords", "Causality, Average treatment effect"),
-                "final_result": {
-                    "method": res['results']['results'].get("method_used"),
-                    "causal_effect": res['results']['results'].get("effect_estimate"),
-                    "standard_deviation": res['results']['results'].get("standard_error"),
-                    "treatment_variable": res['results']['variables'].get("treatment_variable", None),
-                    "outcome_variable": res['results']['variables'].get("outcome_variable", None),
-                    "covariates": res['results']['variables'].get("covariates", []),
-                    "instrument_variable": res['results']['variables'].get("instrument_variable", None),
-                    "running_variable": res['results']['variables'].get("running_variable", None),
-                    "temporal_variable": res['results']['variables'].get("time_variable", None),
-                    "statistical_test_results": res.get("summary", ""),
-                    "explanation_for_model_choice": res.get("explanation", ""),
-                    "regression_equation": res.get("regression_equation", "")
-                }
-            }
-            results[idx] = formatted_result
-            print(f"[main] Formatted result for row {idx+1}")
-        except Exception as e:
-            logging.error(f"[{idx+1}] Error: {e}")
-            results[idx] = {"answer": str(e)}
-
-        time.sleep(RATE_LIMIT_SECONDS)
-
     os.makedirs(os.path.dirname(output_json) or ".", exist_ok=True)
-    with open(output_json, "w") as f:
-        json.dump(results, f, indent=2)
-    print(f"[main] Done. Predictions saved to {output_json}")
+    with open(output_json, "a") as file:
+        for idx, row in meta_df.iterrows():
+            data_path = os.path.join(data_dir, str(row["data_files"]))
+            print(f"\n[main] Row {idx+1}/{len(meta_df)} → Dataset: {data_path}")
+
+            try:
+                res = run_caia(
+                    desc=row["data_description"],
+                    question=row["natural_language_query"],
+                    df=data_path,
+                    use_method_validator=not args.skip_method_validator
+                )
+                
+                # Format result according to specified structure
+                formatted_result = {
+                    "query": row["natural_language_query"],
+                    "method": row["method"],
+                    "answer": row["answer"],
+                    "dataset_description": row["data_description"],
+                    "dataset_path": data_path,
+                    "keywords": row.get("keywords", "Causality, Average treatment effect"),
+                    "final_result": {
+                        "method": res['results']['results'].get("method_used"),
+                        "causal_effect": res['results']['results'].get("effect_estimate"),
+                        "standard_deviation": res['results']['results'].get("standard_error"),
+                        "treatment_variable": res['results']['variables'].get("treatment_variable", None),
+                        "outcome_variable": res['results']['variables'].get("outcome_variable", None),
+                        "covariates": res['results']['variables'].get("covariates", []),
+                        "instrument_variable": res['results']['variables'].get("instrument_variable", None),
+                        "running_variable": res['results']['variables'].get("running_variable", None),
+                        "temporal_variable": res['results']['variables'].get("time_variable", None),
+                        "statistical_test_results": res.get("summary", ""),
+                        "explanation_for_model_choice": res.get("explanation", ""),
+                        "regression_equation": res.get("regression_equation", "")
+                    }
+                }
+                file.write(json.dumps({idx: formatted_result}) + "\n")
+                print(f"[main] Formatted result for row {idx+1}")
+            except Exception as e:
+                logging.error(f"[{idx}] Error: {e}")
+                file.write(json.dumps({idx: {e}}) + "\n")
+
+            time.sleep(RATE_LIMIT_SECONDS)
+
+        print(f"[main] Done. Predictions saved to {output_json}")
 
 if __name__ == "__main__":
     main()
