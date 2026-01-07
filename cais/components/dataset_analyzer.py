@@ -538,6 +538,7 @@ def detect_temporal_structure(df: pd.DataFrame, llm_client: Optional[BaseChatMod
                 llm=llm_client)
             
             logger.info(f"LLM suggestions for DiD variables: {llm_suggestions}")
+            llm_suggestions = {k: None if isinstance(v, str) and v.lower() == 'null' else v for k,v in llm_suggestions.items()} # quick patch, but we need a more robust fix
             
             # Extract primary variables from LLM response
             llm_identified_time_var = llm_suggestions.get("time_variable")

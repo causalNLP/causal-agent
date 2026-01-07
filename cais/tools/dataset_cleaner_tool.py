@@ -15,7 +15,7 @@ def dataset_cleaner_tool(dataset_path: str,
                          original_query: Optional[str] = None, causal_method: Optional[str] = None) -> Dict[str, Any]:
     """
     Clean the dataset conservatively (missing-data handling + normalization only),
-    generate 'cleaned_df.csv', and return the new path + a markdown report.
+    generate a temporary, cleaned dataframe, and return the new path + a markdown report.
     """
     logger.info("Running dataset_cleaner_tool...")
     out = run_cleaning_stage(

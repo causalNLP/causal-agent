@@ -363,7 +363,7 @@ def run_causal_analysis(query: str, dataset_path: str,
             )
             method_validator_output = method_validator_tool.func(method_validator_input)
             # method_validator_output['method'] = "linear_regression"
-            method_name = method_validator_output['method']
+            method_name = method_validator_output.get('method')
         else:
             method_name = method_info.selected_method
             method_validator_output = {
@@ -422,7 +422,7 @@ def run_causal_analysis(query: str, dataset_path: str,
             dataset_description=input_parsing_result["dataset_description"],
             original_query = input_parsing_result["original_query"])
         result = explainer_output
-        result['results']['results']["method_used"] = method_validator_output['method']
+        #result['results']['results']["method_used"] = method_validator_output.get('method')
         logger.info(result)
         logger.info("Causal analysis run finished.")
         
