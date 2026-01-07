@@ -272,7 +272,7 @@ def run_cleaning_stage(dataset_path: str,
         stderr_all += f"\n\n[repair_attempt_{attempts}_stderr]\n" + err
 
     # Determine cleaned path (as required by contract)
-    cleaned_path = os.path.join(os.path.dirname(os.path.abspath(dataset_path)) or ".", "cleaned_df.csv")
+    cleaned_path = os.path.join(os.path.dirname(os.path.abspath(dataset_path)) or ".", f"{dataset_path.split('/')[-1]}_cleaned_{os.getpid()}.csv")
     report = []
     report.append(f"Method: {method}")
     report.append(f"Causal Query: {original_query or ''}")

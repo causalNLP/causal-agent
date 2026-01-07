@@ -426,6 +426,8 @@ def run_causal_analysis(query: str, dataset_path: str,
         logger.info(result)
         logger.info("Causal analysis run finished.")
         
+        # Remove the cleaned csv
+        os.remove(cleaned_path)
         
         # Ensure result is a dict and extract the 'output' part
         if isinstance(result, dict):
