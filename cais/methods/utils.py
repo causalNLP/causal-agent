@@ -17,7 +17,6 @@ from sklearn.linear_model import LogisticRegression
 import logging
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 

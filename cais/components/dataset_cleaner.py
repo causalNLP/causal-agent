@@ -154,10 +154,10 @@ def _profile_dataset(dataset_path: str, sample_rows: int = 5) -> Dict[str, Any]:
 def _invoke_json(llm, system_prompt: str, human_payload: Dict[str, Any]) -> Dict[str, Any]:
     msgs = [SystemMessage(content=system_prompt),
             HumanMessage(content=json.dumps(human_payload, ensure_ascii=False))]
-    print(msgs)
+    #print(msgs)
     resp = llm.invoke(msgs)
     text = getattr(resp, "content", str(resp))
-    print(text)
+    #print(text)
     # force JSON extraction (model already instructed to return only JSON)
     return json.loads(text)
 
@@ -204,9 +204,9 @@ def _plan_transformation_spec(llm, dataset_path: str, causal_method: str, causal
         "causal_query": causal_query or "",
         "variables": variables
     }
-    print(human)
+    #print(human)
     spec = _invoke_json(llm, PLANNER_SYSTEM, human)
-    print(spec)
+    #print(spec)
     # Persist the preview so Fixer can use it later
     spec["_runtime_previews"] = prof  # used only internally, not written to disk by LLM
     return spec

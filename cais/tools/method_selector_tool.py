@@ -65,7 +65,7 @@ def method_selector_tool(
     treatment = variables_dict.get("treatment_variable")
     outcome = variables_dict.get("outcome_variable")
     if not all([treatment, outcome]):
-        logger.error(f"Missing treatment or outcome variable in input. Treament:{treatment} Outcome: {outcome}")
+        logger.critical(f"Missing treatment or outcome variable in input. Treament:{treatment} Outcome: {outcome}")
         # Construct error output, including passed-along context
         workflow_update = create_workflow_state_update(
             current_step="method_selection", 

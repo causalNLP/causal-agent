@@ -183,15 +183,6 @@ def method_executor_tool(inputs: MethodExecutorInput, original_query: Optional[s
             "confidence_interval": results_dict.get("confidence_interval")
         }
         print(f"summary_dict: {summary_dict}")
-        print(f"CURRENT_OUTPUT_LOG_FILE: {CURRENT_OUTPUT_LOG_FILE}")
-        if CURRENT_OUTPUT_LOG_FILE and summary_dict:
-            try:
-                import json
-                log_entry = {"type": "analysis_result", "data": summary_dict}
-                with open(CURRENT_OUTPUT_LOG_FILE, mode='a', encoding='utf-8') as log_file:
-                    log_file.write('\n' + json.dumps(log_entry) + '\n')
-            except Exception as e:
-                print(f"[ERROR] method_executor_tool.py: Failed to write analysis results to log file '{CURRENT_OUTPUT_LOG_FILE}': {e}")
 
         return final_output
 

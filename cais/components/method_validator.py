@@ -5,10 +5,14 @@ This module validates the selected causal inference method against
 dataset characteristics and available variables.
 """
 
+import logging
 from typing import Dict, List, Any, Optional
 from cais.components.assumption_checks import *
 import pandas as pd
 from cais.config import get_llm_client
+
+
+logger = logging.getLogger(__name__)
 
 IV_VALIDATION_PROMPT_TEMPLATE = """\
 You are evaluating an Instrumental Variables (IV / 2SLS) design. 
@@ -455,6 +459,11 @@ def validate_difference_in_differences(validation_result: Dict[str, Any],
         validation_result["concerns"].append("Treatment and/or outcome variable missing for DiD.")
         validation_result["alternative_suggestions"].append("regression_adjustment")
         return
+    if len(set([time_variable, group_variable, treatment])) < 3:
+        validation_result["valid"] = False
+        validation_result["concerns"].append("Duplicate variables used. Each variable must be either time, group, or treatment.")
+        validation_result["alternative_suggestions"].append("regression_adjustment")
+        return
 
     # 1) Does the time variable indicate treatment timing?
     tt = infer_treatment_timing(df, time_variable, group_variable, treatment)
@@ -621,8 +630,8 @@ def validate_method(method_info: Dict[str, Any], dataset_analysis: Dict[str, Any
     if method == "propensity_score_matching":
         validate_propensity_score_matching(validation_result, dataset_analysis, variables)
     
-    elif method == "regression_adjustment":
-        validate_regression_adjustment(validation_result, dataset_analysis, variables)
+    #elif method == "regression_adjustment":
+    #    validate_regression_adjustment(validation_result, dataset_analysis, variables)
     
     elif method == "instrumental_variable":
         validate_instrumental_variable(validation_result, dataset_analysis, variables)
@@ -647,12 +656,15 @@ def validate_method(method_info: Dict[str, Any], dataset_analysis: Dict[str, Any
     
     # Make sure assumptions are listed in the validation result
     validation_result["assumptions"] = assumptions
+    logger.info(validation_result)
+    """
     print("--------------------------")
     print("Validation result:", validation_result)
     print("--------------------------")
     print("--------------------------")
     print("LLM Response:", res)
     print("--------------------------")
+    """
     return validation_result
 
 

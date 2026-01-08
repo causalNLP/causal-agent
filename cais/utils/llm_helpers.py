@@ -35,7 +35,7 @@ def call_llm_with_json_output(llm: Optional[BaseChatModel], prompt: str) -> Opti
         logger.warning("LLM client (BaseChatModel) not provided to call_llm_with_json_output. Cannot make LLM call.")
         return None
 
-    logger.info(f"Attempting LLM call with {type(llm).__name__} for JSON output.")
+    logger.debug(f"Attempting LLM call with {type(llm).__name__} for JSON output.")
     # Full prompt logging can be verbose, using DEBUG level.
     logger.debug(f"LLM Prompt for JSON output:\\n{prompt}")
 

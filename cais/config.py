@@ -44,7 +44,7 @@ def get_llm_client(provider: Optional[str] = None, model_name: Optional[str] = N
     if model_name not in ['o3-mini', 'o3', 'o4-mini']:
         kwargs.setdefault("temperature", 0) # Default temperature if not provided
 
-    logger.info(f"Initializing LLM client: Provider='{provider}', Model='{model_name}'")
+    logger.debug(f"Initializing LLM client: Provider='{provider}', Model='{model_name}'")
 
     try:
         if provider == "openai":

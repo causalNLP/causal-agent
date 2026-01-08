@@ -158,6 +158,7 @@ def infer_treatment_timing(df: pd.DataFrame, time_col: str, group_col: str, trea
     mean_t = df.groupby([group_col, time_col], as_index=False)[treat_col].mean()
     # Rename the treatment column to avoid conflicts
     mean_t = mean_t.rename(columns={treat_col: 'mean_treatment'})
+    #print(mean_t)
     # choose group with larger max mean treatment as treated_group
     max_by_group = mean_t.groupby(group_col)['mean_treatment'].max()
     treated_group = max_by_group.idxmax()
