@@ -5,7 +5,7 @@ import argparse
 from cais.agent import run_causal_analysis
 
 # Constants
-RATE_LIMIT_SECONDS = 2
+RATE_LIMIT_SECONDS = 1
 
 def run_caia(desc, question, df, use_method_validator: bool = True):
     return run_causal_analysis(
@@ -85,6 +85,16 @@ def parse_args():
 
     return args
 
+def get_last_idx(jsonl_path) -> int:
+    last_idx = -1
+    if not os.path.exists(jsonl_path):
+        return last_idx  # nothing processed yet
+
+    with open(jsonl_path, "r") as f:
+        for line in f:
+            last_idx = next(iter(json.loads(line)))
+    return int(last_idx)
+
 def main():
     
     args = parse_args()
@@ -101,18 +111,24 @@ def main():
         logging.error(f"Meta file not found: {csv_meta}")
         return
 
-    meta_df = pd.read_csv(csv_meta)
+    try:
+        meta_df = pd.read_csv(csv_meta)
+    except:
+        meta_df = pd.read_csv(csv_meta, encoding='latin-1')
     print(f"[main] Loaded metadata CSV with {len(meta_df)} rows.")
 
     os.makedirs(os.path.dirname(output_json) or ".", exist_ok=True)
     with open(output_json, "a") as file:
+        leftoff = get_last_idx(output_json)
         for idx, row in meta_df.iterrows():
+            if idx <= leftoff:
+                continue
             data_path = os.path.join(data_dir, str(row["data_files"]))
             print(f"\n[main] Row {idx+1}/{len(meta_df)} → Dataset: {data_path}")
-
+            desc=row["description"] if 'description' in row else row["data_description"]
             try:
                 res = run_caia(
-                    desc=row["data_description"],
+                    desc=desc,
                     question=row["natural_language_query"],
                     df=data_path,
                     use_method_validator=not args.skip_method_validator
@@ -123,7 +139,7 @@ def main():
                     "query": row["natural_language_query"],
                     "method": row["method"],
                     "answer": row["answer"],
-                    "dataset_description": row["data_description"],
+                    "dataset_description": desc,
                     "dataset_path": data_path,
                     "keywords": row.get("keywords", "Causality, Average treatment effect"),
                     "final_result": {
@@ -144,8 +160,8 @@ def main():
                 file.write(json.dumps({idx: formatted_result}) + "\n")
                 print(f"[main] Formatted result for row {idx+1}")
             except Exception as e:
-                logging.error(f"[{idx}] Error: {e}")
-                file.write(json.dumps({idx: {e}}) + "\n")
+                logging.error(f"[row {idx}] Error: {e}")
+                file.write(json.dumps({idx: str(e)}) + "\n")
 
             time.sleep(RATE_LIMIT_SECONDS)
 
