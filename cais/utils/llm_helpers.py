@@ -296,18 +296,25 @@ Work through each step methodically, then provide your final analysis. You must 
     
     result = call_llm_with_json_output(llm, prompt)
     if result:
+        result = {k: None if isinstance(v, str) and v.lower() == 'null' else v for k,v in result.items()} # convert all null's to None
+
         # Validate that identified variables exist in columns
         for key in ["time_variable", "unit_variable", "did_term"]:
             if result.get(key) and result[key] not in column_names:
                 logger.warning(f"{key} '{result[key]}' not found in columns, setting to None")
                 result[key] = None
-                
+        
         # Validate did_canonical is boolean or None
         did_canonical = result.get("did_canonical")
-        if did_canonical is not None and not isinstance(did_canonical, bool):
+        try:
+            if did_canonical is not None:
+                if did_canonical is not isinstance(did_canonical, bool): # might be a string
+                        did_canonical = did_canonical.strip()
+                        did_canonical = (True if did_canonical.lower() == 'true' else False) and (result.get('treatment_time') is not None)
+        except:
             logger.warning(f"Invalid did_canonical '{did_canonical}', must be boolean. Setting to None")
             result["did_canonical"] = None
-            
+
         logger.info(f"DiD variables identified - time: {result.get('time_variable')}, unit: {result.get('unit_variable')}, "
                    f"canonical: {result.get('did_canonical')}, did_term: {result.get('did_term')}")
         return result
