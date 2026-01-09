@@ -6,6 +6,9 @@ from sklearn.preprocessing import OneHotEncoder
 import statsmodels.api as sm
 from typing import Dict, Any, Optional, List, Union
 from rddensity import rddensity
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Try to import optimal_bandwidth from rdd package
 try:
@@ -312,23 +315,27 @@ def rdd_design_compliance(df: pd.DataFrame, running: str, treatment: str, cutoff
     Check if treatment is (approximately) assigned by cutoff: T ≈ 1{running >= cutoff}.
     Returns compliance rate and misclassification share.
     """
-    if running not in df.columns or treatment not in df.columns:
-        return {"ok": False, "error": "Missing running/treatment column."}
-    
+    try:
+        if running not in df.columns or treatment not in df.columns:
+            return {"ok": False, "error": "Missing running/treatment column."}
+        
 
 
-    assign = (df[running] >= cutoff).astype(int)
-    t = df[treatment].astype(int)
-    if t.nunique() != 2:
-        return {"ok": False, "error": "Treatment variable not binary."}
-    
-    agree = (assign == t)
-    rate = float(agree.mean())
-    return {
-        "ok": bool(rate >= thresh_comply),          # loose gate; tune as needed
-        "compliance_rate": rate,
-        "misclassified_share": float(1.0 - rate),
-        "n": int(len(df))}
+        assign = (df[running] >= cutoff).astype(int)
+        t = df[treatment].astype(int)
+        if t.nunique() != 2:
+            return {"ok": False, "error": "Treatment variable not binary."}
+        
+        agree = (assign == t)
+        rate = float(agree.mean())
+        return {
+            "ok": bool(rate >= thresh_comply),          # loose gate; tune as needed
+            "compliance_rate": rate,
+            "misclassified_share": float(1.0 - rate),
+            "n": int(len(df))}
+    except Exception as e:
+        logger.warning(f"RDD Design compliance failed: {e}")
+        return {"ok": False, "error": e}
 
 def rdd_window_summary(df: pd.DataFrame, running: str, outcome: str, cutoff: float,
                        h: Optional[float] = None) -> Dict[str, Any]:

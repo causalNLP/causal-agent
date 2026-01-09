@@ -1,12 +1,12 @@
-import os, time, json, logging
+import os, time, json, logging, signal
 from typing import Dict, Any
 import pandas as pd
 import argparse
+from datetime import datetime
 from cais.agent import run_causal_analysis
 
 # Constants
 RATE_LIMIT_SECONDS = 1
-
 def run_caia(desc, question, df, use_method_validator: bool = True):
     return run_causal_analysis(
         query=question,
@@ -95,9 +95,24 @@ def get_last_idx(jsonl_path) -> int:
             last_idx = next(iter(json.loads(line)))
     return int(last_idx)
 
+class TimeoutException(Exception):
+    pass
+
+def timeout_handler(signum, frame):
+    raise TimeoutException
+
 def main():
-    
     args = parse_args()
+    os.makedirs('./logs/', exist_ok=True)
+    logging.basicConfig(
+        filename=f"logs/{args.output_file.split('/')[-1][:-4]}_{datetime.now():%Y-%m-%d}.log",
+        filemode='a',
+        level=logging.INFO,
+        format='[%(levelname)s] %(asctime)s (%(module)s) - %(message)s',
+        force=True
+    )
+    logger = logging.getLogger(__name__)
+
     csv_meta = args.metadata_path
     data_dir = args.data_dir
     output_json = args.output_file
@@ -127,6 +142,9 @@ def main():
             print(f"\n[main] Row {idx+1}/{len(meta_df)} → Dataset: {data_path}")
             desc=row["description"] if 'description' in row else row["data_description"]
             try:
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(300) # timeout after 5 minutes
+                logger.info(f"Attempting to run CAIS on row [{idx}/{meta_df.shape[0]}]")
                 res = run_caia(
                     desc=desc,
                     question=row["natural_language_query"],

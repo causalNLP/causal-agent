@@ -57,13 +57,6 @@ import json
 
 # Set up basic logging
 os.makedirs('./logs/', exist_ok=True)
-logging.basicConfig(
-    filename=f"./logs/logs.log",
-    filemode='a',
-    level=logging.INFO,
-    format='[%(levelname)s] %(asctime)s (%(module)s) - %(message)s',
-    force=True
-)
 logger = logging.getLogger(__name__)
 
 FINAL_ANSWER_ACTION = "Final Answer:"
@@ -332,7 +325,7 @@ def run_causal_analysis(query: str, dataset_path: str,
         
         # Log the constructed input text
         logger.debug(f"Constructed input for agent: \n{input_text}")
-
+        logger.info("[Causal AI Scientist Stage 1] - Data Processing")
         input_parsing_result = input_parser_tool(input_text)
         dataset_analysis_result = dataset_analyzer_tool.func(dataset_path=input_parsing_result["dataset_path"], dataset_description=input_parsing_result["dataset_description"], original_query=input_parsing_result["original_query"]).analysis_results
         query_info = QueryInfo(
@@ -344,6 +337,8 @@ def run_causal_analysis(query: str, dataset_path: str,
     )
 
         query_interpreter_output = query_interpreter_tool.func(query_info=query_info, dataset_analysis=dataset_analysis_result, dataset_description=input_parsing_result["dataset_description"], original_query = input_parsing_result["original_query"]).variables
+
+        logger.info("[Causal AI Scientist Stage 2] - Method Selection")
         method_selector_output = method_selector_tool.func(variables=query_interpreter_output,
             dataset_analysis=dataset_analysis_result,
             dataset_description=input_parsing_result["dataset_description"],
@@ -355,6 +350,7 @@ def run_causal_analysis(query: str, dataset_path: str,
             **method_selector_output['method_info']
         )
 
+        logger.info("[Causal AI Scientist Stage 3] - Method Validation")
         if use_method_validator:
             method_validator_input = MethodValidatorInput(
                 method_info=method_info,
@@ -404,6 +400,7 @@ def run_causal_analysis(query: str, dataset_path: str,
         #print("----------Cleaned Dataset Path-----------")
         logger.info(cleaned_path)
 
+        logger.info("[Causal AI Scientist Stage 4] - Execution")
         method_executor_input = MethodExecutorInput(
             method = method_name,
             variables=query_interpreter_output,
