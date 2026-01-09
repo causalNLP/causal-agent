@@ -32,6 +32,7 @@ def parse_args():
     parser.add_argument("--llm_provider", type=str, required=False, help="LLM provider (e.g., openai, anthropic).")
     parser.add_argument("--skip-method-validator", action="store_true", help="Skip method validation step.")
     parser.add_argument("--use-llm-rule-engine", action="store_true", help="Use LLM-based method selection.")
+    parser.add_argument("--rows", type=str, required=False, help="Path to text file containing specific rows to run.")
 
     # Back-compat aliases (older/other scripts)
     parser.add_argument("--csv_path", type=str, required=False, help=argparse.SUPPRESS)
@@ -113,6 +114,21 @@ def main():
     )
     logger = logging.getLogger(__name__)
 
+    to_skip = None
+    if args.rows:
+        try:
+            with open(args.rows, "r") as f:
+                to_skip = f.read().splitlines()
+                to_skip = set([int(skip) for skip in to_skip])
+
+        except FileNotFoundError as e:
+            print(f"Invalid path provided to optional --rows argument. Defaulting to all rows")
+            logger.warning("Specific rows provided but path is invalid. Defaulting to all rows.")
+        except Exception as e:
+            print(f"Error reading rows: {e} Defaulting to using all rows.")
+            logger.warning("Specific rows provided but path is invalid. Defaulting to all rows.")
+            to_skip = None
+
     csv_meta = args.metadata_path
     data_dir = args.data_dir
     output_json = args.output_file
@@ -136,8 +152,9 @@ def main():
     with open(output_json, "a") as file:
         leftoff = get_last_idx(output_json)
         for idx, row in meta_df.iterrows():
-            if idx <= leftoff:
+            if (idx <= leftoff) or (to_skip and idx not in to_skip): # only process the specified rows provided or skip rows already processed if re-running
                 continue
+
             data_path = os.path.join(data_dir, str(row["data_files"]))
             print(f"\n[main] Row {idx+1}/{len(meta_df)} → Dataset: {data_path}")
             desc=row["description"] if 'description' in row else row["data_description"]
