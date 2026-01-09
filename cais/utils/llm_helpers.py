@@ -3,6 +3,7 @@ Utility functions for LLM interactions within the cais module.
 """
 
 from typing import Dict, Any, Optional, List
+import re
 import pandas as pd
 import logging
 import json
@@ -298,6 +299,13 @@ Work through each step methodically, then provide your final analysis. You must 
     if result:
         result = {k: None if isinstance(v, str) and v.lower() == 'null' else v for k,v in result.items()} # convert all null's to None
 
+        if isinstance(result.get('treatment_time'), str): # should be a float according to the model; fix if it is a string i.e. March 2008
+            try:
+                result['treatment_time'] = float(re.findall(r'-?\d*\.?\d+', result.get('treatment_time')))
+            except:
+                logger.warning("treatment_time is string but cannot be casted to float. Setting treatment_time to None.")
+                result['treatment_time'] = None
+
         # Validate that identified variables exist in columns
         for key in ["time_variable", "unit_variable", "did_term"]:
             if result.get(key) and result[key] not in column_names:
@@ -310,7 +318,7 @@ Work through each step methodically, then provide your final analysis. You must 
             if did_canonical is not None:
                 if did_canonical is not isinstance(did_canonical, bool): # might be a string
                         did_canonical = did_canonical.strip()
-                        did_canonical = (True if did_canonical.lower() == 'true' else False) and (result.get('treatment_time') is not None)
+                        result['did_canonical'] = (True if did_canonical.lower() == 'true' else False) and (result.get('treatment_time') is not None)
         except:
             logger.warning(f"Invalid did_canonical '{did_canonical}', must be boolean. Setting to None")
             result["did_canonical"] = None
