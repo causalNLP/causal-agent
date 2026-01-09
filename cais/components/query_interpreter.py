@@ -147,13 +147,16 @@ def determine_treatment_reference_level(is_rct: Optional[bool], llm: Optional[Ba
         try:
             prompt = TREATMENT_REFERENCE_IDENTIFICATION_PROMPT_TEMPLATE.format(query=query_text, description=dataset_description or 'N/A', treatment_variable=treatment_variable, treatment_variable_values=treatment_values_sample)
             ref_result = _call_llm_for_var(llm, prompt, LLMTreatmentReferenceLevel)
-            try:
-                ref_result.reference_level = int(ref_result.reference_level)
-            except:
-                pass # cast as int if possible
+
             if ref_result and ref_result.reference_level:
-                if treatment_values_sample and ref_result.reference_level not in treatment_values_sample:
-                    logger.warning(f"LLM reference level '{ref_result.reference_level}' not in sampled values for '{treatment_variable}'.")
+                if treatment_values_sample:
+                    if not isinstance(treatment_values_sample[0], str):
+                        try:
+                            ref_result.reference_level = float(ref_result.reference_level)
+                        except:
+                            pass # cast as a numeric value if possible
+                    if ref_result.reference_level not in treatment_values_sample:
+                        logger.warning(f"LLM reference level '{ref_result.reference_level}' not in sampled values for '{treatment_variable}'.")
                 treatment_reference_level = ref_result.reference_level
                 logger.info(f"LLM identified reference level: {treatment_reference_level} (Reason: {ref_result.reasoning})")
             elif ref_result:
