@@ -106,7 +106,7 @@ def main():
     args = parse_args()
     os.makedirs('./logs/', exist_ok=True)
     logging.basicConfig(
-        filename=f"logs/{args.output_file.split('/')[-1][:-4]}_{datetime.now():%Y-%m-%d}.log",
+        filename=f"logs/{args.output_file.split('/')[-1][:-5]}_{datetime.now():%Y-%m-%d}.log",
         filemode='a',
         level=logging.INFO,
         format='[%(levelname)s] %(asctime)s (%(module)s) - %(message)s',
