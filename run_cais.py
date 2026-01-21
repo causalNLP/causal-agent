@@ -160,7 +160,7 @@ def main():
             desc=row["description"] if 'description' in row else row["data_description"]
             try:
                 signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(300) # timeout after 5 minutes
+                signal.alarm(600) # timeout after 10 minutes
                 logger.info(f"Attempting to run CAIS on row [{idx}/{meta_df.shape[0]}]")
                 res = run_caia(
                     desc=desc,

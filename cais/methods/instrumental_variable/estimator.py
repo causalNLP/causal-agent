@@ -167,6 +167,28 @@ def format_iv_results(estimate: Optional[float], raw_results: Dict, diagnostics:
 
     return formatted
 
+def convert_column_strings(
+        df: pd.DataFrame
+):
+    ctc = df.select_dtypes(object).columns.to_list() # columns to convert to integers
+    map_back = {}
+    for column in ctc:
+        try:
+            unique_vals = df[column].unique()
+            
+            if len(unique_vals) >= 100:
+                raise Exception
+
+            sti = dict(zip(unique_vals, range(len(unique_vals))))
+            df[column] = df[column].apply(lambda x: sti[x])
+
+            map_back[column] = dict(zip(range(len(unique_vals)), unique_vals))
+
+        except Exception as e:
+            logger.warning(f"Could not convert {column} to integers: {e}")
+    
+    return df, map_back
+
 def estimate_effect(
     df: pd.DataFrame,
     treatment: str,
@@ -178,6 +200,8 @@ def estimate_effect(
     **kwargs
 ) -> Dict[str, Any]:
     
+    df, revert_columns = convert_column_strings(df)
+
     instrument = kwargs.get('instrument_variable')
     if not instrument:
         return {"error": "Instrument variable ('instrument_variable') not found in kwargs.", "method_used": "none", "diagnostics": {}}
