@@ -213,7 +213,11 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
     """
 
     logger.info("Interpreting query with hybrid approach...")
-    llm = get_llm_client()
+    try:
+        llm = get_llm_client()
+    except Exception as e:
+        logger.warning(f"Failed to initialize LLM client for query interpretation: {e}. Falling back to heuristics.")
+        llm = None
     
     query_text = query_info.get("query_text", "")
     columns = dataset_analysis.get("columns", [])
@@ -222,7 +226,7 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
 
     
     # --- Identify Treatment --- 
-    treatment_hints = query_info.get("potential_treatments", [])
+    treatment_hints = query_info.get("potential_treatments", []) or query_info.get("treatment_hints", [])
     dataset_treatments = dataset_analysis.get("potential_treatments", [])
     treatment_variable = _identify_variable_hybrid(role="treatment", query_hints=treatment_hints, 
                                                    dataset_suggestions=dataset_treatments, columns=columns,
@@ -234,7 +238,7 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
 
     
     # --- Identify Outcome --- 
-    outcome_hints = query_info.get("outcome_hints", [])
+    outcome_hints = query_info.get("potential_outcomes", []) or query_info.get("outcome_hints", [])
     dataset_outcomes = dataset_analysis.get("potential_outcomes", [])
     outcome_variable = _identify_variable_hybrid(role="outcome", query_hints=outcome_hints, dataset_suggestions=dataset_outcomes,
                                                  columns=columns, column_categories=column_categories,
@@ -474,6 +478,17 @@ def _identify_variable_hybrid(role: str, query_hints: List[str], dataset_suggest
     if plausible_candidates:
         logger.info(f"No LLM provided. Using first plausible {role}: {plausible_candidates[0]}")
         return plausible_candidates[0]
+
+    # Fallback: use any available column that matches prioritized types
+    type_filtered = [c for c in available_columns if column_categories.get(c) in prioritize_types]
+    if type_filtered:
+        logger.info(f"Fallback to first type-matched {role}: {type_filtered[0]}")
+        return type_filtered[0]
+
+    # Last resort: pick the first available column
+    if available_columns:
+        logger.info(f"Fallback to first available column for {role}: {available_columns[0]}")
+        return available_columns[0]
 
     logger.warning(f"No plausible candidates for {role}. Cannot identify variable.")
     return None

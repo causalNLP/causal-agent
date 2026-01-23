@@ -23,6 +23,7 @@ from cais.tools import (
     input_parser_tool,
     dataset_analyzer_tool,
     query_interpreter_tool,
+    iv_discovery_tool,
     method_selector_tool,
     method_validator_tool,
     method_executor_tool,

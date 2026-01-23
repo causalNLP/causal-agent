@@ -7,7 +7,13 @@ import logging
 from langchain.chat_models.base import BaseChatModel
 
 from .diagnostics import run_iv_diagnostics
-from .llm_assist import identify_instrument_variable, validate_instrument_assumptions_qualitative, interpret_iv_results
+from .llm_assist import (
+    identify_instrument_variable,
+    validate_instrument_assumptions_qualitative,
+    interpret_iv_results,
+    discover_instruments_with_validation,
+    identify_confounders,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -179,8 +185,52 @@ def estimate_effect(
 ) -> Dict[str, Any]:
     
     instrument = kwargs.get('instrument_variable')
+    iv_discovery_results = None
+    
+    # --- IV-LLM Discovery: Find instrument if not provided ---
+    if not instrument and llm:
+        logger.info("No instrument provided, using IV-LLM pipeline to discover instruments...")
+        df_cols = list(df.columns)
+        query_str = query or dataset_description or ""
+        
+        # Use full IV-LLM discovery with validation
+        iv_discovery_results = discover_instruments_with_validation(
+            treatment=treatment,
+            outcome=outcome,
+            df_cols=df_cols,
+            query=query_str,
+            confounders=covariates if covariates else None,
+            llm=llm,
+        )
+        
+        valid_ivs = iv_discovery_results.get("valid_ivs", [])
+        proposed_ivs = iv_discovery_results.get("proposed_ivs", [])
+        
+        if valid_ivs:
+            instrument = valid_ivs[0]  # Use first valid IV
+            logger.info(f"IV-LLM discovered valid instrument: {instrument}")
+        elif proposed_ivs:
+            # Use first proposed IV as fallback (with warning)
+            instrument = proposed_ivs[0]
+            logger.warning(f"No IVs passed validation, using proposed IV: {instrument}")
+        else:
+            logger.error("IV-LLM could not discover any instruments")
+            return {
+                "error": "No instrument variable provided and IV-LLM could not discover valid instruments.",
+                "method_used": "none",
+                "diagnostics": {},
+                "iv_discovery_results": iv_discovery_results,
+            }
+        
+        # Also update covariates with discovered confounders if they were identified
+        discovered_confounders = iv_discovery_results.get("confounders", [])
+        if discovered_confounders and not covariates:
+            # Filter to only include columns that exist in the dataframe
+            covariates = [c for c in discovered_confounders if c in df.columns]
+            logger.info(f"IV-LLM discovered confounders (filtered to dataset): {covariates}")
+    
     if not instrument:
-        return {"error": "Instrument variable ('instrument_variable') not found in kwargs.", "method_used": "none", "diagnostics": {}}
+        return {"error": "Instrument variable ('instrument_variable') not found in kwargs and LLM not available for discovery.", "method_used": "none", "diagnostics": {}}
         
     instrument_list = [instrument] if isinstance(instrument, str) else instrument
     valid_instruments = [inst for inst in instrument_list if isinstance(inst, str)]
@@ -195,6 +245,10 @@ def estimate_effect(
     identified_estimand = None # Initialize
     model = None             # Initialize
     refutation_results = {}  # Initialize
+    
+    # Store IV discovery results if available
+    if iv_discovery_results:
+        results['iv_discovery_results'] = iv_discovery_results
 
     # --- Input Validation --- 
     required_cols = [treatment, outcome] + valid_instruments + clean_covariates
