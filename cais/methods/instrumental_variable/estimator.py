@@ -172,26 +172,22 @@ def convert_column_strings(
 ):
     ctc = df.select_dtypes(object).columns.to_list() # columns to convert to integers
     map_back = {}
-    errors = set() # variables to not use as they cannot be factorized
     for column in ctc:
         try:
+            unique_vals = df[column].unique()
             
-            if df[column].unique() >= 30:
+            if len(unique_vals) >= 100:
                 raise Exception
 
-            codes, indexer = df[column].factorize()
-            df[column] = codes
-            map_back[column] = indexer
-            #sti = dict(zip(unique_vals, range(len(unique_vals))))
-            #df[column] = df[column].apply(lambda x: sti[x])
+            sti = dict(zip(unique_vals, range(len(unique_vals))))
+            df[column] = df[column].apply(lambda x: sti[x])
 
-            #map_back[column] = dict(zip(range(len(unique_vals)), unique_vals))
+            map_back[column] = dict(zip(range(len(unique_vals)), unique_vals))
 
         except Exception as e:
-            errors.add(column)
             logger.warning(f"Could not convert {column} to integers: {e}")
     
-    return df, map_back, errors
+    return df, map_back
 
 def estimate_effect(
     df: pd.DataFrame,
@@ -204,7 +200,7 @@ def estimate_effect(
     **kwargs
 ) -> Dict[str, Any]:
     
-    #df, indexer, column_errors = convert_column_strings(df)
+    df, revert_columns = convert_column_strings(df)
 
     instrument = kwargs.get('instrument_variable')
     if not instrument:

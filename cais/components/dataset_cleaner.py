@@ -4,12 +4,6 @@ import os, io, json, traceback, contextlib, sys
 from typing import Dict, Any, Optional, Tuple
 import pandas as pd
 
-# new data cleaner
-from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler, OrdinalEncoder
-
 from langchain_core.messages import SystemMessage, HumanMessage
 from cais.config import get_llm_client  # returns a LangChain chat model
 
@@ -257,52 +251,6 @@ def run_cleaning_stage(dataset_path: str,
 
     cleaned_path = os.path.join(os.path.dirname(os.path.abspath(dataset_path)) or ".", f"{dataset_path.split('/')[-1][:-4]}_cleaned_{os.getpid()}.csv")
 
-    df = pd.read_csv(dataset_path)
-
-    numeric_columns = df.select_dtypes("number").columns.to_list()
-    categorical_columns = df.select_dtypes("object").columns.to_list()
-    #long_categorical_columns = []
-    #for col in categorical_columns:
-    #    if df[col].nunique() >= 20:
-    #        categorical_columns.remove(col)
-    #        long_categorical_columns.append(col)
-
-    number_transform = Pipeline(steps=[
-        ("impute", SimpleImputer(strategy="median")),
-        #("scaler", StandardScaler())
-    ])
-
-    ohe_cat_transform = Pipeline(steps=[
-        ("impute", SimpleImputer(strategy="most_frequent")),
-        ("ohe", OrdinalEncoder())
-    ])
-
-    #label_cat_transform = Pipeline(steps=[
-    #    ("impute", SimpleImputer(strategy="most_frequent")),
-    #    ("le", OrdinalEncoder())
-    #])
-
-    preprocess = ColumnTransformer(
-        transformers=[
-            ("numeric", number_transform, numeric_columns),
-            ("short_categorical", ohe_cat_transform, categorical_columns),
-        ]
-    ).set_output(transform="pandas")
-
-    df = preprocess.fit_transform(df)
-    df.rename(
-        columns=dict(zip(df.columns, [col.split("__")[-1] for col in df])),
-        inplace=True
-    )
-
-    df.to_csv(cleaned_path, sep=",")
-
-    return {
-        "cleaned_dataset_path": cleaned_path,
-        "preprocessing_pipeline": preprocess
-    }
-
-    '''
     # 1) PLAN
     method = causal_method or variables.get("method") or ""
     spec = _plan_transformation_spec(llm, dataset_path, method, original_query or "", variables)
@@ -333,7 +281,7 @@ def run_cleaning_stage(dataset_path: str,
     report.append(f"Artifacts expected: {cleaned_path}, preprocessing_manifest.json, derived_columns.json")
     if ("Traceback" in stderr_all) or ("Error" in stderr_all):
         report.append("\n⚠️ LLM pipeline produced errors. Check stderr; artifacts may be missing or partial.")
-    
+
     return {
         "cleaned_dataset_path": cleaned_path,
         "cleaning_report_md": "\n".join(report),
@@ -341,4 +289,3 @@ def run_cleaning_stage(dataset_path: str,
         "stdout": stdout_all,
         "stderr": stderr_all
     }
-    '''

@@ -30,14 +30,6 @@ CURRENT_OUTPUT_LOG_FILE = None
 
 logger = logging.getLogger(__name__)
 
-def repair_spaced_variables(df: pd.DataFrame) -> Dict[str, str]:
-    # returns a dictionary to rename columns
-    rename = {}
-    for column in df:
-        if " " in column:
-            rename[column] = column.replace(" ", "_")
-    return rename
-
 @tool
 def method_executor_tool(inputs: MethodExecutorInput, original_query: Optional[str] = None) -> Dict[str, Any]: # Use Pydantic Input
     '''Execute the selected causal inference method function using structured input.
@@ -71,9 +63,7 @@ def method_executor_tool(inputs: MethodExecutorInput, original_query: Optional[s
         if not dataset_path:
              raise ValueError("Dataset path is missing.")
         df = pd.read_csv(dataset_path)
-        df.rename(columns=repair_spaced_variables(df), inplace=True)
-        # remove spaces from df name; can occur during one hot encoding, and it throws and error when training a model with a formula
-
+        
         # 2. Extract Key Variables needed by estimate_func signature
         treatment = variables_dict.get("treatment_variable")
         outcome = variables_dict.get("outcome_variable")

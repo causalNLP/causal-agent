@@ -34,7 +34,6 @@ def dataset_cleaner_tool(dataset_path: str,
         next_step_reason="Dataset cleaned; proceed to validate method assumptions."
     )
 
-    '''
     result = {
         "cleaned_dataset_path": out["cleaned_dataset_path"],
         "cleaning_report_md": out["cleaning_report_md"],
@@ -43,6 +42,5 @@ def dataset_cleaner_tool(dataset_path: str,
         "stderr": out.get("stderr", ""),
         **wf
     }
-    '''
-    logger.info(f"Cleaning complete. Saved: {out['cleaned_dataset_path']}")
-    return out
+    logger.info(f"Cleaning complete. Saved: {result['cleaned_dataset_path']}")
+    return result
