@@ -152,7 +152,7 @@ def main():
     with open(output_json, "a") as file:
         leftoff = get_last_idx(output_json)
         for idx, row in meta_df.iterrows():
-            if (idx <= leftoff) or (to_skip and idx not in to_skip): # only process the specified rows provided or skip rows already processed if re-running
+            if (idx <= leftoff) or (to_skip and idx not in to_skip) or idx in {93, 110}: # only process the specified rows provided or skip rows already processed if re-running
                 continue
 
             data_path = os.path.join(data_dir, str(row["data_files"]))
