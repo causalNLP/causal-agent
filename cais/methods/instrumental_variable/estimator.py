@@ -8,7 +8,6 @@ from langchain.chat_models.base import BaseChatModel
 
 from .diagnostics import run_iv_diagnostics
 from .llm_assist import identify_instrument_variable, validate_instrument_assumptions_qualitative, interpret_iv_results
-from utils import convert_column_strings
 
 logger = logging.getLogger(__name__)
 
@@ -179,8 +178,6 @@ def estimate_effect(
     llm: Optional[BaseChatModel] = None, 
     **kwargs
 ) -> Dict[str, Any]:
-    
-    df, revert_columns = convert_column_strings(df)
 
     instrument = kwargs.get('instrument_variable')
     if not instrument:
