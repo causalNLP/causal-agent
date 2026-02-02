@@ -332,3 +332,12 @@ Work through each step methodically, then provide your final analysis. You must 
             "time_variable": None, "unit_variable": None, "did_canonical": None,
             "did_term": None, "treatment_time": None, "treatment_state": None
         }
+    
+def repair_spaced_variables(df: pd.DataFrame) -> Dict[str, str]:
+    # returns a dictionary to rename columns
+    rename = {}
+    for column in df:
+        if " " in column:
+            rename[column] = column.replace(" ", "_")
+    return 
+
