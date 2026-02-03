@@ -154,10 +154,10 @@ def _profile_dataset(dataset_path: str, sample_rows: int = 5) -> Dict[str, Any]:
 def _invoke_json(llm, system_prompt: str, human_payload: Dict[str, Any]) -> Dict[str, Any]:
     msgs = [SystemMessage(content=system_prompt),
             HumanMessage(content=json.dumps(human_payload, ensure_ascii=False))]
-    print(msgs)
+    #print(msgs)
     resp = llm.invoke(msgs)
     text = getattr(resp, "content", str(resp))
-    print(text)
+    #print(text)
     # force JSON extraction (model already instructed to return only JSON)
     return json.loads(text)
 
@@ -169,7 +169,7 @@ def _invoke_text(llm, system_prompt: str, human_payload: Dict[str, Any]) -> str:
     return getattr(resp, "content", str(resp))
 
 
-def _run_script_text(script: str, dataset_path: str) -> Tuple[str, str]:
+def _run_script_text(script: str, dataset_path: str, cleaned_path: str) -> Tuple[str, str]:
     """
     Executes user code in a controlled globals dict.
     Captures stdout/stderr. No network or file sandboxing is applied here by default.
@@ -184,6 +184,7 @@ def _run_script_text(script: str, dataset_path: str) -> Tuple[str, str]:
         with contextlib.redirect_stdout(stdout_io), contextlib.redirect_stderr(stderr_io):
             # Provide dataset_path as a global the script can read (it should anyway use the passed JSON)
             gbls["__DATASET_PATH__"] = dataset_path
+            script=script.replace('cleaned_df.csv', cleaned_path)
             exec(script, gbls, lcls)
     except Exception as e:
         tb = traceback.format_exc()
@@ -203,9 +204,9 @@ def _plan_transformation_spec(llm, dataset_path: str, causal_method: str, causal
         "causal_query": causal_query or "",
         "variables": variables
     }
-    print(human)
+    #print(human)
     spec = _invoke_json(llm, PLANNER_SYSTEM, human)
-    print(spec)
+    #print(spec)
     # Persist the preview so Fixer can use it later
     spec["_runtime_previews"] = prof  # used only internally, not written to disk by LLM
     return spec
@@ -248,18 +249,19 @@ def run_cleaning_stage(dataset_path: str,
     """
     llm = get_llm_client()
 
+    cleaned_path = os.path.join(os.path.dirname(os.path.abspath(dataset_path)) or ".", f"{dataset_path.split('/')[-1][:-4]}_cleaned_{os.getpid()}.csv")
+
     # 1) PLAN
-    
     method = causal_method or variables.get("method") or ""
     spec = _plan_transformation_spec(llm, dataset_path, method, original_query or "", variables)
-    print(spec)
+    #print(spec)
 
     # 2) CODEGEN
     code = _generate_code(llm, dataset_path, spec)
-    print(code)
+    #print(code)
 
     # 3) EXECUTE
-    stdout_all, stderr_all = _run_script_text(code, dataset_path)
+    stdout_all, stderr_all = _run_script_text(code, dataset_path, cleaned_path)
 
     # 4) SELF-REPAIR (bounded)
     attempts = 0
@@ -267,17 +269,16 @@ def run_cleaning_stage(dataset_path: str,
         attempts += 1
         patched = _self_repair(llm, dataset_path, spec, code, stderr_all)
         code = patched
-        out, err = _run_script_text(code, dataset_path)
+        out, err = _run_script_text(code, dataset_path, cleaned_path)
         stdout_all += f"\n\n[repair_attempt_{attempts}_stdout]\n" + out
         stderr_all += f"\n\n[repair_attempt_{attempts}_stderr]\n" + err
 
     # Determine cleaned path (as required by contract)
-    cleaned_path = os.path.join(os.path.dirname(os.path.abspath(dataset_path)) or ".", "cleaned_df.csv")
     report = []
     report.append(f"Method: {method}")
     report.append(f"Causal Query: {original_query or ''}")
     report.append(f"Rows/Cols before: see planner profile in memory.")
-    report.append(f"Artifacts expected: cleaned_df.csv, preprocessing_manifest.json, derived_columns.json")
+    report.append(f"Artifacts expected: {cleaned_path}, preprocessing_manifest.json, derived_columns.json")
     if ("Traceback" in stderr_all) or ("Error" in stderr_all):
         report.append("\n⚠️ LLM pipeline produced errors. Check stderr; artifacts may be missing or partial.")
 

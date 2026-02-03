@@ -1,4 +1,6 @@
 """
+DEPRECIATED ???
+
 Data Analyzer class for causal inference pipelines.
 
 This module provides the DataAnalyzer class for analyzing datasets

@@ -3,6 +3,7 @@ Utility functions for LLM interactions within the cais module.
 """
 
 from typing import Dict, Any, Optional, List
+import re
 import pandas as pd
 import logging
 import json
@@ -35,7 +36,7 @@ def call_llm_with_json_output(llm: Optional[BaseChatModel], prompt: str) -> Opti
         logger.warning("LLM client (BaseChatModel) not provided to call_llm_with_json_output. Cannot make LLM call.")
         return None
 
-    logger.info(f"Attempting LLM call with {type(llm).__name__} for JSON output.")
+    logger.debug(f"Attempting LLM call with {type(llm).__name__} for JSON output.")
     # Full prompt logging can be verbose, using DEBUG level.
     logger.debug(f"LLM Prompt for JSON output:\\n{prompt}")
 
@@ -296,18 +297,32 @@ Work through each step methodically, then provide your final analysis. You must 
     
     result = call_llm_with_json_output(llm, prompt)
     if result:
+        result = {k: None if isinstance(v, str) and v.lower() == 'null' else v for k,v in result.items()} # convert all null's to None
+
+        if isinstance(result.get('treatment_time'), str): # should be a float according to the model; fix if it is a string i.e. March 2008
+            try:
+                result['treatment_time'] = float(re.findall(r'-?\d*\.?\d+', result.get('treatment_time')))
+            except:
+                logger.warning("treatment_time is string but cannot be casted to float. Setting treatment_time to None.")
+                result['treatment_time'] = None
+
         # Validate that identified variables exist in columns
         for key in ["time_variable", "unit_variable", "did_term"]:
             if result.get(key) and result[key] not in column_names:
                 logger.warning(f"{key} '{result[key]}' not found in columns, setting to None")
                 result[key] = None
-                
+        
         # Validate did_canonical is boolean or None
         did_canonical = result.get("did_canonical")
-        if did_canonical is not None and not isinstance(did_canonical, bool):
+        try:
+            if did_canonical is not None:
+                if did_canonical is not isinstance(did_canonical, bool): # might be a string
+                        did_canonical = did_canonical.strip()
+                        result['did_canonical'] = (True if did_canonical.lower() == 'true' else False) and (result.get('treatment_time') is not None)
+        except:
             logger.warning(f"Invalid did_canonical '{did_canonical}', must be boolean. Setting to None")
             result["did_canonical"] = None
-            
+
         logger.info(f"DiD variables identified - time: {result.get('time_variable')}, unit: {result.get('unit_variable')}, "
                    f"canonical: {result.get('did_canonical')}, did_term: {result.get('did_term')}")
         return result
@@ -317,3 +332,12 @@ Work through each step methodically, then provide your final analysis. You must 
             "time_variable": None, "unit_variable": None, "did_canonical": None,
             "did_term": None, "treatment_time": None, "treatment_state": None
         }
+    
+def repair_spaced_variables(df: pd.DataFrame) -> Dict[str, str]:
+    # returns a dictionary to rename columns
+    rename = {}
+    for column in df:
+        if " " in column:
+            rename[column] = column.replace(" ", "_")
+    return 
+

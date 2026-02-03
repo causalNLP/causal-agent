@@ -125,7 +125,7 @@ class Variables(BaseModel):
     running_variable: Optional[str] = None
     cutoff_value: Optional[Union[float, int]] = None
     is_rct: Optional[bool] = Field(False, description="Flag indicating if the dataset is from an RCT.")
-    treatment_reference_level: Optional[str] = Field(None, description="The specified reference/control level for a multi-valued treatment variable.")
+    treatment_reference_level: Optional[Union[float, str]] = Field(None, description="The specified reference/control level for a multi-valued treatment variable.")
     interaction_term_suggested: Optional[bool] = Field(False, description="Whether the query or context suggests an interaction term with the treatment might be relevant.")
     interaction_variable_candidate: Optional[str] = Field(None, description="The covariate identified as a candidate for interaction with the treatment.")
     confounders: Optional[List[str]] = Field(default_factory=list)

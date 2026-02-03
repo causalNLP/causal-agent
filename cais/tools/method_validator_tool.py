@@ -98,8 +98,8 @@ def method_validator_tool(inputs: MethodValidatorInput) -> Dict[str, Any]: # Use
     
     # If validation failed, attempt to backtrack through decision tree
     if not assumptions_valid and failed_assumptions:
-        logger.info(f"Method {original_method} failed validation due to: {failed_assumptions}")
-        logger.info("Attempting to backtrack and select alternative method...")
+        logger.warning(f"Method {original_method} failed validation due to: {failed_assumptions}")
+        logger.warning("Attempting to backtrack and select alternative method...")
         
         try:
             # Extract properties for decision tree

@@ -167,6 +167,7 @@ def format_iv_results(estimate: Optional[float], raw_results: Dict, diagnostics:
 
     return formatted
 
+
 def estimate_effect(
     df: pd.DataFrame,
     treatment: str,
@@ -177,7 +178,7 @@ def estimate_effect(
     llm: Optional[BaseChatModel] = None, 
     **kwargs
 ) -> Dict[str, Any]:
-    
+
     instrument = kwargs.get('instrument_variable')
     if not instrument:
         return {"error": "Instrument variable ('instrument_variable') not found in kwargs.", "method_used": "none", "diagnostics": {}}

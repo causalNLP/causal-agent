@@ -6,7 +6,6 @@ allowing for an interactive approach to analyzing datasets and applying appropri
 causal inference methods.
 """
 
-import logging
 from typing import Dict, List, Any, Optional
 from langchain.agents.react.agent import create_react_agent
 from langchain.agents import AgentExecutor, create_structured_chat_agent, create_tool_calling_agent
@@ -24,7 +23,6 @@ from langchain.agents.output_parsers.tools import ToolsAgentOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.language_models import BaseChatModel
 from langchain_anthropic.chat_models import convert_to_anthropic_tool
-import os
 
 from cais.tools.input_parser_tool import input_parser_tool
 from cais.tools.dataset_analyzer_tool import dataset_analyzer_tool
@@ -39,17 +37,12 @@ from langchain_core.output_parsers import StrOutputParser
 from .config import get_llm_client 
 #from .prompts import SYSTEM_PROMPT 
 from langchain_core.messages import AIMessage, AIMessageChunk
-import re
-import json
-from typing import Union
 from langchain_core.output_parsers import BaseOutputParser
 from langchain.schema import AgentAction, AgentFinish
 from langchain_anthropic.output_parsers import ToolsOutputParser
 from langchain.agents.react.output_parser import ReActOutputParser
 from langchain.agents import AgentOutputParser
 from langchain.agents.agent import AgentAction, AgentFinish, OutputParserException
-import re
-from typing import Union, List
 from cais.models import *
 
 from langchain_core.agents import AgentAction, AgentFinish
@@ -58,7 +51,13 @@ from langchain_core.exceptions import OutputParserException
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from cais.tools.dataset_cleaner_tool import dataset_cleaner_tool
+import os, logging
+import re
+import json
 
+# Set up basic logging
+os.makedirs('./logs/', exist_ok=True)
+logger = logging.getLogger(__name__)
 
 FINAL_ANSWER_ACTION = "Final Answer:"
 MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE = (
@@ -135,10 +134,6 @@ class ReActMultiInputOutputParser(AgentOutputParser):
 
         # Fallback
         raise OutputParserException(f"Could not parse LLM output: `{text}`")
-
-# Set up basic logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
 
 
 def create_agent_prompt(tools: List[tool]) -> ChatPromptTemplate:
@@ -295,9 +290,7 @@ def run_causal_analysis(query: str, dataset_path: str,
     Returns:
         Dictionary containing the final formatted analysis results from the agent's last step.
     """
-    # Log the start of the analysis
     logger.info("Starting causal analysis run...")
-    
     try:
         # --- Instantiate the shared LLM client --- 
         model_name = os.getenv("LLM_MODEL", "gpt-4")
@@ -306,7 +299,8 @@ def run_causal_analysis(query: str, dataset_path: str,
             shared_llm = get_llm_client()
         else:
             shared_llm = get_llm_client(temperature=0) # Or read provider/model from env
-        
+
+        logger.info(f"Initializing LLM client: Provider='{os.getenv('LLM_PROVIDER')}', Model='{os.getenv('LLM_MODEL')}'")
         # --- Dependency Injection Note (REMAINS RELEVANT) --- 
         # If tools need the LLM, they must be adapted. Example using partial:
         # from functools import partial
@@ -330,8 +324,8 @@ def run_causal_analysis(query: str, dataset_path: str,
         input_text += "Please perform the causal analysis following the workflow."
         
         # Log the constructed input text
-        print(f"Constructed input for agent: \n{input_text}")
-
+        logger.debug(f"Constructed input for agent: \n{input_text}")
+        logger.info("[Causal AI Scientist Stage 1] - Data Processing")
         input_parsing_result = input_parser_tool(input_text)
         dataset_analysis_result = dataset_analyzer_tool.func(dataset_path=input_parsing_result["dataset_path"], dataset_description=input_parsing_result["dataset_description"], original_query=input_parsing_result["original_query"]).analysis_results
         query_info = QueryInfo(
@@ -343,6 +337,8 @@ def run_causal_analysis(query: str, dataset_path: str,
     )
 
         query_interpreter_output = query_interpreter_tool.func(query_info=query_info, dataset_analysis=dataset_analysis_result, dataset_description=input_parsing_result["dataset_description"], original_query = input_parsing_result["original_query"]).variables
+
+        logger.info("[Causal AI Scientist Stage 2] - Method Selection")
         method_selector_output = method_selector_tool.func(variables=query_interpreter_output,
             dataset_analysis=dataset_analysis_result,
             dataset_description=input_parsing_result["dataset_description"],
@@ -353,6 +349,8 @@ def run_causal_analysis(query: str, dataset_path: str,
         method_info = MethodInfo(
             **method_selector_output['method_info']
         )
+
+        logger.info("[Causal AI Scientist Stage 3] - Method Validation")
         if use_method_validator:
             method_validator_input = MethodValidatorInput(
                 method_info=method_info,
@@ -363,7 +361,7 @@ def run_causal_analysis(query: str, dataset_path: str,
             )
             method_validator_output = method_validator_tool.func(method_validator_input)
             # method_validator_output['method'] = "linear_regression"
-            method_name = method_validator_output['method']
+            method_name = method_validator_output.get('method')
         else:
             method_name = method_info.selected_method
             method_validator_output = {
@@ -387,8 +385,8 @@ def run_causal_analysis(query: str, dataset_path: str,
         # Update variables with selected controls
         from cais.models import Variables
         query_interpreter_output = Variables(**controls_selector_output['variables'])
-        print(f"Selected controls: {query_interpreter_output}")
-        print('Started Dataset Cleaning... ')
+        logger.info(f"Selected controls: {query_interpreter_output}")
+        logger.info('Started Dataset Cleaning... ')
 
         original_path = dataset_analysis_result.dataset_info.file_path 
         cleaning_output = dataset_cleaner_tool.func(
@@ -399,9 +397,10 @@ def run_causal_analysis(query: str, dataset_path: str,
             causal_method = method_name
         )
         cleaned_path = cleaning_output.get("cleaned_dataset_path", original_path)
-        print("----------Cleaned Dataset Path-----------")
-        print(cleaned_path)
+        #print("----------Cleaned Dataset Path-----------")
+        logger.info(cleaned_path)
 
+        logger.info("[Causal AI Scientist Stage 4] - Execution")
         method_executor_input = MethodExecutorInput(
             method = method_name,
             variables=query_interpreter_output,
@@ -411,8 +410,7 @@ def run_causal_analysis(query: str, dataset_path: str,
             # validation_info=method_validator_output,
             original_query = input_parsing_result["original_query"]
         )
-        print("----------Method Executor Input-----------")
-        print(method_executor_input)
+        logger.debug(method_executor_input)
         method_executor_output = method_executor_tool.func(method_executor_input, original_query = input_parsing_result["original_query"])
         explainer_output = explanation_generator_tool.func(            method_info=method_info,
             validation_info=method_validator_output,
@@ -422,10 +420,13 @@ def run_causal_analysis(query: str, dataset_path: str,
             dataset_description=input_parsing_result["dataset_description"],
             original_query = input_parsing_result["original_query"])
         result = explainer_output
-        result['results']['results']["method_used"] = method_validator_output['method']
-        logger.info(result)
+        #result['results']['results']["method_used"] = method_validator_output.get('method')
+        logger.debug(result)
         logger.info("Causal analysis run finished.")
         
+        # Remove the cleaned csv
+        logger.info("Removing cleaned csv.")
+        os.remove(cleaned_path)
         
         # Ensure result is a dict and extract the 'output' part
         if isinstance(result, dict):

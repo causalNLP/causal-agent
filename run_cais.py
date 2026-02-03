@@ -1,12 +1,12 @@
-import os, time, json, logging
+import os, time, json, logging, signal
 from typing import Dict, Any
 import pandas as pd
 import argparse
+from datetime import datetime
 from cais.agent import run_causal_analysis
 
 # Constants
-RATE_LIMIT_SECONDS = 2
-
+RATE_LIMIT_SECONDS = 1
 def run_caia(desc, question, df, use_method_validator: bool = True):
     return run_causal_analysis(
         query=question,
@@ -32,6 +32,7 @@ def parse_args():
     parser.add_argument("--llm_provider", type=str, required=False, help="LLM provider (e.g., openai, anthropic).")
     parser.add_argument("--skip-method-validator", action="store_true", help="Skip method validation step.")
     parser.add_argument("--use-llm-rule-engine", action="store_true", help="Use LLM-based method selection.")
+    parser.add_argument("--rows", type=str, required=False, help="Path to text file containing specific rows to run.")
 
     # Back-compat aliases (older/other scripts)
     parser.add_argument("--csv_path", type=str, required=False, help=argparse.SUPPRESS)
@@ -85,9 +86,49 @@ def parse_args():
 
     return args
 
+def get_last_idx(jsonl_path) -> int:
+    last_idx = -1
+    if not os.path.exists(jsonl_path):
+        return last_idx  # nothing processed yet
+
+    with open(jsonl_path, "r") as f:
+        for line in f:
+            last_idx = next(iter(json.loads(line)))
+    return int(last_idx)
+
+class TimeoutException(Exception):
+    pass
+
+def timeout_handler(signum, frame):
+    raise TimeoutException
+
 def main():
-    
     args = parse_args()
+    os.makedirs('./logs/', exist_ok=True)
+    logging.basicConfig(
+        filename=f"logs/{args.output_file.split('/')[-1][:-5]}_{datetime.now():%Y-%m-%d}.log",
+        filemode='a',
+        level=logging.INFO,
+        format='[%(levelname)s] %(asctime)s (%(module)s) - %(message)s',
+        force=True
+    )
+    logger = logging.getLogger(__name__)
+
+    to_skip = None
+    if args.rows:
+        try:
+            with open(args.rows, "r") as f:
+                to_skip = f.read().splitlines()
+                to_skip = set([int(skip) for skip in to_skip])
+
+        except FileNotFoundError as e:
+            print(f"Invalid path provided to optional --rows argument. Defaulting to all rows")
+            logger.warning("Specific rows provided but path is invalid. Defaulting to all rows.")
+        except Exception as e:
+            print(f"Error reading rows: {e} Defaulting to using all rows.")
+            logger.warning("Specific rows provided but path is invalid. Defaulting to all rows.")
+            to_skip = None
+
     csv_meta = args.metadata_path
     data_dir = args.data_dir
     output_json = args.output_file
@@ -101,58 +142,65 @@ def main():
         logging.error(f"Meta file not found: {csv_meta}")
         return
 
-    meta_df = pd.read_csv(csv_meta)
+    try:
+        meta_df = pd.read_csv(csv_meta)
+    except:
+        meta_df = pd.read_csv(csv_meta, encoding='latin-1')
     print(f"[main] Loaded metadata CSV with {len(meta_df)} rows.")
 
-    results: Dict[int, Dict[str, Any]] = {}
-
-    for idx, row in meta_df.iterrows():
-        data_path = os.path.join(data_dir, str(row["data_files"]))
-        print(f"\n[main] Row {idx+1}/{len(meta_df)} → Dataset: {data_path}")
-
-        try:
-            res = run_caia(
-                desc=row["data_description"],
-                question=row["natural_language_query"],
-                df=data_path,
-                use_method_validator=not args.skip_method_validator
-            )
-            
-            # Format result according to specified structure
-            formatted_result = {
-                "query": row["natural_language_query"],
-                "method": row["method"],
-                "answer": row["answer"],
-                "dataset_description": row["data_description"],
-                "dataset_path": data_path,
-                "keywords": row.get("keywords", "Causality, Average treatment effect"),
-                "final_result": {
-                    "method": res['results']['results'].get("method_used"),
-                    "causal_effect": res['results']['results'].get("effect_estimate"),
-                    "standard_deviation": res['results']['results'].get("standard_error"),
-                    "treatment_variable": res['results']['variables'].get("treatment_variable", None),
-                    "outcome_variable": res['results']['variables'].get("outcome_variable", None),
-                    "covariates": res['results']['variables'].get("covariates", []),
-                    "instrument_variable": res['results']['variables'].get("instrument_variable", None),
-                    "running_variable": res['results']['variables'].get("running_variable", None),
-                    "temporal_variable": res['results']['variables'].get("time_variable", None),
-                    "statistical_test_results": res.get("summary", ""),
-                    "explanation_for_model_choice": res.get("explanation", ""),
-                    "regression_equation": res.get("regression_equation", "")
-                }
-            }
-            results[idx] = formatted_result
-            print(f"[main] Formatted result for row {idx+1}")
-        except Exception as e:
-            logging.error(f"[{idx+1}] Error: {e}")
-            results[idx] = {"answer": str(e)}
-
-        time.sleep(RATE_LIMIT_SECONDS)
-
     os.makedirs(os.path.dirname(output_json) or ".", exist_ok=True)
-    with open(output_json, "w") as f:
-        json.dump(results, f, indent=2)
-    print(f"[main] Done. Predictions saved to {output_json}")
+    with open(output_json, "a") as file:
+        leftoff = get_last_idx(output_json)
+        for idx, row in meta_df.iterrows():
+            if (idx <= leftoff) or (to_skip and idx not in to_skip): # only process the specified rows provided or skip rows already processed if re-running
+                continue
+
+            data_path = os.path.join(data_dir, str(row["data_files"]))
+            print(f"\n[main] Row {idx+1}/{len(meta_df)} → Dataset: {data_path}")
+            desc=row["description"] if 'description' in row else row["data_description"]
+            try:
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(600) # timeout after 10 minutes
+                logger.info(f"Attempting to run CAIS on row [{idx}/{meta_df.shape[0]}]")
+                res = run_caia(
+                    desc=desc,
+                    question=row["natural_language_query"],
+                    df=data_path,
+                    use_method_validator=not args.skip_method_validator
+                )
+                
+                # Format result according to specified structure
+                formatted_result = {
+                    "query": row["natural_language_query"],
+                    "method": row["method"],
+                    "answer": row["answer"],
+                    "dataset_description": desc,
+                    "dataset_path": data_path,
+                    "keywords": row.get("keywords", "Causality, Average treatment effect"),
+                    "final_result": {
+                        "method": res.get("method_used"),
+                        "causal_effect": res['results'].get("effect_estimate"),
+                        "standard_deviation": res['results'].get("standard_error"),
+                        "treatment_variable": res['variables'].get("treatment_variable", None),
+                        "outcome_variable": res['variables'].get("outcome_variable", None),
+                        "covariates": res['variables'].get("covariates", []),
+                        "instrument_variable": res['variables'].get("instrument_variable", None),
+                        "running_variable": res['variables'].get("running_variable", None),
+                        "temporal_variable": res['variables'].get("time_variable", None),
+                        "statistical_test_results": res.get("summary", ""),
+                        "explanation_for_model_choice": res.get("explanation", ""),
+                        "regression_equation": res.get("regression_equation", "")
+                    }
+                }
+                file.write(json.dumps({idx: formatted_result}) + "\n")
+                print(f"[main] Formatted result for row {idx+1}")
+            except Exception as e:
+                logging.error(f"[row {idx}] Error: {e}")
+                file.write(json.dumps({idx: str(e)}) + "\n")
+
+            time.sleep(RATE_LIMIT_SECONDS)
+
+        print(f"[main] Done. Predictions saved to {output_json}")
 
 if __name__ == "__main__":
     main()

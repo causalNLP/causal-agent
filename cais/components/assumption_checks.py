@@ -6,6 +6,9 @@ from sklearn.preprocessing import OneHotEncoder
 import statsmodels.api as sm
 from typing import Dict, Any, Optional, List, Union
 from rddensity import rddensity
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Try to import optimal_bandwidth from rdd package
 try:
@@ -158,6 +161,7 @@ def infer_treatment_timing(df: pd.DataFrame, time_col: str, group_col: str, trea
     mean_t = df.groupby([group_col, time_col], as_index=False)[treat_col].mean()
     # Rename the treatment column to avoid conflicts
     mean_t = mean_t.rename(columns={treat_col: 'mean_treatment'})
+    #print(mean_t)
     # choose group with larger max mean treatment as treated_group
     max_by_group = mean_t.groupby(group_col)['mean_treatment'].max()
     treated_group = max_by_group.idxmax()
@@ -311,23 +315,27 @@ def rdd_design_compliance(df: pd.DataFrame, running: str, treatment: str, cutoff
     Check if treatment is (approximately) assigned by cutoff: T ≈ 1{running >= cutoff}.
     Returns compliance rate and misclassification share.
     """
-    if running not in df.columns or treatment not in df.columns:
-        return {"ok": False, "error": "Missing running/treatment column."}
-    
+    try:
+        if running not in df.columns or treatment not in df.columns:
+            return {"ok": False, "error": "Missing running/treatment column."}
+        
 
 
-    assign = (df[running] >= cutoff).astype(int)
-    t = df[treatment].astype(int)
-    if t.nunique() != 2:
-        return {"ok": False, "error": "Treatment variable not binary."}
-    
-    agree = (assign == t)
-    rate = float(agree.mean())
-    return {
-        "ok": bool(rate >= thresh_comply),          # loose gate; tune as needed
-        "compliance_rate": rate,
-        "misclassified_share": float(1.0 - rate),
-        "n": int(len(df))}
+        assign = (df[running] >= cutoff).astype(int)
+        t = df[treatment].astype(int)
+        if t.nunique() != 2:
+            return {"ok": False, "error": "Treatment variable not binary."}
+        
+        agree = (assign == t)
+        rate = float(agree.mean())
+        return {
+            "ok": bool(rate >= thresh_comply),          # loose gate; tune as needed
+            "compliance_rate": rate,
+            "misclassified_share": float(1.0 - rate),
+            "n": int(len(df))}
+    except Exception as e:
+        logger.warning(f"RDD Design compliance failed: {e}")
+        return {"ok": False, "error": e}
 
 def rdd_window_summary(df: pd.DataFrame, running: str, outcome: str, cutoff: float,
                        h: Optional[float] = None) -> Dict[str, Any]:

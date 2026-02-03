@@ -46,7 +46,7 @@ from cais.prompts.method_identification_prompts import (
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+
 def infer_treatment_variable_type(treatment_variable: str, column_categories: Dict[str, str],
                                   dataset_analysis: Dict[str, Any]) -> str:
     """
@@ -147,8 +147,9 @@ def determine_treatment_reference_level(is_rct: Optional[bool], llm: Optional[Ba
         try:
             prompt = TREATMENT_REFERENCE_IDENTIFICATION_PROMPT_TEMPLATE.format(query=query_text, description=dataset_description or 'N/A', treatment_variable=treatment_variable, treatment_variable_values=treatment_values_sample)
             ref_result = _call_llm_for_var(llm, prompt, LLMTreatmentReferenceLevel)
+
             if ref_result and ref_result.reference_level:
-                if treatment_values_sample and ref_result.reference_level not in treatment_values_sample:
+                if ref_result.reference_level not in treatment_values_sample:
                     logger.warning(f"LLM reference level '{ref_result.reference_level}' not in sampled values for '{treatment_variable}'.")
                 treatment_reference_level = ref_result.reference_level
                 logger.info(f"LLM identified reference level: {treatment_reference_level} (Reason: {ref_result.reasoning})")

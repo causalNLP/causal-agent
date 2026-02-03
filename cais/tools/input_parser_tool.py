@@ -30,7 +30,7 @@ def input_parser_tool(input_text: str) -> Dict[str, Any]:
     Returns:
         Dict containing parsed query information, path, description, and workflow state.
     """
-    logger.info(f"Running input_parser_tool on input: '{input_text[:100]}...'")
+    logger.info(f"Running input_parser_tool on input: '{input_text[:50]}...'")
     
     # --- Extract structured info using Regex --- 
     query = None
@@ -95,9 +95,10 @@ def input_parser_tool(input_text: str) -> Dict[str, Any]:
         # Pass dataset_description along
         "dataset_description": dataset_description 
     }
-    print('before workflow: ', result)
+    #print('before workflow: ', result)
     # Add workflow state to the result
     result.update(workflow_update)
-    print('after workflow: ', result)
+    #print('after workflow: ', result)
     logger.info("input_parser_tool finished successfully.")
+    logger.info(result)
     return result
