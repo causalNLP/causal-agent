@@ -6,15 +6,32 @@ causal inference methods based on dataset characteristics and query details.
 """
 
 import logging
+import re
 import os
 from typing import Dict, List, Any, Optional, Union
 from langchain_core.tools import tool 
+
+import pandas as pd
 
 # Import component function and central LLM factory
 from cais.components.decision_tree import rule_based_select_method 
 from cais.components.decision_tree_llm import DecisionTreeLLMEngine 
 from cais.config import get_llm_client 
 from cais.components.state_manager import create_workflow_state_update
+from cais.components.assumption_checks import (
+    RDDTest, # Regression Discontinuity Design
+    DiDTest, # Differences-in-Differences
+    ObervationalTest, # OLS, PS Matching
+    IVTest # Instrumental Variables
+)
+from cais.components.decision_tree import (
+    LINEAR_REGRESSION,
+    DIFF_IN_DIFF,
+    REGRESSION_DISCONTINUITY,
+    PROPENSITY_SCORE_MATCHING,
+    INSTRUMENTAL_VARIABLE,
+    PROPENSITY_SCORE_WEIGHTING
+)
 
 # Import shared models from central location
 from cais.models import (
@@ -25,11 +42,31 @@ from cais.models import (
 
 logger = logging.getLogger(__name__)
 
+def separate_validation(validation: str) -> List[str]:
+
+    match = re.search(r"\b(yes|no)\b", validation, re.IGNORECASE)
+    if not match:
+        logger.error("No Match found in when checking assumptions.")
+        return {
+            "valid_assumptions": "Could not determine",
+            "justification": validation
+        }
+        
+    flag = match.group(0).lower() 
+    just = validation[match.span(0)[-1]:]
+    return {
+        "valid_assumptions": flag,
+        "justification": just
+    }
+
+
+
 @tool(args_schema=MethodSelectorInput)
 # Option 1: Modify signature to match args_schema fields
 def method_selector_tool(
     variables: Variables, 
     dataset_analysis: DatasetAnalysis, 
+    dataset_path: str,
     dataset_description: Optional[str] = None, 
     original_query: Optional[str] = None,
     excluded_methods: Optional[List[str]] = None
@@ -50,12 +87,15 @@ def method_selector_tool(
         Dictionary with method selection details, context for next step, and workflow state.
     """
     logger.info("Running method_selector_tool with individual args...")
-    
+
     # Access data directly from arguments (they are already Pydantic models)
     variables_model = variables
     dataset_analysis_model = dataset_analysis
     dataset_description_str = dataset_description
     is_rct_flag = variables_model.is_rct # Get is_rct directly from variables argument
+    
+    # load data for assumption checking
+    data = pd.read_csv(dataset_path)
 
     # Convert Pydantic models to dicts for the component call (select_method expects dicts)
     variables_dict = variables_model.model_dump()
@@ -137,19 +177,83 @@ def method_selector_tool(
                  "dataset_description": dataset_description_str,
                  **workflow_update.get('workflow_state', {})}
 
+
+    selected_method = method_selection_dict.get("selected_method")
+
     # --- Prepare Output Dictionary --- 
-    method_selected_flag = bool(method_selection_dict.get("selected_method") and method_selection_dict["selected_method"] != "Error")
+    method_selected_flag = bool(selected_method and method_selection_dict["selected_method"] != "Error")
     
     # Create the 'method_info' sub-dictionary required by the validator
     # Include alternative_methods if present in the selection output
     method_info = {
-         "selected_method": method_selection_dict.get("selected_method"),
+         "selected_method": selected_method,
          "method_name": method_selection_dict.get("selected_method", "").replace("_", " ").title() if method_selected_flag else None, 
          "method_justification": method_selection_dict.get("method_justification"),
          "method_assumptions": method_selection_dict.get("method_assumptions", []),
          "alternative_methods": method_selection_dict.get("alternatives", []), # Include alternatives
          "decision_tree": method_selection_dict.get("decision_tree", {})
     }
+    
+    try:
+        # check whether the assumptions of the methods are violated
+        if selected_method in {LINEAR_REGRESSION, PROPENSITY_SCORE_MATCHING, PROPENSITY_SCORE_WEIGHTING}:
+            valid = ObervationalTest(
+                data=data,
+                query=original_query,
+                description=dataset_description,
+                treat_var=variables.treatment_variable,
+                outcome_var=variables.outcome_variable,
+                confounders=variables.covariates
+            )
+
+        elif selected_method == DIFF_IN_DIFF:
+            valid = DiDTest(
+                data=data,
+                query=original_query,
+                description=dataset_description,
+                treat_var=variables.treatment_variable,
+                outcome_var=variables.outcome_variable,
+                time_var=variables.time_variable,
+                group_var=variables.group_variable,
+                covariates=variables.covariates
+            )
+
+        elif selected_method == REGRESSION_DISCONTINUITY:
+            valid = RDDTest(
+                data=data,
+                query=original_query,
+                description=dataset_description,
+                treat_var=variables.treatment_variable,
+                outcome_var=variables.outcome_variable,
+                running_var=variables.running_variable,
+                cutoff=variables.cutoff_value,
+                covariates=variables.covariates
+            )
+
+        elif selected_method == INSTRUMENTAL_VARIABLE:
+            valid = RDDTest(
+                data=data,
+                query=original_query,
+                description=dataset_description,
+                treat_var=variables.treatment_variable,
+                outcome_var=variables.outcome_variable,
+                running_var=variables.running_variable,
+                covariates=variables.covariates
+            )
+
+        valid = valid.run_tests() # should return string
+
+    except Exception as e:
+        logger.error(f"Issue in assumption_checks.py: {e}")
+        valid = "No valid method to check assumptions."
+
+    try:
+
+        logger.info(f"Assumption Validation: {valid}")
+        valid = separate_validation(valid)
+
+    except Exception as e:
+        logger.error(f"Issue checking method assumptions: {e} valid: {valid}")
     
     # Create the final output dictionary for the agent
     result = {
@@ -158,7 +262,7 @@ def method_selector_tool(
         "dataset_analysis": dataset_analysis_dict, 
         "dataset_description": dataset_description_str,
         "original_query": original_query # Pass original query argument
-    }
+    } | valid
     
     # Determine workflow state for the next step
     next_tool_name = "controls_selector_tool" if method_selected_flag else "error_handler_tool"

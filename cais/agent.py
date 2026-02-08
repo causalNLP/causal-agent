@@ -341,6 +341,7 @@ def run_causal_analysis(query: str, dataset_path: str,
         logger.info("[Causal AI Scientist Stage 2] - Method Selection")
         method_selector_output = method_selector_tool.func(variables=query_interpreter_output,
             dataset_analysis=dataset_analysis_result,
+            dataset_path = input_parsing_result["dataset_path"],
             dataset_description=input_parsing_result["dataset_description"],
             original_query = input_parsing_result["original_query"],
             excluded_methods=None)
@@ -375,6 +376,10 @@ def run_causal_analysis(query: str, dataset_path: str,
                     "suggestions": []
                 }
             }
+        
+        # add assumption validation checks to method validator output
+        method_validator_output = method_validator_output | method_selector_output
+        
         controls_selector_output = controls_selector_tool.func(
             method_name=method_name,
             variables=query_interpreter_output,

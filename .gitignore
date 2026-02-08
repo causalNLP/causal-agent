@@ -184,6 +184,9 @@ logs/
 checkpoints/
 wandb/
 
+# Script files
+scripts/
+
 # Temporary files
 *.tmp
 *.temp

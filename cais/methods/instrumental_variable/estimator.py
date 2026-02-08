@@ -10,6 +10,7 @@ from .diagnostics import run_iv_diagnostics
 from .llm_assist import identify_instrument_variable, validate_instrument_assumptions_qualitative, interpret_iv_results
 
 logger = logging.getLogger(__name__)
+logging.getLogger("dowhy.causal_estimators.instrumental_variable_estimator").setLevel(logging.WARNING)
 
 def build_iv_graph_gml(treatment: str, outcome: str, instruments: List[str], covariates: List[str]) -> str:
     """
@@ -321,7 +322,7 @@ def estimate_effect(
                 placebo_type="permute" # Necessary for IV according to docs/examples
             )
             logger.info("Refutation test completed.")
-            logger.debug(f"Refuter Result:\n{refuter_result}")
+            #logger.debug(f"Refuter Result:\n{refuter_result}")
             # Store relevant info from refuter_result (check its structure)
             refutation_results = {
                 "refuter": "placebo_treatment_refuter",

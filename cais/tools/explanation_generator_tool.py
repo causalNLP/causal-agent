@@ -94,6 +94,8 @@ def explanation_generator_tool(
         )
         
     results['method_used'] = method_used
+    results['valid_assumptions'] = validation_info.get("valid_assumptions")
+    results['assumption_justification'] = validation_info.get("justification")
     # Call component to generate the single explanation string
     try:
         explanation_dict = generate_explanation(

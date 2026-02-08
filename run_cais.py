@@ -33,6 +33,7 @@ def parse_args():
     parser.add_argument("--skip-method-validator", action="store_true", help="Skip method validation step.")
     parser.add_argument("--use-llm-rule-engine", action="store_true", help="Use LLM-based method selection.")
     parser.add_argument("--rows", type=str, required=False, help="Path to text file containing specific rows to run.")
+    #parser.add_argument("--overwrite", action="store_true", help="Overwrite current results and log files. Useful when debugging.")
 
     # Back-compat aliases (older/other scripts)
     parser.add_argument("--csv_path", type=str, required=False, help=argparse.SUPPRESS)
@@ -129,6 +130,8 @@ def main():
             logger.warning("Specific rows provided but path is invalid. Defaulting to all rows.")
             to_skip = None
 
+    #overwrite = args.overwrite
+
     csv_meta = args.metadata_path
     data_dir = args.data_dir
     output_json = args.output_file
@@ -181,6 +184,8 @@ def main():
                         "method": res.get("method_used"),
                         "causal_effect": res['results'].get("effect_estimate"),
                         "standard_deviation": res['results'].get("standard_error"),
+                        "valid_assumptions": res.get("valid_assumptions"),
+                        "assumption_justification": res.get("assumption_justification"),
                         "treatment_variable": res['variables'].get("treatment_variable", None),
                         "outcome_variable": res['variables'].get("outcome_variable", None),
                         "covariates": res['variables'].get("covariates", []),
