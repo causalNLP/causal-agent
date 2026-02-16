@@ -39,7 +39,7 @@ def main(argv: Optional[list[str]] = None) -> None:
         os.environ["LLM_MODEL"] = args.llm_name
     if getattr(args, "llm_provider", None):
         os.environ["LLM_PROVIDER"] = args.llm_provider
-    if getattr(args, "use_llm_rule_engine", False):
+    if getattr(args, "use_llm_rule_engine", False): # TODO: Change this to use decision tree in default
         os.environ["CAIS_USE_LLM_RULE_ENGINE"] = "1"
 
     if args.command == "run":
