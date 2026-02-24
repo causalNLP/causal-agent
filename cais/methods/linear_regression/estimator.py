@@ -5,6 +5,7 @@ Uses Ordinary Least Squares (OLS) to estimate the treatment effect, potentially
 adjusting for covariates.
 """
 import pandas as pd
+import numpy as np
 
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
@@ -23,7 +24,7 @@ from typing import Dict, Any, List, Optional, Union
 from cais.models import LLMIdentifiedRelevantParams, Variables
 from cais.prompts.regression_prompts import STATSMODELS_PARAMS_IDENTIFICATION_PROMPT_TEMPLATE
 from cais.config import get_llm_client
-
+from cais.methods.utils import classify_treatment
 from cais.methods.causal_method import CausalMethod
 
 # Placeholder for potential future LLM assistance integration
@@ -47,11 +48,137 @@ class LinearRegression(CausalMethod):
 
     def validate_assumptions(self, df, variables):
         pass
+
+    def check_data_quality(self, df: pd.DataFrame, outcome: str, treatment: str, covariates: List[str]) -> pd.DataFrame:
+        try:
+            # check if outcome, treatment, or covariates are missing/None
+            if not outcome or not treatment or not covariates:
+                logger.error(f"Cannot estimate causal effect with missing variables [treatment, outcome, covariates]: {[treatment, outcome, covariates]}")
+                return
+
+            # check for missing columns in the dataframe
+            required = [treatment, outcome] + covariates # expected for the analysis
+            missing = CausalMethod.check_missing(df, required)
+            if missing:
+                critical = {outcome, treatment} - missing
+                if critical:
+                    # raise an error if we're missing a critical variable
+                    logger.error(f"Mising {critical} et al variables from columns: {missing}")
+                    raise ValueError(f"Missing required columns: {missing}")
+                else:
+                    # log an error and continue
+                    logger.warning(f"Missing covariates from dataframe: {covariates}")
+
+            # drop NaNs
+            df = df[required]
+            if df.isna().any(axis=None):
+                logger.warning(f"NaNs detected in the required columns: {df.isna().sum(axis=0)}. Shape: {df.shape}")
+                df = df.dropna(axis=0) # drop samples with NaNs
+
+                # check if we still have data
+                if df.empty:
+                    raise ValueError("No data remaining after dropping NaNs.")
+            # END TODO
+
+        except Exception as e:
+            logger.error(f"Error encountered while checking data quality: {e}")
+        
+        return df
     
-    @staticmethod
-    def estimate_effect(df: pd.DataFrame, variables: Variables):
-        # TODO: Incorporate the depreciated code.
-        pass
+    def construct_formula(self, df: pd.DataFrame, outcome: str, treatment: str, covariates: List[str], variables: Variables) -> str:
+
+        try:
+            formula = []
+
+            # Treatment Variable encoding
+            reference_level = variables.treatment_reference_level
+            treat_type = classify_treatment(df[treatment])
+            if treat_type == 'categorical':
+                if reference_level:
+                    formula += f"C({treatment}, Treatment(reference='{reference_level}')) "
+                else:
+                    formula.append(f"C({treatment})")
+
+            elif treat_type == 'binary':
+                formula.append(f"C({treatment})")
+
+            else: # must be numeric
+                formula.append(treatment)
+
+            # Covariate encoding
+            for cov in covariates:
+                if cov == treatment:
+                    continue
+                elif cov not in df.columns:
+                    logger.warning(f"Selected covariate {cov} not present in dataframe.")
+                    continue
+
+                if df[cov].dtype.name in {'object', 'category'}:
+                    formula.append(f"C({cov})")
+                else:
+                    formula.append(cov)
+                
+            # TODO: Include interaction terms
+
+            # ==== Combine Formula ====
+            if not formula:
+                formula = f"{outcome} ~ 1"
+                logger.error(f"No covariates or treatment were included in the modeling formula.")
+            else:
+                formula = f"{outcome} ~ {' + '.join(formula)} + 1"
+            logger.info(f"Constructed formula for OLS estimation: {formula}")
+        except Exception as e:
+            logger.error(f"Error encountered during model construction: {e}")
+            formula = f"{outcome} ~ 1"
+
+        return formula
+    
+    def estimate_effect(self, df: pd.DataFrame, variables: Variables):
+        """Callable method for estimating the ATE using OLS regression. 
+
+        Args:
+            df (pd.DataFrame): Dataframe with the experimental data, preprocessed in the future
+            variables (Variables): Variable pydantic model; will be changed later to incorporate selected covariates
+
+        Raises:
+            ValueError: _description_
+            ValueError: _description_
+        """
+        outcome = variables.outcome_variable
+        treatment = variables.treatment_variable
+        covariates = variables.covariates # TODO: Change to be the covariates selected by the model
+
+        # ==== Data Quality Checking ====
+        logger.info("Verifiying data integrity for OLS.")
+        df = self.check_data_quality(
+            df=df,
+            outcome=outcome,
+            treatment=treatment,
+            covariates=covariates
+        )
+        
+        logger.info("Constructing formula for OLS.")
+        # ==== Model Construction ====
+        formula = self.construct_formula(
+            df=df,
+            outcome=outcome,
+            treatment=treatment,
+            covariates=covariates,
+            variables=variables
+        )
+
+        results = None
+        try:
+            model = smf.ols(
+                formula=formula,
+                data=df
+            )
+            results = model.fit()
+            logger.info("OLS Model fit successfully.")
+        except Exception as e:
+            logger.error(f"Error encountered while fitting OLS with formula: {e}.")
+
+        return results
 
 
 ### ======== DEPRECIATED ========

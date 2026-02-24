@@ -13,8 +13,18 @@ from langchain.chat_models.base import BaseChatModel
 
 from .diagnostics import run_rdd_diagnostics
 from .llm_assist import interpret_rdd_results
+from cais.methods.causal_method import CausalMethod
 
 logger = logging.getLogger(__name__)
+
+class RDDRegression(CausalMethod):
+
+    name="Regression Discontinuity Design"
+    description=None
+    assumptions=None
+
+    def __init__(self):
+        super().__init__()
 
 # Attempt to import specific functions from the evan-magnusson/rdd package
 _rdd_estimator_func_em = None

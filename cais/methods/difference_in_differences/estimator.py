@@ -10,8 +10,18 @@ import statsmodels.formula.api as smf
 from .diagnostics import validate_parallel_trends
 from .llm_assist import interpret_did_results
 from cais.config import get_llm_client
+from cais.methods.causal_method import CausalMethod
 
 logger = logging.getLogger(__name__)
+
+class DiDRegression(CausalMethod):
+
+    name="Differences-in-Differences"
+    description=None
+    assumptions=None
+
+    def __init__(self):
+        super().__init__()
 
 def format_did_results(statsmodels_results: Any, interaction_term_key: str, 
                        validation_results: Dict[str, Any], 

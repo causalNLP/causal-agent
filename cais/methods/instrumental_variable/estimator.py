@@ -8,8 +8,19 @@ from langchain.chat_models.base import BaseChatModel
 
 from .diagnostics import run_iv_diagnostics
 from .llm_assist import identify_instrument_variable, validate_instrument_assumptions_qualitative, interpret_iv_results
+from cais.methods.causal_method import CausalMethod
+
 
 logger = logging.getLogger(__name__)
+
+class IVRegression(CausalMethod):
+
+    name="Instrument Variable Regression"
+    description=None
+    assumptions=None
+
+    def __init__(self):
+        super().__init__()
 
 def build_iv_graph_gml(treatment: str, outcome: str, instruments: List[str], covariates: List[str]) -> str:
     """

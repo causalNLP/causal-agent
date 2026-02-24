@@ -5,7 +5,7 @@ This module defines the interface that all causal inference methods must impleme
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Set
 from cais.models import Variables
 import pandas as pd
 
@@ -43,7 +43,6 @@ class CausalMethod(ABC):
         """
         pass
     
-    @staticmethod
     @abstractmethod
     def estimate_effect(df: pd.DataFrame, variables: Variables) -> Dict[str, Any]:
         """Estimate causal effect using this method.
@@ -60,6 +59,16 @@ class CausalMethod(ABC):
                 - additional_metrics (Dict): Any method-specific metrics
         """
         pass
+    
+    @staticmethod
+    def check_missing(df: pd.DataFrame, required: list[str]) -> Set[str]:
+        """Checks for any missing columns in the dataset.
+
+        Returns:
+            List with missing column names
+        """
+        return set([column for column in required if column not in df.columns])
+
 
     def describe(self) -> str:
         """Explain this causal method, its assumptions, and the required variables.
@@ -68,8 +77,7 @@ class CausalMethod(ABC):
             String with detailed explanation of the method
         """
         
-        desc = f"""
-        Description: {self.description}
+        desc = f"""Description: {self.description}
         Assumptions: {self.assumptions}
         """
         return desc
