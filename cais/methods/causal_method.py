@@ -48,8 +48,9 @@ class CausalMethod(ABC):
         """
         pass
     
+    @staticmethod
     @abstractmethod
-    def estimate_effect(self, df: pd.DataFrame, variables: Variables) -> Dict[str, Any]:
+    def estimate_effect(df: pd.DataFrame, variables: Variables) -> Dict[str, Any]:
         """Estimate causal effect using this method.
         
         Args:
@@ -66,4 +67,19 @@ class CausalMethod(ABC):
         pass
 
     def __call__(self, df, variables):
-        return self.estimate_effect(df, variables)
+        return CausalMethod.estimate_effect(df, variables)
+    
+
+'''
+Can be made into tools for future LangChain workflows by
+
+class OLS(CausalMethod):
+    pass
+
+class input_schema(BaseModel):
+    variables: Field(variables, etc)
+
+@tool(args_schema=input_schema)
+def linear_regression(init_args, callable_args):
+    return OLS(callable_args)
+'''

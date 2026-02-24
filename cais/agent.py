@@ -7,8 +7,7 @@ causal inference methods.
 """
 
 from typing import Dict, List, Any, Optional
-from methods.causal_method import CausalMethod
-
+from library import Estimators
 from cais.tools.input_parser_tool import input_parser_tool
 from cais.tools.dataset_analyzer_tool import dataset_analyzer_tool
 from cais.tools.query_interpreter_tool import query_interpreter_tool
@@ -43,44 +42,6 @@ logger = logging.getLogger(__name__)
 
 # TODO: Is it better to update class variables or pass in methods above?
 
-class Estimators:
-    
-    def __init__(self):
-        
-        default_estimators = {
-            # Add variables, i.e.
-            # OLS: methods.linear_regression.OLS
-        }
-
-        self.estimators = default_estimators
-
-    def __getitem__(self, key):
-        return self.estimators[key]
-
-    def __iter__(self):
-        return iter(self.estimators)
-
-    def __len__(self):
-        return len(self.estimators)
-    
-    def add_estimator(self, name: str, estimator: CausalMethod) -> None:
-        
-        assert isinstance(estimator, CausalMethod)
-
-        if name in self.estimators:
-            logger.warning(f"Cannot add {name} estimator as it is already found in the estimator library. Current keys: {list(self.estimators.keys())}")
-            return
-
-        self.estimators[name] = estimator
-
-    def remove_estimator(self, name: str) -> None:
-        
-        if name not in self.estimators:
-            logger.warning(f"Cannot remove {name} estimator as it is not found in the estimator library.")
-            return
-
-        del self.estimators[name]
-
 class CausalAgent():
     
     def __init__(self):
@@ -99,6 +60,8 @@ class CausalAgent():
 
         self.results = None
         self.explanations = None
+
+        self.estimators = Estimators()
 
 
 
@@ -153,7 +116,7 @@ class CausalAgent():
         return 
         
 
-    def select_controls(self):
+    def select_controls(self) -> list:
         
         '''
         # TODO: 
@@ -172,8 +135,19 @@ class CausalAgent():
         logger.info('Started Dataset Cleaning... ')
         '''
         
-        method_name = None
-        variables = None
+        method_name = self.selected_method
+        variables = self.variables
+
+        controls_selector_tool(
+            method_name=method_name,
+            variables=variables,
+            dataset_analysis=None,
+            dataset_description=None,
+            original_query=None
+        )
+
+        if method_name not in self.estimators:
+            pass
 
         '''
         Select controls based on the estimator
@@ -197,6 +171,8 @@ class CausalAgent():
         return cleaned_path
 
     def execute_method(self):   
+        
+        #self.estimators[self.selected_method](variables, etc)
         pass
     
     def run_analysis(self, query, dataset_path, dataset_description):
