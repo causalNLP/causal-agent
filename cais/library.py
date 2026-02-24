@@ -6,13 +6,14 @@ TODO: Possibly convert each CausalMethod to their own Pydantic models with acces
 
 import logging
 from methods.causal_method import CausalMethod
+from methods.linear_regression.estimator import LinearRegression
 logger = logging.getLogger(__name__)
 
 class Estimators:
     def __init__(self):
 
         self.estimators = None
-        self._refresh()
+        self.refresh_()
 
     def __getitem__(self, key):
         return self.estimators[key]
@@ -23,14 +24,14 @@ class Estimators:
     def __len__(self):
         return len(self.estimators)
 
-    def _refresh(self):
+    def refresh_(self):
         '''
         Initialize or refresh the library of default estimators.
         '''
         logger.info("Refreshed estimator library.")
         default_estimators = {
             # Add variables, i.e.
-            # OLS: methods.linear_regression.OLS
+            LinearRegression.name : LinearRegression()
         }
 
         self.estimators = default_estimators

@@ -22,15 +22,10 @@ class CausalMethod(ABC):
     inference method while conforming to this interface.
     """
 
-    @abstractmethod
-    def describe(self) -> str:
-        """Explain this causal method, its assumptions, and the required variables.
-        
-        Returns:
-            String with detailed explanation of the method
-        """
-        pass 
-    
+    name: str
+    description: str
+    assumptions: List[str]
+
     @abstractmethod
     def validate_assumptions(self, df: pd.DataFrame, variables: Variables) -> Dict[str, Any]:
         """Validate method assumptions against the dataset. Checks whether any key variables for the method are None/missing
@@ -66,8 +61,21 @@ class CausalMethod(ABC):
         """
         pass
 
+    def describe(self) -> str:
+        """Explain this causal method, its assumptions, and the required variables.
+        
+        Returns:
+            String with detailed explanation of the method
+        """
+        
+        desc = f"""
+        Description: {self.description}
+        Assumptions: {self.assumptions}
+        """
+        return desc
+
     def __call__(self, df, variables):
-        return CausalMethod.estimate_effect(df, variables)
+        return self.estimate_effect(df, variables)
     
 
 '''
