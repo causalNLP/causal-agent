@@ -8,6 +8,8 @@ import logging
 from typing import List, Set
 from cais.methods.causal_method import CausalMethod
 from cais.methods.linear_regression.estimator import LinearRegression
+from cais.methods.regression_discontinuity.estimator import RDDRegression
+from cais.methods.difference_in_differences.estimator import DiDRegression
 logger = logging.getLogger(__name__)
 
 class Estimators:
@@ -32,7 +34,9 @@ class Estimators:
         logger.info("Refreshed estimator library.")
         default_estimators = {
             # Add variables, i.e.
-            LinearRegression.name : LinearRegression()
+            LinearRegression.name : LinearRegression(),
+            RDDRegression.name : RDDRegression(),
+            DiDRegression.name : DiDRegression()
         }
 
         self.estimators = default_estimators
