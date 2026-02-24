@@ -7,7 +7,7 @@ causal inference methods.
 """
 
 from typing import Dict, List, Any, Optional
-from library import Estimators
+from cais.library import Estimators
 from cais.tools.input_parser_tool import input_parser_tool
 from cais.tools.dataset_analyzer_tool import dataset_analyzer_tool
 from cais.tools.query_interpreter_tool import query_interpreter_tool

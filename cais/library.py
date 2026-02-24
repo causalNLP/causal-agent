@@ -5,8 +5,9 @@ TODO: Possibly convert each CausalMethod to their own Pydantic models with acces
 '''
 
 import logging
-from methods.causal_method import CausalMethod
-from methods.linear_regression.estimator import LinearRegression
+from typing import List, Set
+from cais.methods.causal_method import CausalMethod
+from cais.methods.linear_regression.estimator import LinearRegression
 logger = logging.getLogger(__name__)
 
 class Estimators:
@@ -35,7 +36,7 @@ class Estimators:
         }
 
         self.estimators = default_estimators
-    
+
     def describe(self):
         '''
         Returns:
@@ -81,3 +82,6 @@ class Estimators:
 
         if len(self.estimators) == 0:
             logger.warning("No available estimators in the library.")
+
+    def names(self) -> Set[str]:
+        return set(self.estimators.keys())

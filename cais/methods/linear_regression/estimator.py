@@ -24,7 +24,7 @@ from cais.models import LLMIdentifiedRelevantParams, Variables
 from cais.prompts.regression_prompts import STATSMODELS_PARAMS_IDENTIFICATION_PROMPT_TEMPLATE
 from cais.config import get_llm_client
 
-from methods.causal_method import CausalMethod
+from cais.methods.causal_method import CausalMethod
 
 # Placeholder for potential future LLM assistance integration
 # from .llm_assist import interpret_lr_results, suggest_lr_covariates

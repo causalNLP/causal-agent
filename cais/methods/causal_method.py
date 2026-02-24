@@ -6,7 +6,7 @@ This module defines the interface that all causal inference methods must impleme
 
 from abc import ABC, abstractmethod
 from typing import Dict, List, Any
-from models import Variables
+from cais.models import Variables
 import pandas as pd
 
 
