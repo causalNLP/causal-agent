@@ -1,12 +1,12 @@
 """
 Abstract base class for all causal inference methods.
 
-This module defines the interface that all causal inference methods
-must implement, ensuring consistent behavior across different methods.
+This module defines the interface that all causal inference methods must implement, ensuring consistent behavior across different methods.
 """
 
 from abc import ABC, abstractmethod
 from typing import Dict, List, Any
+from models import Variables
 import pandas as pd
 
 
@@ -21,17 +21,23 @@ class CausalMethod(ABC):
     Each implementation should handle the specifics of the causal
     inference method while conforming to this interface.
     """
+
+    @abstractmethod
+    def describe(self) -> str:
+        """Explain this causal method, its assumptions, and the required variables.
+        
+        Returns:
+            String with detailed explanation of the method
+        """
+        pass 
     
     @abstractmethod
-    def validate_assumptions(self, df: pd.DataFrame, treatment: str, 
-                           outcome: str, covariates: List[str]) -> Dict[str, Any]:
-        """Validate method assumptions against the dataset.
+    def validate_assumptions(self, df: pd.DataFrame, variables: Variables) -> Dict[str, Any]:
+        """Validate method assumptions against the dataset. Checks whether any key variables for the method are None/missing
         
         Args:
             df: DataFrame containing the dataset
-            treatment: Name of the treatment variable column
-            outcome: Name of the outcome variable column
-            covariates: List of covariate column names
+            variables: Variables pydantic model containing the extract variables
             
         Returns:
             Dict containing validation results with keys:
@@ -43,15 +49,12 @@ class CausalMethod(ABC):
         pass
     
     @abstractmethod
-    def estimate_effect(self, df: pd.DataFrame, treatment: str,
-                      outcome: str, covariates: List[str]) -> Dict[str, Any]:
+    def estimate_effect(self, df: pd.DataFrame, variables: Variables) -> Dict[str, Any]:
         """Estimate causal effect using this method.
         
         Args:
             df: DataFrame containing the dataset
-            treatment: Name of the treatment variable column
-            outcome: Name of the outcome variable column
-            covariates: List of covariate column names
+            variables: Pydantic model with Variables and their types
             
         Returns:
             Dict containing estimation results with keys:
@@ -61,28 +64,6 @@ class CausalMethod(ABC):
                 - additional_metrics (Dict): Any method-specific metrics
         """
         pass
-    
-    @abstractmethod
-    def generate_code(self, dataset_path: str, treatment: str,
-                    outcome: str, covariates: List[str]) -> str:
-        """Generate executable code for this causal method.
-        
-        Args:
-            dataset_path: Path to the dataset file
-            treatment: Name of the treatment variable column
-            outcome: Name of the outcome variable column
-            covariates: List of covariate column names
-            
-        Returns:
-            String containing executable Python code implementing this method
-        """
-        pass
-    
-    @abstractmethod
-    def explain(self) -> str:
-        """Explain this causal method, its assumptions, and when to use it.
-        
-        Returns:
-            String with detailed explanation of the method
-        """
-        pass 
+
+    def __call__(self, df, variables):
+        return self.estimate_effect(df, variables)

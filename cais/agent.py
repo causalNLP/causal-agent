@@ -7,7 +7,7 @@ causal inference methods.
 """
 
 from typing import Dict, List, Any, Optional
-
+from methods.causal_method import CausalMethod
 
 from cais.tools.input_parser_tool import input_parser_tool
 from cais.tools.dataset_analyzer_tool import dataset_analyzer_tool
@@ -43,8 +43,45 @@ logger = logging.getLogger(__name__)
 
 # TODO: Is it better to update class variables or pass in methods above?
 
-class CausalAgent():
+class Estimators:
+    
+    def __init__(self):
+        
+        default_estimators = {
+            # Add variables, i.e.
+            # OLS: methods.linear_regression.OLS
+        }
 
+        self.estimators = default_estimators
+
+    def __getitem__(self, key):
+        return self.estimators[key]
+
+    def __iter__(self):
+        return iter(self.estimators)
+
+    def __len__(self):
+        return len(self.estimators)
+    
+    def add_estimator(self, name: str, estimator: CausalMethod) -> None:
+        
+        assert isinstance(estimator, CausalMethod)
+
+        if name in self.estimators:
+            logger.warning(f"Cannot add {name} estimator as it is already found in the estimator library. Current keys: {list(self.estimators.keys())}")
+            return
+
+        self.estimators[name] = estimator
+
+    def remove_estimator(self, name: str) -> None:
+        
+        if name not in self.estimators:
+            logger.warning(f"Cannot remove {name} estimator as it is not found in the estimator library.")
+            return
+
+        del self.estimators[name]
+
+class CausalAgent():
     
     def __init__(self):
 
@@ -98,6 +135,9 @@ class CausalAgent():
         )
 
     def validate_method(self):
+        
+        '''
+        # TODO: Move changes from assumption_checker branch to refactoring (this branch)
 
         method_validator_input = MethodValidatorInput(
                 method_info=self.selected_method,
@@ -109,10 +149,15 @@ class CausalAgent():
         method_validator_output = method_validator_tool.func(method_validator_input)
         # method_validator_output['method'] = "linear_regression"
         method_name = method_validator_output.get('method')
+        '''
+        return 
         
 
     def select_controls(self):
         
+        '''
+        # TODO: 
+
         controls_selector_output = controls_selector_tool.func(
             method_name=self.selected_method,
             variables=query_interpreter_output,
@@ -125,6 +170,18 @@ class CausalAgent():
         query_interpreter_output = Variables(**controls_selector_output['variables'])
         logger.info(f"Selected controls: {query_interpreter_output}")
         logger.info('Started Dataset Cleaning... ')
+        '''
+        
+        method_name = None
+        variables = None
+
+        '''
+        Select controls based on the estimator
+        Each estimator will have different variable requirements
+        
+        '''
+
+        return
 
     def clean_dataset(self):   
         original_path = dataset_analysis_result.dataset_info.file_path 
