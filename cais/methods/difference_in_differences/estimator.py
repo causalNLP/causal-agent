@@ -23,6 +23,12 @@ class DiDRegression(CausalMethod):
     def __init__(self):
         super().__init__()
 
+    def validate_assumptions(self, df, variables):
+        pass
+
+    def estimate_effect(df, variables):
+        pass
+
 def format_did_results(statsmodels_results: Any, interaction_term_key: str, 
                        validation_results: Dict[str, Any], 
                        method_details: str, parameters: Dict[str, Any]) -> Dict[str, Any]:

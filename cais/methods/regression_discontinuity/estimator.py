@@ -26,6 +26,12 @@ class RDDRegression(CausalMethod):
     def __init__(self):
         super().__init__()
 
+    def validate_assumptions(self, df, variables):
+        pass
+
+    def estimate_effect(df, variables):
+        pass
+
 # Attempt to import specific functions from the evan-magnusson/rdd package
 _rdd_estimator_func_em = None
 _rdd_optimal_bw_func_em = None

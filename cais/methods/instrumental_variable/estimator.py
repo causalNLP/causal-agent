@@ -22,6 +22,12 @@ class IVRegression(CausalMethod):
     def __init__(self):
         super().__init__()
 
+    def validate_assumptions(self, df, variables):
+        pass
+
+    def estimate_effect(df, variables):
+        pass
+
 def build_iv_graph_gml(treatment: str, outcome: str, instruments: List[str], covariates: List[str]) -> str:
     """
     Constructs a GML string representing the causal graph for IV.
