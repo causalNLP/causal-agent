@@ -1,30 +1,37 @@
+import json
+import logging
+from typing import List
+
+from langchain_core.language_models import BaseChatModel
+
+from cais.utils.llm_helpers import invoke_llm
 from ..prompts.prompt_loader import PromptLoader
 
+logger = logging.getLogger(__name__)
 
 class ExclusionCritic:
-    def __init__(self, llm_client):
-        self.llm_client = llm_client
+    def __init__(self, llm: BaseChatModel) -> None:
+        self.llm = llm
         self.prompt_loader = PromptLoader()
     
-    def validate_exclusion(self, iv, treatment, outcome, confounders):
+    def validate_exclusion(self, iv: str, treatment: str, outcome: str, confounders: List[str]) -> bool:
         # Exclusion restriction: does IV affect outcome only through treatment?
         # Confounders not directly relevant here - just check direct pathways
         prompt = self.prompt_loader.format_exclusion_prompt(iv, treatment, outcome, confounders)
-        response = self.llm_client.generate(prompt)
+        response = invoke_llm(self.llm, prompt)
         result = self._parse_validity(response)
         
         # Log detailed output
-        from ..llm.output_tracker import tracker
-        tracker.log_agent_output(
-            f'exclusion_critic_{iv}',
-            {'iv': iv, 'treatment': treatment, 'outcome': outcome, 'confounders': confounders},
-            {'valid': result},
-            response
-        )
+        logger.info(json.dumps({
+            'name': f'exclusion_critic_{iv}',
+            'inputs': {'iv': iv, 'treatment': treatment, 'outcome': outcome, 'confounders': confounders},
+            'outputs': {'valid': result},
+            'raw_response': response,
+        }, default=str))
         
         return result
     
-    def _parse_validity(self, response):
+    def _parse_validity(self, response: str) -> bool:
         import re
         match = re.search(r'<Answer>(Valid|Invalid)</Answer>', response)
         return match.group(1) == 'Valid' if match else False

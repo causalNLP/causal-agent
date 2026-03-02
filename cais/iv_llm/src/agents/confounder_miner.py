@@ -1,16 +1,24 @@
+import json
+import logging
+from typing import List
+
+from langchain_core.language_models import BaseChatModel
+
+from cais.utils.llm_helpers import invoke_llm
 from ..prompts.prompt_loader import PromptLoader
 from ..variable_utils import extract_available_columns, filter_to_available
 
+logger = logging.getLogger(__name__)
 
 class ConfounderMiner:
-    def __init__(self, llm_client, j=5):
-        self.llm_client = llm_client
+    def __init__(self, llm: BaseChatModel, j: int = 5) -> None:
+        self.llm = llm
         self.j = j
         self.prompt_loader = PromptLoader()
     
-    def identify_confounders(self, treatment, outcome, context=""):
+    def identify_confounders(self, treatment: str, outcome: str, context: str = "") -> List[str]:
         prompt = self.prompt_loader.format_confounder_prompt(treatment, outcome, self.j, context=context)
-        response = self.llm_client.generate(prompt)
+        response = invoke_llm(self.llm, prompt)
         confounders_raw = self._parse_confounders(response)
 
         available_cols = extract_available_columns(context)
@@ -22,18 +30,16 @@ class ConfounderMiner:
 
         confounders = confounders[: self.j]
         
-        # Log detailed output
-        from ..llm.output_tracker import tracker
-        tracker.log_agent_output(
-            'confounder_miner',
-            {'treatment': treatment, 'outcome': outcome, 'j': self.j},
-            {'confounders': confounders},
-            response
-        )
+        logger.info(json.dumps({
+            'name': 'confounder_miner',
+            'inputs': {'treatment': treatment, 'outcome': outcome, 'j': self.j},
+            'outputs': {'confounders': confounders},
+            'raw_response': response,
+        }, default=str))
         
         return confounders
     
-    def _parse_confounders(self, response):
+    def _parse_confounders(self, response: str) -> List[str]:
         import re
 
         def _clean(name: str) -> str:

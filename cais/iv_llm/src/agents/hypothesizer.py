@@ -1,39 +1,44 @@
+import json
+import logging
+from typing import List
+
+from langchain_core.language_models import BaseChatModel
+
+from cais.utils.llm_helpers import invoke_llm
 from ..prompts.prompt_loader import PromptLoader
 from ..variable_utils import extract_available_columns, filter_to_available, fallback_candidates
 
+logger = logging.getLogger(__name__)
 
 class Hypothesizer:
-    def __init__(self, llm_client, k=5):
-        self.llm_client = llm_client
+    def __init__(self, llm: BaseChatModel, k: int = 5) -> None:
+        self.llm = llm
         self.k = k
         self.prompt_loader = PromptLoader()
     
-    def propose_ivs(self, treatment, outcome, context=""):
+    def propose_ivs(self, treatment: str, outcome: str, context: str = "") -> List[str]:
         prompt = self.prompt_loader.format_hypothesizer_prompt(treatment, outcome, self.k, context=context)
-        response = self.llm_client.generate(prompt)
+        response = invoke_llm(self.llm, prompt)
         ivs_raw = self._parse_ivs(response)
 
         available_cols = extract_available_columns(context)
         ivs = filter_to_available(ivs_raw, available_cols) if available_cols else ivs_raw
 
-        # Ensure we return only dataset column names (and ideally not treatment/outcome).
         if available_cols and not ivs:
             ivs = fallback_candidates(available_cols, exclude=[treatment, outcome])[: self.k]
 
         ivs = ivs[: self.k]
         
-        # Log detailed output
-        from ..llm.output_tracker import tracker
-        tracker.log_agent_output(
-            'hypothesizer',
-            {'treatment': treatment, 'outcome': outcome, 'k': self.k},
-            {'proposed_ivs': ivs},
-            response
-        )
+        logger.info(json.dumps({
+            'name': 'hypothesizer',
+            'inputs': {'treatment': treatment, 'outcome': outcome, 'k': self.k},
+            'outputs': {'proposed_ivs': ivs},
+            'raw_response': response,
+        }, default=str))
         
         return ivs
     
-    def _parse_ivs(self, response):
+    def _parse_ivs(self, response: str) -> List[str]:
         import re
 
         def _clean(name: str) -> str:

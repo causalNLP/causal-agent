@@ -29,6 +29,7 @@ import os
 from cais.tools.input_parser_tool import input_parser_tool
 from cais.tools.dataset_analyzer_tool import dataset_analyzer_tool
 from cais.tools.query_interpreter_tool import query_interpreter_tool
+from cais.tools.iv_discovery_tool import iv_discovery_tool
 from cais.tools.method_selector_tool import method_selector_tool
 from cais.tools.method_validator_tool import method_validator_tool
 from cais.tools.method_executor_tool import method_executor_tool
@@ -183,11 +184,12 @@ You must follow this exact workflow, selecting the appropriate tool for each ste
 1. ALWAYS start with `input_parser_tool` to understand the query
 2. THEN use `dataset_analyzer_tool` to analyze the dataset
 3. THEN use `query_interpreter_tool` to identify variables (output includes `variables` and `dataset_analysis`)
-4. THEN use `method_selector_tool` (input requires `variables` and `dataset_analysis` from previous step)
-5. THEN use `method_validator_tool` (input requires `method_info` and `variables` from previous step)
-6. THEN use `method_executor_tool` (input requires `method`, `variables`, `dataset_path`)
-7. THEN use `explanation_generator_tool` (input requires results, method_info, variables, etc.)
-8. FINALLY use `output_formatter_tool` to return the results 
+4. THEN use `iv_discovery_tool` to discover instrumental variables (input requires `variables` and `dataset_analysis` from previous step)
+5. THEN use `method_selector_tool` (input requires `variables` and `dataset_analysis` from previous step)
+6. THEN use `method_validator_tool` (input requires `method_info` and `variables` from previous step)
+7. THEN use `method_executor_tool` (input requires `method`, `variables`, `dataset_path`)
+8. THEN use `explanation_generator_tool` (input requires results, method_info, variables, etc.)
+9. FINALLY use `output_formatter_tool` to return the results 
 
 REASONING PROCESS:
 ------------------
@@ -336,7 +338,18 @@ def run_causal_analysis(query: str, dataset_path: str,
     )
 
         query_interpreter_output = query_interpreter_tool.func(query_info=query_info, dataset_analysis=dataset_analysis_result, dataset_description=input_parsing_result["dataset_description"], original_query = input_parsing_result["original_query"]).variables
-        method_selector_output = method_selector_tool.func(variables=query_interpreter_output,
+        iv_discovery_output = iv_discovery_tool.func(variables=query_interpreter_output,
+            dataset_analysis=dataset_analysis_result,
+            dataset_description=input_parsing_result["dataset_description"],
+            original_query = input_parsing_result["original_query"])
+        # Update variables with any discovered instruments
+        # Tools called via `.func` may return Pydantic models (not dicts).
+        if hasattr(iv_discovery_output, "model_dump"):
+            iv_discovery_output_dict = iv_discovery_output.model_dump()
+        else:
+            iv_discovery_output_dict = iv_discovery_output
+        updated_variables = Variables(**iv_discovery_output_dict["variables"])
+        method_selector_output = method_selector_tool.func(variables=updated_variables,
             dataset_analysis=dataset_analysis_result,
             dataset_description=input_parsing_result["dataset_description"],
             original_query = input_parsing_result["original_query"],
@@ -346,7 +359,7 @@ def run_causal_analysis(query: str, dataset_path: str,
         )
         method_validator_input = MethodValidatorInput(
             method_info=method_info,
-            variables=query_interpreter_output,
+            variables=updated_variables,
             dataset_analysis=dataset_analysis_result,
             dataset_description=input_parsing_result["dataset_description"],
             original_query = input_parsing_result["original_query"]
@@ -358,7 +371,7 @@ def run_causal_analysis(query: str, dataset_path: str,
         method_executor_output = method_executor_tool.func(method_executor_input, original_query = input_parsing_result["original_query"])
         explainer_output = explanation_generator_tool.func(            method_info=method_info,
             validation_info=method_validator_output,
-            variables=query_interpreter_output,
+            variables=updated_variables,
             results=method_executor_output,
             dataset_analysis=dataset_analysis_result,
             dataset_description=input_parsing_result["dataset_description"],

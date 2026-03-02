@@ -43,11 +43,7 @@ def dataset_analyzer_tool(dataset_path: str,
     """
     logger.info(f"Running dataset_analyzer_tool on path: {dataset_path}")
     # Call the component function with the LLM if available
-    try:
-        llm = get_llm_client()
-    except Exception as e:
-        logger.warning(f"Failed to initialize LLM for dataset analysis: {e}. Proceeding without LLM.")
-        llm = None
+    llm = get_llm_client()
 
     try:
         # Call the component function 

@@ -23,7 +23,6 @@ import json
 from cais.models import (
     LLMSelectedVariable,
     LLMSelectedCovariates,
-    LLMIVars,
     LLMRDDVars,
     LLMRCTCheck,
     LLMTreatmentReferenceLevel,
@@ -213,11 +212,7 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
     """
 
     logger.info("Interpreting query with hybrid approach...")
-    try:
-        llm = get_llm_client()
-    except Exception as e:
-        logger.warning(f"Failed to initialize LLM client for query interpretation: {e}. Falling back to heuristics.")
-        llm = None
+    llm = get_llm_client()
     
     query_text = query_info.get("query_text", "")
     columns = dataset_analysis.get("columns", [])
@@ -226,7 +221,7 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
 
     
     # --- Identify Treatment --- 
-    treatment_hints = query_info.get("potential_treatments", []) or query_info.get("treatment_hints", [])
+    treatment_hints = query_info.get("potential_treatments", [])
     dataset_treatments = dataset_analysis.get("potential_treatments", [])
     treatment_variable = _identify_variable_hybrid(role="treatment", query_hints=treatment_hints, 
                                                    dataset_suggestions=dataset_treatments, columns=columns,
@@ -238,7 +233,7 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
 
     
     # --- Identify Outcome --- 
-    outcome_hints = query_info.get("potential_outcomes", []) or query_info.get("outcome_hints", [])
+    outcome_hints = query_info.get("potential_outcomes", [])
     dataset_outcomes = dataset_analysis.get("potential_outcomes", [])
     outcome_variable = _identify_variable_hybrid(role="outcome", query_hints=outcome_hints, dataset_suggestions=dataset_outcomes,
                                                  columns=columns, column_categories=column_categories,
@@ -273,7 +268,7 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
     logger.info(f"Identified Time Var: {time_variable}, Group Var: {group_variable}, temporal structure: {temporal_structure}")
 
     # --- Identify IV/RDD/RCT using LLM --- 
-    instrument_variable = None
+    instrument_variable = None  # Will be discovered later by IV-LLM integration
     running_variable = None
     cutoff_value = None
     is_rct = None
@@ -286,14 +281,6 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
             rct_result = _call_llm_for_var(llm, prompt_rct, LLMRCTCheck)
             is_rct = rct_result.is_rct if rct_result else None
             logger.info(f"LLM identified RCT: {is_rct}")
-
-            # Check for IV
-            prompt_iv = _create_identify_prompt("instrumental variable", query_text, dataset_description, columns, column_categories, treatment_variable, outcome_variable)
-            iv_result = _call_llm_for_var(llm, prompt_iv, LLMIVars)
-            instrument_variable = iv_result.instrument_variable if iv_result else None
-            if instrument_variable not in columns:
-                instrument_variable = None  
-            logger.info(f"LLM identified IV: {instrument_variable}")
 
             # Check for RDD
             prompt_rdd = _create_identify_prompt("regression discontinuity (running variable and cutoff)", query_text, dataset_description, columns, column_categories, treatment_variable, outcome_variable)
@@ -478,17 +465,6 @@ def _identify_variable_hybrid(role: str, query_hints: List[str], dataset_suggest
     if plausible_candidates:
         logger.info(f"No LLM provided. Using first plausible {role}: {plausible_candidates[0]}")
         return plausible_candidates[0]
-
-    # Fallback: use any available column that matches prioritized types
-    type_filtered = [c for c in available_columns if column_categories.get(c) in prioritize_types]
-    if type_filtered:
-        logger.info(f"Fallback to first type-matched {role}: {type_filtered[0]}")
-        return type_filtered[0]
-
-    # Last resort: pick the first available column
-    if available_columns:
-        logger.info(f"Fallback to first available column for {role}: {available_columns[0]}")
-        return available_columns[0]
 
     logger.warning(f"No plausible candidates for {role}. Cannot identify variable.")
     return None

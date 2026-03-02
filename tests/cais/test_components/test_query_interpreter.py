@@ -22,6 +22,7 @@ MOCK_DATASET_ANALYSIS_REF_LEVEL = {
     },
     "potential_treatments": ["fertilizer_type"],
     "potential_outcomes": ["crop_yield"],
+    "dataset_info": {"file_path": "mock_path.csv"},  # Added for query_interpreter
     "value_counts": { # Added for providing unique values to the prompt
         "fertilizer_type": {
             "values": ["Nitro", "Phos", "Control"]
@@ -45,7 +46,7 @@ def test_interpret_query_identifies_treatment_reference_level():
     mock_structured_llm = MagicMock()
 
     # This will be the mock for the call related to TREATMENT_REFERENCE_IDENTIFICATION_PROMPT_TEMPLATE
-    # The other LLM calls (for T, O, C, IV, RDD, RCT) also need to be considered
+    # The other LLM calls (for T, O, C, RDD, RCT) also need to be considered
     # or made to return benign defaults for this specific test.
 
     # Simulate LLM responses for different calls within interpret_query
@@ -67,8 +68,6 @@ def test_interpret_query_identifies_treatment_reference_level():
              return MagicMock(variable_name="crop_yield")
         elif "valid covariates" in args[1]: # Simplified check for covariates prompt
              return MagicMock(covariates=["soil_ph", "rainfall"])
-        elif "Instrumental Variables" in args[1]: # Check for IV prompt
-            return MagicMock(instrument_variable=None)
         elif "Regression Discontinuity Design" in args[1]: # Check for RDD prompt
             return MagicMock(running_variable=None, cutoff_value=None)
         elif "Randomized Controlled Trial" in args[1]: # Check for RCT prompt

@@ -7,9 +7,19 @@ import pandas as pd
 import logging
 import json
 from langchain.chat_models.base import BaseChatModel
+from langchain_core.language_models import BaseChatModel as BaseChatModelCore
 from langchain_core.messages import AIMessage 
 
 logger = logging.getLogger(__name__)
+
+
+def invoke_llm(llm: BaseChatModelCore, prompt: str) -> str:
+    """Call llm with prompt and return the text content."""
+    response = llm.invoke(prompt)
+    if hasattr(response, "content"):
+        return response.content
+    return str(response)
+
 
 def call_llm_with_json_output(llm: Optional[BaseChatModel], prompt: str) -> Optional[Dict[str, Any]]:
     """
