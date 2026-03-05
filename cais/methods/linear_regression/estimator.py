@@ -144,6 +144,13 @@ class LinearRegression(CausalMethod):
             ValueError: _description_
             ValueError: _description_
         """
+
+        assert (
+            hasattr(variables, 'treatment_variable') and
+            hasattr(variables, 'outcome_variable') and
+            hasattr(variables, 'covariates')
+        )
+
         outcome = variables.outcome_variable
         treatment = variables.treatment_variable
         covariates = variables.covariates # TODO: Change to be the covariates selected by the model

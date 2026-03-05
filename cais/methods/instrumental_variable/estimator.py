@@ -26,7 +26,9 @@ class IVRegression(CausalMethod):
         pass
 
     def estimate_effect(df, variables):
-        pass
+        treatment = variables.treatment_variable
+        outcome = variables.outcome_variable
+        iv = variables.instrument_variable
 
 def build_iv_graph_gml(treatment: str, outcome: str, instruments: List[str], covariates: List[str]) -> str:
     """

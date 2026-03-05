@@ -113,7 +113,7 @@ class CausalAgent():
         # method_validator_output['method'] = "linear_regression"
         method_name = method_validator_output.get('method')
         '''
-        return 
+        pass
         
 
     def select_controls(self) -> list:
@@ -138,7 +138,7 @@ class CausalAgent():
         method_name = self.selected_method
         variables = self.variables
 
-        controls_selector_tool(
+        controls = controls_selector_tool(
             method_name=method_name,
             variables=variables,
             dataset_analysis=None,
