@@ -1,7 +1,5 @@
 '''
-Estimator library for easy agent access and user modification for custom estimators. Essentially a glorified dictionary with checks for new estimators. 
-
-TODO: Possibly convert each CausalMethod to their own Pydantic models with accessible assumption attributes instead. Could be easier to incorporate into future LangChain/graph workflows.
+Estimator library (iterable) for easy agent access and user modification for custom estimators. Essentially a glorified dictionary with checks for new estimators and helper funcs. 
 '''
 
 import logging

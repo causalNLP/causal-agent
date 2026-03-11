@@ -2,13 +2,23 @@
 Abstract base class for all causal inference methods.
 
 This module defines the interface that all causal inference methods must implement, ensuring consistent behavior across different methods.
+
+These can be turned into a tool using langchain_core.tools.Tool.from_function
+
+i.e.
+
+method = child of CausalMethod()
+tool = langchain_core.tools.Tool.from_function(
+    func=method,
+    name=method.name,
+    description=method.description
+)
 """
 
 from abc import ABC, abstractmethod
 from typing import Dict, List, Any, Set
 from cais.models import Variables
 import pandas as pd
-
 
 class CausalMethod(ABC):
     """Base class for all causal inference methods.

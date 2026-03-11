@@ -50,6 +50,7 @@ class LinearRegression(CausalMethod):
         pass
 
     def check_data_quality(self, df: pd.DataFrame, outcome: str, treatment: str, covariates: List[str]) -> pd.DataFrame:
+        # TODO: Unnecessary once we have the preprocessing steps 
         try:
             # check if outcome, treatment, or covariates are missing/None
             if not outcome or not treatment or not covariates:
@@ -58,7 +59,7 @@ class LinearRegression(CausalMethod):
 
             # check for missing columns in the dataframe
             required = [treatment, outcome] + covariates # expected for the analysis
-            missing = CausalMethod.check_missing(df, required)
+            missing = self.check_missing(df, required)
             if missing:
                 critical = {outcome, treatment} - missing
                 if critical:
@@ -78,7 +79,6 @@ class LinearRegression(CausalMethod):
                 # check if we still have data
                 if df.empty:
                     raise ValueError("No data remaining after dropping NaNs.")
-            # END TODO
 
         except Exception as e:
             logger.error(f"Error encountered while checking data quality: {e}")
@@ -147,13 +147,14 @@ class LinearRegression(CausalMethod):
 
         assert (
             hasattr(variables, 'treatment_variable') and
-            hasattr(variables, 'outcome_variable') and
-            hasattr(variables, 'covariates')
+            hasattr(variables, 'outcome_variable')
         )
 
         outcome = variables.outcome_variable
         treatment = variables.treatment_variable
-        covariates = variables.covariates # TODO: Change to be the covariates selected by the model
+        
+        covariates = variables.covariates
+        covariates = covariates if covariates else [] # TODO: Change to be the covariates selected by the model
 
         # ==== Data Quality Checking ====
         logger.info("Verifiying data integrity for OLS.")
@@ -186,6 +187,8 @@ class LinearRegression(CausalMethod):
             logger.error(f"Error encountered while fitting OLS with formula: {e}.")
 
         return results
+
+
 
 
 ### ======== DEPRECIATED ========

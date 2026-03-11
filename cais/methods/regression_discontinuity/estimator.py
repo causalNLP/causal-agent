@@ -44,8 +44,7 @@ class RDDRegression(CausalMethod):
             hasattr(variables, 'treatment_variable') and
             hasattr(variables, 'outcome_variable') and
             hasattr(variables, 'running_variable') and
-            hasattr(variables, 'cutoff_value') and
-            hasattr(variables, 'covariates')
+            hasattr(variables, 'cutoff_value')
         )
 
         treatment = variables.treatment_variable
@@ -53,6 +52,15 @@ class RDDRegression(CausalMethod):
         running_var = variables.running_variable
         cutoff = variables.cutoff_value
         covariates = variables.covariates
+        covariates = covariates if covariates else []
+
+        missing = self.check_missing(
+            df,
+            required=[running_var, outcome, treatment]
+        )
+        if missing:
+            logger.error(f"Missing at least one of required columns: {missing}")
+            raise ValueError
 
         try:
             out = estimate_effect(
