@@ -51,7 +51,7 @@ class RDDRegression(CausalMethod):
         outcome = variables.outcome_variable
         running_var = variables.running_variable
         cutoff = variables.cutoff_value
-        covariates = variables.covariates
+        covariates = variables.confounders
         covariates = covariates if covariates else []
 
         missing = self.check_missing(

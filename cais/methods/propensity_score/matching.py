@@ -42,7 +42,7 @@ class PropensityScoreMatching(CausalMethod):
         outcome = variables.outcome_variable
         treatment = variables.treatment_variable
         
-        covariates = variables.covariates
+        covariates = variables.confounders
         covariates = covariates if covariates else [] 
 
         # TODO: Finish refactoring

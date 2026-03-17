@@ -70,7 +70,7 @@ class LinearRegression(CausalMethod):
         outcome = variables.outcome_variable
         treatment = variables.treatment_variable
         
-        covariates = variables.covariates
+        covariates = variables.confounders
         covariates = covariates if covariates else [] # TODO: Change to be the covariates selected by the model
 
         return estimate_effect(

@@ -43,7 +43,7 @@ class IVRegression(CausalMethod):
         iv = [iv] if isinstance(iv, str) else [instrument for instrument in iv if isinstance(instrument, str)] # one or more instruments, need to convert to list + check integrity
 
         # reformat covariates
-        covariates = variables.covariates
+        covariates = variables.confounders
         covariates = covariates if covariates else []
 
         # check if variables are present in the dataframe

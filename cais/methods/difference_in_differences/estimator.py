@@ -48,7 +48,7 @@ class DiDRegression(CausalMethod):
         did_term = variables.did_term
         did_term = did_term if did_term else treatment
 
-        covariates = variables.covariates
+        covariates = variables.confounders
         covariates = covariates if covariates else []
 
         missing = self.check_missing(
