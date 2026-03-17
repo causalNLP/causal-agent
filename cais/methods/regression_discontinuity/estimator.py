@@ -38,7 +38,7 @@ class RDDRegression(CausalMethod):
     def validate_assumptions(self, df, variables):
         pass
 
-    def estimate_effect(self, df, variables):
+    def estimate_effect(self, df, variables, query=None):
 
         assert (
             hasattr(variables, 'treatment_variable') and
@@ -59,8 +59,7 @@ class RDDRegression(CausalMethod):
             required=[running_var, outcome, treatment]
         )
         if missing:
-            logger.error(f"Missing at least one of required columns: {missing}")
-            raise ValueError
+            raise ValueError(f"Missing at least one of required columns: {missing}")
 
         try:
             out = estimate_effect(
@@ -72,7 +71,7 @@ class RDDRegression(CausalMethod):
                 covariates=covariates
             )
         except Exception as e:
-            logger.warning(f"Ran into an error with RDD, using fallback: {e}")
+            raise ValueError(f"Couldn't calculate effect using RDD: {e}")
 
         return out
         

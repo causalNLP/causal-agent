@@ -5,7 +5,7 @@ from dowhy import CausalModel
 from typing import Dict, Any, List, Union, Optional
 import logging
 from langchain.chat_models.base import BaseChatModel
-
+from cais.config import get_llm_client
 from .diagnostics import run_iv_diagnostics
 from .llm_assist import identify_instrument_variable, validate_instrument_assumptions_qualitative, interpret_iv_results
 from cais.methods.causal_method import CausalMethod
@@ -16,8 +16,11 @@ logger = logging.getLogger(__name__)
 class IVRegression(CausalMethod):
 
     name="Instrument Variable Regression"
-    description=None
-    assumptions=None
+    description="Instrumental variables can be used in a regression ot estimate the causal relationships when controlled experiments are not feasible. Instrumental variable methods allow for consistent estimation when covariates are correlated with the error terms in a regression model, which would otherwise give biased results."
+    assumptions=[
+        "Strong First Stage: The instruments must be (strongly) correlated with the endogenous explanatory variables, condtionally on other covariates.",
+        "Exclusion Restriction: The instrument cannot be correlated with the error term in the explanatory equation, condtionally on the other covariates."
+    ]
 
     def __init__(self):
         super().__init__()
@@ -25,10 +28,45 @@ class IVRegression(CausalMethod):
     def validate_assumptions(self, df, variables):
         pass
 
-    def estimate_effect(df, variables):
+    def estimate_effect(self, df, variables, query=None):
+
+        assert (
+            hasattr(variables, 'treatment_variable') and
+            hasattr(variables, 'outcome_variable') and
+            hasattr(variables, 'instrument_variable')
+        )
+
+        # extract variables of interest
         treatment = variables.treatment_variable
         outcome = variables.outcome_variable
         iv = variables.instrument_variable
+        iv = [iv] if isinstance(iv, str) else [instrument for instrument in iv if isinstance(instrument, str)] # one or more instruments, need to convert to list + check integrity
+
+        # reformat covariates
+        covariates = variables.covariates
+        covariates = covariates if covariates else []
+
+        # check if variables are present in the dataframe
+        missing = self.check_missing(
+            df=df,
+            required=[treatment, outcome] + iv
+        )
+        if missing:
+            raise ValueError(f"Missing at least one of required columns: {missing}")
+
+        logger.info(f"Starting IV Estimation\n\nTreatment: {treatment}, Outcome: {outcome}, IVs: {iv}, Covariates: {covariates}")
+
+        # TODO: Finish refactoring below, currently just using implemented method
+        return estimate_effect(
+            df=df,
+            treatment=treatment,
+            outcome=outcome,
+            covariates=covariates,
+            instrument_variable=iv,
+            query=query,
+            llm=get_llm_client()
+        )
+
 
 def build_iv_graph_gml(treatment: str, outcome: str, instruments: List[str], covariates: List[str]) -> str:
     """
@@ -224,6 +262,7 @@ def estimate_effect(
     if not valid_instruments:
         return {"error": "Instrument variable(s) must be provided and valid.", "method_used": method_used, "diagnostics": {}}
 
+    # TODO: Add similar to IVRegression(CausalMethod)
     # --- LLM Pre-Checks --- 
     if query and llm:
         qualitative_check = validate_instrument_assumptions_qualitative(treatment, outcome, valid_instruments, clean_covariates, query, llm=llm)

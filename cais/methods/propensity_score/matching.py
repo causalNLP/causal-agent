@@ -15,6 +15,45 @@ from .llm_assist import get_llm_parameters # Import LLM helpers
 
 logger = logging.getLogger(__name__)
 
+from cais.methods.causal_method import CausalMethod
+
+class PropensityScoreMatching(CausalMethod):
+
+    name="Propensity Score Matching"
+    description="Propensity Score Matching (PSM) estimates the effect of a treatment by accounting for the covariates that predict recieving the treatment. PSM employs a probability prediction of a group membership (treatment vs. control) based on observed predictors obtained here by logistic regression."
+    assumptions=[
+        "Unconfoundedness", #TODO: Fill out
+        "SUTVA",
+        "Positivity"
+    ]
+
+    def __init__(self):
+        super().__init__()
+
+    def validate_assumptions(self, df, variables):
+        pass
+
+    def estimate_effect(self, df, variables, query=None):
+        assert (
+            hasattr(variables, 'treatment_variable') and
+            hasattr(variables, 'outcome_variable')
+        )
+
+        outcome = variables.outcome_variable
+        treatment = variables.treatment_variable
+        
+        covariates = variables.covariates
+        covariates = covariates if covariates else [] 
+
+        # TODO: Finish refactoring
+        return estimate_effect(
+            df=df,
+            treatment=treatment,
+            outcome=outcome,
+            covariates=covariates,
+            query=query
+        )
+
 def _calculate_logit(pscore):
     """Calculate logit of propensity score, clipping to avoid inf."""
     # Clip pscore to prevent log(0) or log(1) issues which lead to inf

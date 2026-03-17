@@ -92,8 +92,8 @@ class CausalMethod(ABC):
         """
         return desc
 
-    def __call__(self, df, variables):
-        return self.estimate_effect(df, variables)
+    def __call__(self, df, variables, query = None):
+        return self.estimate_effect(df, variables, query)
     
 
 '''
