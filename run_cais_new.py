@@ -7,13 +7,6 @@ from cais.agent import run_causal_analysis, CausalAgent
 
 # Constants
 RATE_LIMIT_SECONDS = 1
-def run_caia(desc, question, df, use_method_validator: bool = True):
-    return run_causal_analysis(
-        query=question,
-        dataset_path=df,
-        dataset_description=desc,
-        use_method_validator=use_method_validator
-    )
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run batch causal analysis (CAIS).")
