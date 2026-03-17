@@ -156,9 +156,6 @@ class CausalAgent():
         #self.estimators[self.selected_method](variables, etc)
         pass
     
-
-
-
     def run_analysis(self, query, dataset_path, dataset_description, use_decision_tree: Optional[bool] = True):
 
         #TODO: Check out if input_text and input_parsing_tool is still needed 
