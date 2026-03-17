@@ -5,8 +5,6 @@ This module provides automated causal inference capabilities
 through a pipeline that selects and applies appropriate causal methods.
 """
 
-'''
-
 __version__ = "0.1.1"
 
 # Import components
@@ -38,5 +36,3 @@ from .agent import run_causal_analysis
 __all__ = [
     'run_causal_analysis'
 ]
-
-'''

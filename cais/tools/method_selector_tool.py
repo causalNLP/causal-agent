@@ -25,9 +25,6 @@ from cais.models import (
 
 logger = logging.getLogger(__name__)
 
-
-
-
 @tool(args_schema=MethodSelectorInput)
 # Option 1: Modify signature to match args_schema fields
 def method_selector_tool(
@@ -92,7 +89,7 @@ def method_selector_tool(
     # Call the component function
     try:
         if use_decision_tree:
-            print('USING DECISION TREE')
+            #print('USING DECISION TREE')
             logger.info("Using LLM-based Decision Tree Engine for method selection.")
             if not llm_instance:
                 logger.warning("LLM instance is required for DecisionTreeLLMEngine but not available. Falling back to rule-based or error.")
@@ -108,7 +105,7 @@ def method_selector_tool(
                 excluded_methods=excluded_methods
             )
         else:
-            print('NOT USING DECISION TREE')
+            #print('NOT USING DECISION TREE')
             logger.info("Using Rule-based Decision Tree Engine for method selection.")
             # Pass dicts and the is_rct flag
             method_selection_dict = rule_based_select_method(
