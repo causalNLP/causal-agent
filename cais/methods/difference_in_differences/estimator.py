@@ -37,7 +37,7 @@ class DiDRegression(CausalMethod):
         assert (
             hasattr(variables, 'time_variable') and
             hasattr(variables, 'group_variable') and
-            #hasattr(variables, 'did_term') and
+            hasattr(variables, 'did_term') and
             hasattr(variables, 'outcome_variable')
         )
         
@@ -67,129 +67,6 @@ class DiDRegression(CausalMethod):
             group_variable=group_var,
             did_term=did_term
         )
-
-class NewDiDRegression(CausalMethod):
-
-    name="Differences-in-Differences"
-    description="Differences-in-Differences (did) is used on observation data from a natural experiment to study the effect of a treatment on a treatment vs. control group in a natural experiment. The effect is calculated by comparing the average change over time in the outcome variable for the treatment group and average change over time for the control group."
-    assumptions=[
-        "Parallel Trends: In the absence of treatment, the outcome trends in treatment and control groups would have evolved similarly.",
-        "No Anticipatory Effects This states that the treatment effect applies only after implementation, meaning units do not change their behavior in anticipation of future treatment."
-    ]
-
-    def __init__(self):
-        super().__init__()
-
-    def validate_assumptions(self, df, variables):
-        pass
-
-    def estimate_effect(self, df, variables):
-
-        assert (
-            hasattr(variables, 'time_variable') and
-            hasattr(variables, 'group_variable') and
-            #hasattr(variables, 'did_term') and
-            hasattr(variables, 'outcome_variable')
-        )
-
-        time_var = variables.time_variable
-        group_var = variables.group_variable
-        outcome = variables.outcome_variable
-        treatment = variables.treatment_variable
-        did_term = variables.did_term
-        did_term = did_term if did_term else treatment
-
-        covariates = variables.covariates
-        covariates = covariates if covariates else []
-
-        missing = self.check_missing(
-            df,
-            required=[time_var, group_var, outcome, treatment]
-        )
-        if missing:
-            raise ValueError(f"Missing at least one of required columns: {missing}")
-
-        def twfe():
-            """Estimates canonical Two-way Fixed-Effects DiD if treatment or time variables are not binary
-
-            Returns:
-                _type_: _description_
-            """
-            logger.info("Executing two-way fixed-effects DiD effect estimation.")
-
-            if did_term not in df:
-                raise ValueError(f"DiD term '{did_term}' not found in DataFrame for TWFE estimation")
-            
-            # build the model
-            # outcome ~ post + treatment + did_term + covariates
-            formula = [did_term, f"C({group_var})", f"C({time_var})"] + [c for c in covariates if c in df]
-            formula = f"{outcome} ~ {' + '.join(formula)}"
-            logger.info(f"TWFE Formula: {formula}")
-
-            model = smf.ols(
-                formula=formula,
-                data=df
-            )
-
-            res = model.fit(
-                cov_type='cluster',
-                cov_kwds={
-                    'groups': df[group_var]
-                }
-            )
-
-            return res
-
-        def twoxtwo():
-            """Estimates canonical 2x2 DiD when treatment and time variables are binary
-
-            Returns:
-                _type_: _description_
-            """
-            logger.info("Executing 2x2 DiD effect estimation")
-            # create our primary terms
-            df['post'] = df[time_var].astype(int)
-            df['treatment'] = df[treatment].astype(int)
-            df['did_term'] = df['post'] * df['treatment']
-
-            # build the model
-            # outcome ~ post + treatment + did_term + covariates
-            formula = ['post', 'treatment', 'did_term'] + [c for c in covariates if c in df]
-            formula = f"{outcome} ~ {' + '.join(formula)}"
-            logger.info(f"TWFE Formula: {formula}")
-
-            model = smf.ols(
-                formula=formula,
-                data=df
-            )
-            
-            # fit the model
-            res = model.fit(
-                cov_type='cluster',
-                cov_kwds={
-                    'groups': df[group_var]
-                }
-            )
-
-            return res
-        
-        # binary checking
-    
-        binary_time: bool = df[time_var].unique().shape[0] == 2
-        binary_treatment: bool = df[treatment].unique().shape[0] == 2
-
-        logger.info(f"Time '{time_var}' is binary: {binary_time}\nTreatment '{binary_treatment}' is binary: {binary_treatment}")
-
-        if binary_treatment and binary_time: 
-            # 2x2 estimation
-            return twoxtwo()
-        
-        else: 
-            # two-way fixed-effects estimation
-            return twfe()
-
-
-# ====== Depreciated below, DO NOT USE ======
 
 def format_did_results(statsmodels_results: Any, interaction_term_key: str, 
                        validation_results: Dict[str, Any], 
