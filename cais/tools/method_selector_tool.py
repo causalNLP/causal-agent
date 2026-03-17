@@ -25,6 +25,9 @@ from cais.models import (
 
 logger = logging.getLogger(__name__)
 
+
+
+
 @tool(args_schema=MethodSelectorInput)
 # Option 1: Modify signature to match args_schema fields
 def method_selector_tool(
@@ -32,7 +35,8 @@ def method_selector_tool(
     dataset_analysis: DatasetAnalysis, 
     dataset_description: Optional[str] = None, 
     original_query: Optional[str] = None,
-    excluded_methods: Optional[List[str]] = None
+    excluded_methods: Optional[List[str]] = None,
+    use_decision_tree: Optional[bool] = True
 ) -> Dict[str, Any]:
     """
     Select the most appropriate causal inference method based on structured input.
@@ -50,16 +54,12 @@ def method_selector_tool(
         Dictionary with method selection details, context for next step, and workflow state.
     """
     logger.info("Running method_selector_tool with individual args...")
-    
-    # Access data directly from arguments (they are already Pydantic models)
-    variables_model = variables
-    dataset_analysis_model = dataset_analysis
-    dataset_description_str = dataset_description
-    is_rct_flag = variables_model.is_rct # Get is_rct directly from variables argument
+
+    is_rct_flag = variables.is_rct # Get is_rct directly from variables argument
 
     # Convert Pydantic models to dicts for the component call (select_method expects dicts)
-    variables_dict = variables_model.model_dump()
-    dataset_analysis_dict = dataset_analysis_model.model_dump()
+    variables_dict = variables.model_dump()
+    dataset_analysis_dict = dataset_analysis.model_dump()
     
     # Basic validation
     treatment = variables_dict.get("treatment_variable")
@@ -78,7 +78,7 @@ def method_selector_tool(
         return { "error": "Missing treatment/outcome", 
                  "variables": variables_dict,
                  "dataset_analysis": dataset_analysis_dict, 
-                 "dataset_description": dataset_description_str,
+                 "dataset_description": dataset_description,
                  **workflow_update.get('workflow_state', {})}
         
     # Get LLM instance (optional for component)
@@ -88,20 +88,17 @@ def method_selector_tool(
         logger.warning(f"Failed to initialize LLM for method_selector_tool: {e}. Proceeding without LLM features.")
         llm_instance = None
         
-    # --- Configuration for switching ---
-    use_llm_decision_tree = os.getenv("CAIS_USE_LLM_RULE_ENGINE", "").strip().lower() in {
-        "1", "true", "yes", "y", "on"
-    }
-        
+
     # Call the component function
     try:
-        if use_llm_decision_tree:
+        if use_decision_tree:
             print('USING DECISION TREE')
             logger.info("Using LLM-based Decision Tree Engine for method selection.")
             if not llm_instance:
                 logger.warning("LLM instance is required for DecisionTreeLLMEngine but not available. Falling back to rule-based or error.")
                 # Potentially raise an error or explicitly call rule-based here if LLM is mandatory for this path
                 # For now, it will proceed and DecisionTreeLLMEngine will handle the missing llm
+
             llm_engine = DecisionTreeLLMEngine(verbose=True) # You can set verbosity as needed
             method_selection_dict = llm_engine.select_method_llm(
                 dataset_analysis=dataset_analysis_dict,
@@ -111,7 +108,7 @@ def method_selector_tool(
                 excluded_methods=excluded_methods
             )
         else:
-            print('NOT NOT USING DECISION TREE')
+            print('NOT USING DECISION TREE')
             logger.info("Using Rule-based Decision Tree Engine for method selection.")
             # Pass dicts and the is_rct flag
             method_selection_dict = rule_based_select_method(
@@ -136,7 +133,7 @@ def method_selector_tool(
         return { "error": f"Method selection logic failed: {e}",
                  "variables": variables_dict, 
                  "dataset_analysis": dataset_analysis_dict, 
-                 "dataset_description": dataset_description_str,
+                 "dataset_description": dataset_description,
                  **workflow_update.get('workflow_state', {})}
 
     # --- Prepare Output Dictionary --- 
@@ -158,7 +155,7 @@ def method_selector_tool(
         "method_info": method_info,
         "variables": variables_dict,
         "dataset_analysis": dataset_analysis_dict, 
-        "dataset_description": dataset_description_str,
+        "dataset_description": dataset_description,
         "original_query": original_query # Pass original query argument
     }
     

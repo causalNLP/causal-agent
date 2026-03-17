@@ -1,9 +1,6 @@
 """
-LangChain agent for the cais module.
-
-This module configures a LangChain agent with specialized tools for causal inference,
-allowing for an interactive approach to analyzing datasets and applying appropriate
-causal inference methods.
+Core class for the CausalAgent, which orchestrates the workflow of analyzing a dataset and query,
+selecting and validating methods, cleaning the dataset, executing the method, and generating explanations. 
 """
 
 from typing import Dict, List, Any, Optional
@@ -25,84 +22,67 @@ from cais.tools.dataset_cleaner_tool import dataset_cleaner_tool
 import os, logging
 import re
 import json
-
+    
 # Set up basic logging
 os.makedirs('./logs/', exist_ok=True)
 logger = logging.getLogger(__name__)
 
-
-# ROUGH SKETCH OF HOW THIS OBJECT SHOULD BE IMPLEMENTED
-
-# cais = CausalAgent(dataset_description="", query="", dataset_path="", data="")
-# cais.analyse_dataset()
-# cais.select_method()
-# cais.validate_method()
-# cais.execute_method()
-
-# cais.run_analysis(query="", dataset_path="", dataset_description="")  
-
-# TODO: Is it better to update class variables or pass in methods above?
 
 class CausalAgent():
 
     
     def __init__(self):
 
-        self.data = None
-        self.data_description = None
-        self.dataset_path = None
-        self.query = None
+        # Inputs
+        self.query: Optional[str] = None
+        self.dataset_path: Optional[str] = None
+        self.dataset_description: Optional[str] = None
 
-        self.dataset_analysis = None
-        self.query_interpreter_output = None
-    
-        self.variables = Variables()
-        self.selected_method = None
-        self.processed_data = None
-
-        self.results = None
-        self.explanations = None
-
+        # Pipeline states 
+        self.dataset_analysis: Optional[DatasetAnalysis] = None
+        self.query_interpreter_output: Optional[QueryInterpreterOutput] = None
+        self.variables: Optional[Variables] = None
+        self.selected_method: Optional[MethodInfo] = None
+        self.cleaned_dataset_path: Optional[str] = None
+        self.results: Optional[Dict[str, Any]] = None
+        self.explanations: Optional[Dict[str, Any]] = None
 
 
-    def analyse_data(self):
 
-        # TODO: What is the point of input_parsing_result, it doesn't do anything
+    def analyse_dataset(self):
+
+        # Analyse dataset based on provided description 
+        dataset_analysis = dataset_analyzer_tool.func(dataset_path=self.dataset_path, dataset_description=self.dataset_description, original_query=self.query).analysis_results        
         
-        dataset_analysis_result, query_info = dataset_analyzer_tool.func(dataset_path=self.dataset_path, dataset_description=self.dataset_description, original_query=self.query).analysis_results
-        query_interpreter_output = query_interpreter_tool.func(query_info=query_info, dataset_analysis=dataset_analysis_result, dataset_description=self.dataset_description, original_query = self.query).variables
-
+        # Analyse query based on dataset analysis and dataset description
+        query_interpreter_output = query_interpreter_tool.func(dataset_analysis=dataset_analysis, dataset_description=self.dataset_description, original_query=self.query)
         
-        # query_info = QueryInfo(
-        #     query_text=input_parsing_result["original_query"],
-        #     potential_treatments=input_parsing_result["extracted_variables"].get("treatment"),
-        #     potential_outcomes=input_parsing_result["extracted_variables"].get("outcome"),
-        #     covariates_hints=input_parsing_result["extracted_variables"].get("covariates_mentioned"),
-        #     instrument_hints=input_parsing_result["extracted_variables"].get("instruments_mentioned")
-        # )
+        self.dataset_analysis = dataset_analysis
+        self.query_interpreter_output = query_interpreter_output
+        self.variables = query_interpreter_output.variables
 
-        return dataset_analysis_result, query_interpreter_output
 
 
     def select_method(self):
 
-        method_selector_output = method_selector_tool.func(variables=self.query_interpreter_output,
+        method_selector_output = method_selector_tool.func(variables=self.variables,
             dataset_analysis=self.dataset_analysis,
             dataset_description=self.dataset_description,
             original_query = self.query,
-            excluded_methods=None)
-
-        # NEW: Select control variables based on chosen method
-        self.selected_method= MethodInfo(
-            **method_selector_output['method_info']
+            excluded_methods=None
         )
+
+        self.selected_method = method_selector_output['method_info']
+
+        return self.selected_method
+
 
     def validate_method(self):
 
         method_validator_input = MethodValidatorInput(
                 method_info=self.selected_method,
-                variables=query_interpreter_output,
-                dataset_analysis=dataset_analysis_result,
+                variables=self.query_interpreter_output,
+                dataset_analysis=self.dataset_analysis_result,
                 dataset_description=self.dataset_description,
                 original_query = self.query,
             )
@@ -113,10 +93,14 @@ class CausalAgent():
 
     def select_controls(self):
         
+
+        # self.dataset_analysis_result: str, self.query_interpreter_output: str
+        # self.selected_method: str
+
         controls_selector_output = controls_selector_tool.func(
             method_name=self.selected_method,
             variables=query_interpreter_output,
-            dataset_analysis=dataset_analysis_result,
+            dataset_analysis=self.dataset_analysis_result,
             dataset_description=self.dataset_description,
             original_query=self.query,
         )
@@ -127,13 +111,14 @@ class CausalAgent():
         logger.info('Started Dataset Cleaning... ')
 
     def clean_dataset(self):   
-        original_path = dataset_analysis_result.dataset_info.file_path 
+        
+        original_path = self.dataset_analysis_result.dataset_info.file_path 
         cleaning_output = dataset_cleaner_tool.func(
             dataset_path=original_path,
-            variables=query_interpreter_output.model_dump(),
-            dataset_description=input_parsing_result["dataset_description"],
-            original_query=input_parsing_result["original_query"],
-            causal_method = method_name
+            variables=self.query_interpreter_output.model_dump(),
+            dataset_description=self.dataset_description,
+            original_query=self.query,
+            causal_method = self.selected_method
         )
         cleaned_path = cleaning_output.get("cleaned_dataset_path", original_path)
         
@@ -142,30 +127,32 @@ class CausalAgent():
     def execute_method(self):   
         pass
     
-    def run_analysis(self, query, dataset_path, dataset_description):
 
-        input_text = f"My question is: {query}\n"
-        input_text += f"The dataset is located at: {dataset_path}\n"
-        if dataset_description:
-            input_text += f"Dataset Description: {dataset_description}\n"
-        input_text += "Please perform the causal analysis following the workflow."
-        # Log the constructed input text
-        logger.debug(f"Constructed input for agent: \n{input_text}")
-        logger.info("[Causal AI Scientist Stage 1] - Data Processing")
+
+
+    def run_analysis(self, query, dataset_path, dataset_description, use_decision_tree: Optional[bool] = True):
+
+        #TODO: Check out if input_text and input_parsing_tool is still needed 
+
+        logger.info("[Causal AI Scientist Stage 1] - Dataset and Query analysis")
 
         self.query = query
         self.dataset_path = dataset_path
         self.dataset_description = dataset_description
 
-        dataset_analysis_result, query_interpreter_output =  self.analyse_dataset()
-        self.selected_method = self.select_method()
-        self.validate_method(self.selected_method) 
-        controls_selector_output = self.select_controls()
-        # cleaned_dataset = self.clean_dataset(dataset_path, query_interpreter_output, self.dataset_description, self.query, self.selected_method)
-        result = self.execute_method()
+        self.analyse_dataset()
+        self.select_method()     
 
-        logger.debug(result)
-        logger.info("Causal analysis run finished.")
+        import sys
+        sys.exit()   
+
+        # self.validate_method(self.selected_method) 
+        # controls_selector_output = self.select_controls()
+        # cleaned_dataset = self.clean_dataset(dataset_path, query_interpreter_output, self.dataset_description, self.query, self.selected_method)
+        # result = self.execute_method()
+
+        # logger.debug(result)
+        # logger.info("Causal analysis run finished.")
 
 
     
@@ -252,13 +239,9 @@ def run_causal_analysis(query: str, dataset_path: str,
         # print('QUERY INTERPRETER OUTPUT')
         # print(query_interpreter_output)
 
-        import sys
-        sys.exit()
-
- 
-
 
         logger.info("[Causal AI Scientist Stage 2] - Method Selection")
+        
         
         method_selector_output = method_selector_tool.func(variables=query_interpreter_output,
             dataset_analysis=dataset_analysis_result,
@@ -266,10 +249,19 @@ def run_causal_analysis(query: str, dataset_path: str,
             original_query = input_parsing_result["original_query"],
             excluded_methods=None)
 
+        
+
+        print('METHOD SELECTOR OUTPUT: ', method_selector_output)
+
+        import sys
+        sys.exit()
+
         # NEW: Select control variables based on chosen method
         method_info = MethodInfo(
             **method_selector_output['method_info']
         )
+
+        
 
         logger.info("[Causal AI Scientist Stage 3] - Method Validation")
         if use_method_validator:
