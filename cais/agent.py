@@ -151,6 +151,7 @@ class CausalAgent():
 
         self.method_info = MethodInfo(**method_selector_output['method_info'])
         self.selected_method = self.method_info.selected_method
+        return self.selected_method
 
 
     def validate_method(self, query=None):
@@ -197,6 +198,7 @@ class CausalAgent():
             causal_method=self.selected_method
         )
         self.cleaned_dataset_path = cleaning_output.get("cleaned_dataset_path", self.dataset_path)
+        return self.cleaned_dataset_path
 
     def execute_method(self, query=None, remove_cleaned=True):
         
@@ -235,6 +237,8 @@ class CausalAgent():
                 os.remove(self.cleaned_dataset_path)
                 self.cleaned_dataset_path=None
                 logger.info("Succesfully Removed Cleaned Dataset.")
+
+        return self.results
     
     def run_analysis(self, query, llm_method_selection: Optional[bool] = True):
 
@@ -258,6 +262,8 @@ class CausalAgent():
         self.execute_method(
             query=query
         )
+
+        return self.results
 
 
 # ===== DEPRECIATED ======
