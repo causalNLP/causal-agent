@@ -21,6 +21,7 @@ from cais.methods.difference_in_differences.estimator import DiDRegression
 from cais.methods.instrumental_variable.estimator import IVRegression
 from cais.methods.propensity_score.matching import PropensityScoreMatching
 from cais.models import Variables, MethodInfo
+from cais.components.assumption_checks import IVTest, ObervationalTest, DiDTest, RDDTest
 
 from .config import get_llm_client 
 #from .prompts import SYSTEM_PROMPT 
