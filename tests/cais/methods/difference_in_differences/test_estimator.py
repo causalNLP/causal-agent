@@ -88,7 +88,7 @@ class TestDifferenceInDifferences:
             outcome=outcome_var,
             covariates=covariates,
             # Pass specific required args for DiD via kwargs
-            time_var=time_var,
+            time_variable=time_var,
             group_var=group_var,
             # Explicitly pass the correct treatment start period
             treatment_period_start=8 

@@ -20,11 +20,11 @@ class TestPropensityScoreMatching(unittest.TestCase):
         self.outcome = 'outcome'
         self.covariates = ['covariate1', 'covariate2']
 
-    @patch('cais.methods.propensity_score.matching.get_llm_parameters')
-    @patch('cais.methods.propensity_score.matching.determine_optimal_caliper')
-    @patch('cais.methods.propensity_score.matching.select_propensity_model')
-    @patch('cais.methods.propensity_score.matching.estimate_propensity_scores')
-    @patch('cais.methods.propensity_score.matching.assess_balance')
+    @patch('cais.methods.propensity_score.llm_assist.get_llm_parameters')
+    @patch('cais.methods.propensity_score.llm_assist.determine_optimal_caliper')
+    @patch('cais.methods.propensity_score.base.select_propensity_model')
+    @patch('cais.methods.propensity_score.base.estimate_propensity_scores')
+    @patch('cais.methods.propensity_score.diagnostics.assess_balance')
     def test_estimate_effect_structure_and_types(self, mock_assess_balance, mock_estimate_ps, 
                                                  mock_select_model, mock_determine_caliper, mock_get_llm_params):
         '''Test the basic structure and types of the estimate_effect output.'''
@@ -52,7 +52,7 @@ class TestPropensityScoreMatching(unittest.TestCase):
         for key in expected_keys:
             self.assertIn(key, result, f"Key '{key}' missing from result")
 
-        self.assertEqual(result["method_details"], "PS.Matching")
+        self.assertEqual(result["method_details"], "PSM (DoWhy PSM)")
         self.assertIsInstance(result["effect_estimate"], float)
         self.assertIsInstance(result["effect_se"], float)
         self.assertIsInstance(result["confidence_interval"], list)
