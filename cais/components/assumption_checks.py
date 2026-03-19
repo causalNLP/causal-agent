@@ -24,7 +24,7 @@ def format_prompt(user_prompt):
     ]
     
 
-class Test:
+class AssumptionTest:
     """A base class for testing the validity of assumptions of causal inference methods"""
 
     def __init__(self, data, query, description):
@@ -77,7 +77,7 @@ class Test:
         return self.invoke(sutva_prompt)
 
 
-class IVTest(Test):
+class IVTest(AssumptionTest):
     """A class to test for IV assumptions in a dataset"""
 
     def __init__(self, data, query, description, treat_var, outcome_var, iv_var, 
@@ -217,7 +217,7 @@ class IVTest(Test):
         return final_result
 
 
-class DiDTest(Test):
+class DiDTest(AssumptionTest):
     """A class to test for DiD assumptions in panel datasets"""
 
     def __init__(self, data, query, description, treat_var, outcome_var, time_var, group_var, 
@@ -302,7 +302,7 @@ class DiDTest(Test):
         
         return self.invoke(final_llm_prompt)
 
-class RDDTest(Test):
+class RDDTest(AssumptionTest):
     """A class to test for RDD assumptions in datasets"""
 
     def __init__(self, data, query, description, treat_var, outcome_var, running_var, cutoff, 
@@ -377,7 +377,7 @@ class RDDTest(Test):
         
         return self.invoke(final_llm_prompt)
     
-class ObervationalTest(Test):
+class ObervationalTest(AssumptionTest):
     """
         A class to test for assumptions of observational causal inference methods in datasets. The focus is on SUTVA, conditional ignorability, and positivity. 
         Our focus is on propensity score based methods at the moment. This includes PS matching and IPW, and OLS for randomized data. 

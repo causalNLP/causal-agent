@@ -4,7 +4,7 @@ selecting and validating methods, cleaning the dataset, executing the method, an
 """
 
 from typing import Dict, List, Any, Optional
-from cais.library import Estimators
+from cais.estimator_lib import Estimators
 from cais.tools.input_parser_tool import input_parser_tool
 from cais.tools.dataset_analyzer_tool import dataset_analyzer_tool
 from cais.tools.query_interpreter_tool import query_interpreter_tool
@@ -263,7 +263,10 @@ class CausalAgent():
             query=query
         )
 
-        return self.results
+        return {
+            "results" : self.results,
+            "explanation": self.explanations
+        }
 
 
 # ===== DEPRECIATED ======
