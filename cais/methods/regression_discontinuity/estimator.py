@@ -10,11 +10,117 @@ import statsmodels.api as sm
 from typing import Dict, Any, List, Optional
 import logging
 from langchain.chat_models.base import BaseChatModel 
+from cais.config import get_llm_client
 
 from .diagnostics import run_rdd_diagnostics
 from .llm_assist import interpret_rdd_results
+from cais.methods.causal_method import CausalMethod
+from cais.models import LLMRDDVars
+from pydantic import BaseModel, ValidationError
+from langchain_core.messages import HumanMessage
+from langchain_core.exceptions import OutputParserException
+from cais.prompts.method_identification_prompts import RDD_IDENTIFICATION_PROMPT_TEMPLATE
 
 logger = logging.getLogger(__name__)
+
+class RDDRegression(CausalMethod):
+
+    name="Regression Discontinuity Design"
+    description="Regression Discontinuity Design (RDD) is a pretest-posttest design that deteremines causal effects of interventions/treatments by assigning a threshold above or below which an intervention is assigned. By comparing observations close to the threshold, it is possible to estimate the local average treatment effect (LATE) in environemnts where random assignment is unfeasible."
+    assumptions=[
+        "Density Test", #TODO: Fill out
+        "Continuity"
+    ]
+
+    def __init__(self):
+        super().__init__()
+
+    def validate_assumptions(self, df, variables):
+        pass
+
+    def estimate_effect(self, df, variables, query=None):
+
+        assert (
+            hasattr(variables, 'treatment_variable') and
+            hasattr(variables, 'outcome_variable') and
+            hasattr(variables, 'running_variable') and
+            hasattr(variables, 'cutoff_value')
+        )
+
+        treatment = variables.treatment_variable
+        outcome = variables.outcome_variable
+        running_var = variables.running_variable
+        cutoff = variables.cutoff_value
+        covariates = variables.confounders
+        covariates = covariates if covariates else []
+
+        missing = self.check_missing(
+            df,
+            required=[running_var, outcome, treatment]
+        )
+        if missing:
+            raise ValueError(f"Missing at least one of required columns: {missing}")
+
+        try:
+            out = estimate_effect(
+                df=df,
+                treatment=treatment,
+                outcome=outcome,
+                running_variable=running_var,
+                cutoff_value=cutoff,
+                covariates=covariates
+            )
+        except Exception as e:
+            raise ValueError(f"Couldn't calculate effect using RDD: {e}")
+
+        return out
+        
+    @staticmethod
+    def get_cutoff(df, query, description, variables):
+
+        def _create_identify_prompt(target: str, query: str, description: Optional[str], columns: List[str], 
+                                    categories: Dict[str,str], treatment: Optional[str], outcome: Optional[str]) -> str:
+            """
+            Creates a prompt to ask LLM to identify specific roles like IV, RDD, or RCT by selecting and formatting a specific template
+            """
+            column_info = "\n".join([f"- '{c}' (Type: {categories.get(c, 'Unknown')})" for c in columns])
+            
+            # Select the appropriate detailed prompt template based on the target
+            template = RDD_IDENTIFICATION_PROMPT_TEMPLATE
+
+            # Format the selected template with the provided context
+            prompt = template.format(query=query, description=description or 'N/A', column_info=column_info,
+                                    treatment=treatment or 'N/A', outcome=outcome or 'N/A')
+            return prompt
+
+        def _call_llm_for_var(llm: BaseChatModel, prompt: str, pydantic_model: BaseModel) -> Optional[BaseModel]:
+            """Helper to call LLM with structured output and handle errors."""
+            try:
+                messages = [HumanMessage(content=prompt)]
+                structured_llm = llm.with_structured_output(pydantic_model)
+                parsed_result = structured_llm.invoke(messages)
+                return parsed_result
+            except (OutputParserException, ValidationError) as e:
+                logger.error(f"LLM call failed parsing/validation for {pydantic_model.__name__}: {e}")
+            except Exception as e:
+                logger.error(f"LLM call failed unexpectedly for {pydantic_model.__name__}: {e}", exc_info=True)
+            return None
+        
+        columns = df.columns
+        cats = df.dtypes
+        llm = get_llm_client()
+        prompt_rdd = _create_identify_prompt("regression discontinuity (running variable and cutoff)", query, description, columns, cats, variables.treatment_variable, variables.outcome_variable)
+        rdd_result = _call_llm_for_var(llm, prompt_rdd, LLMRDDVars)
+        if rdd_result:
+            running_variable = rdd_result.running_variable
+            cutoff_value = rdd_result.cutoff_value
+        if running_variable not in columns or cutoff_value is None:
+            running_variable = None
+            cutoff_value = None
+        logger.info(f"LLM identified RDD: Running={running_variable}, Cutoff={cutoff_value}")
+        return cutoff_value
+
+
 
 # Attempt to import specific functions from the evan-magnusson/rdd package
 _rdd_estimator_func_em = None

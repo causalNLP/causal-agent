@@ -7,7 +7,7 @@ import pandas as pd
 from dotenv import load_dotenv
 
 # Import the main entry point
-from cais.agent import run_causal_analysis
+from cais.agent import CausalAgent
 
 # Ensure necessary environment variables are set for LLM calls (e.g., OPENAI_API_KEY)
 # Load from .env file if present
@@ -32,7 +32,7 @@ class TestE2EDID(unittest.TestCase):
 
         # Construct path relative to this test file's directory
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-        cls.dataset_path = os.path.join(base_dir, "data", "qrdata", "smoking2.csv")
+        cls.dataset_path = os.path.join(base_dir, "data", "all_data", "smoking2.csv")
         print(f"DEBUG: E2E test using dataset path: {cls.dataset_path}")
 
         # Check if data file exists
@@ -82,22 +82,25 @@ class TestE2EDID(unittest.TestCase):
         '''Run the full agent workflow on the smoking dataset.'''
 
         # run_causal_analysis now returns the final explanation string directly
-        final_output_string = run_causal_analysis(self.query, self.dataset_path, self.dataset_description)
-
-        print("\n--- E2E Test Output (DiD) ---")
-        print(final_output_string)
-        print("-----------------------------\n")
+        agent = CausalAgent(
+            dataset_path=self.dataset_path,
+            dataset_description=self.dataset_description
+        )
+        output = agent.run_analysis(query=self.query)
 
         # Parse the output string directly
-        parsed_results = self.extract_results_from_output(final_output_string)
+        parsed_results = {
+            'method' : agent.selected_method,
+            'effect' : output['results']['effect_estimate']
+        }
 
-        # Assertions
         self.assertIsNotNone(parsed_results['method'], "Could not extract method from final output string.")
         # Check if the method is DiD (case-insensitive, ignoring spaces)
-        method_lower_no_space = parsed_results['method'].lower().replace(' ', '').replace('-', '')
+        method_lower_no_space = parsed_results['method'].lower().replace(' ', '').replace('-', '').replace('_', '')
         expected_methods = ["differenceindifferences", "did", "diffindiff"]
+
         self.assertTrue(
-            any(expected in method_lower_no_space for expected in expected_methods),
+            any(expected == method_lower_no_space for expected in expected_methods),
             f"Expected DiD method, but found: {parsed_results['method']}"
         )
 

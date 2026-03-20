@@ -25,7 +25,8 @@ logger = logging.getLogger(__name__)
 @tool
 def dataset_analyzer_tool(dataset_path: str,
                             dataset_description: Optional[str] = None,
-                            original_query: Optional[str] = None) -> DatasetAnalyzerOutput:
+                            original_query: Optional[str] = None,
+                            llm = None) -> DatasetAnalyzerOutput:
     """
     Analyze dataset to identify important characteristics for causal inference.
     
@@ -43,7 +44,7 @@ def dataset_analyzer_tool(dataset_path: str,
     """
     logger.info(f"Running dataset_analyzer_tool on path: {dataset_path}")
     # Call the component function with the LLM if available
-    llm = get_llm_client()
+    llm = llm if llm else get_llm_client()
 
     try:
 

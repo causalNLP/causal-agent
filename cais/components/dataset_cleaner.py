@@ -7,13 +7,10 @@ import pandas as pd
 from langchain_core.messages import SystemMessage, HumanMessage
 from cais.config import get_llm_client  # returns a LangChain chat model
 
-PLANNER_SYSTEM = """You are “CausalPrep-Planner”, a senior data & methods engineer.
+PLANNER_SYSTEM = """You are “CausalPrep-Planner”, a senior data engineer and analyst.
 
 Goal: From (dataset_profile, causal_method, causal_query, variables), produce a SINGLE JSON
 Transformation Spec that makes the dataframe METHOD-READY while avoiding target leakage.
-This stage ONLY pre-processes treatment/outcome as explicitly specified by the causal_query
-or required to define treatment/outcome for the chosen method.
-Do not pattern-match to any given examples. Generalize beyond them.
 
 Principles:
 - STRICT: Transform ONLY treatment/outcome columns (or new columns derived solely to define them).

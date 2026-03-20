@@ -1,426 +1,519 @@
-import numpy as np
+import numpy as np 
 import pandas as pd
-from typing import Dict, Any, List, Tuple
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import OneHotEncoder
-import statsmodels.api as sm
-from typing import Dict, Any, Optional, List, Union
-from rddensity import rddensity
-import logging
+import matplotlib.pyplot as plt
 
+import statsmodels.formula.api as smf
+from sklearn.linear_model import LogisticRegression
+from sklearn.compose import ColumnTransformer
+from rddensity import rddensity
+from dowhy import CausalModel
+
+from cais.config import get_llm_client
+from langchain_core.messages import SystemMessage, HumanMessage
+
+import logging
 logger = logging.getLogger(__name__)
 
-# Try to import optimal_bandwidth from rdd package
-try:
-    from rdd.rdd import optimal_bandwidth
-    _has_rdd_optimal_bandwidth = True
-except ImportError:
-    _has_rdd_optimal_bandwidth = False
-    optimal_bandwidth = None
+ASSUMPTION_PROMPT = """You are CausalAI an expert in Causal Analysis. To run a robust causal analysis, we need to check the assumptions we make about our data to see whether a proposed causal method is appropriate. You are tasked with running those checks.
+"""
 
-## ------ For observational methods relying on conditional ignorability ----------
-# ----------- Internal helpers ------------
+def format_prompt(user_prompt):
+    return [
+        SystemMessage(content=ASSUMPTION_PROMPT),
+        HumanMessage(content=user_prompt)
+    ]
+    
 
-def _smd_from_groups(a: np.ndarray, b: np.ndarray) -> float:
-    """SMD = (mu_t - mu_c) / sqrt((var_t + var_c)/2)."""
+class AssumptionTest:
+    """A base class for testing the validity of assumptions of causal inference methods"""
 
-    mu_t, mu_c = np.nanmean(a), np.nanmean(b)
-    var_t, var_c = np.nanvar(a, ddof=1), np.nanvar(b, ddof=1)
-    denom = np.sqrt((var_t + var_c) / 2.0 + 1e-12)
+    def __init__(self, data, query, description):
 
-    return float((mu_t - mu_c) / (denom if denom > 0 else 1.0))
+        self.data = data # the data in csv form 
+        self.query = query # the query of interest
+        self.description = description # the description of the dataset 
+        self.llm = get_llm_client()
 
-def _one_hot_df(df: pd.DataFrame, cols: List[str]) -> Tuple[pd.DataFrame, Dict[str, List[str]]]:
-    """One-hot encode categorical cols; return expanded DF and mapping."""
+        self.encode_strings() # convert object (string) columns to numeric values; temporary fix for calculating sample statistics
+    
+    def run_tests(self):
+        """
+        Runs tests to validate the assumptions of the causal inference method 
+        """
 
-    num_cols = [c for c in cols if pd.api.types.is_numeric_dtype(df[c])]
-    cat_cols = [c for c in cols if c not in num_cols]
-    mapping: Dict[str, List[str]] = {}
-    parts = []
-    if num_cols:
-        parts.append(df[num_cols].astype(float))
-        for c in num_cols: 
-            mapping[c] = [c]
-    if cat_cols:
-        enc = OneHotEncoder(drop=None, sparse_output=False, handle_unknown="ignore")
-        arr = enc.fit_transform(df[cat_cols])
-        oh_cols = enc.get_feature_names_out(cat_cols).tolist()
-        parts.append(pd.DataFrame(arr, index=df.index, columns=oh_cols))
-        for c in cat_cols:
-            mapping[c] = [col for col in oh_cols if col.startswith(c + "_")]
-    X = pd.concat(parts, axis=1) if parts else pd.DataFrame(index=df.index)
+    def encode_strings(self):
+        """
+        Converts any strings into numeric values for statistical testing. 
+        !!! This is a temporary fix; we will need to either move dataset cleaning earlier into the pipeline or come up with some other safety nets for statsmodels
+        """
+        
+        string_columns = self.data.select_dtypes("object").columns.tolist()
+        for column in string_columns:
+            codes, _ = pd.factorize(self.data[column])
+            self.data[column] = codes
 
-    return X, mapping
+    def invoke(self, prompt):
+        return self.llm.invoke(format_prompt(prompt)).content
 
-# ---------- Public diagnostics ----------
+    def sutva_test(self, treat_var, outcome_var, description, question):
+        """
+        Test for the Stable Unit Treatment Value Assumption (SUTVA), which is perhaps the most common assumption in causal inference. 
+        It has two main components: no interference and consistency. 
+        This is again an untestable assumptions.
+        """
+        
+        sutva_prompt = f"""I am considering using a causal inference method to estimate the causal effect of {treat_var} on {outcome_var}.
+                        The goal is to answer the question: {question}. The dataset and its variables is described as follows: {description}.
+                        I need to assess whether the Stable Unit Treatment Value Assumption (SUTVA) holds in this context.
+                        SUTVA has two main components: no interference and consistency.
+                        No interference means that the treatment status of one unit does not affect the potential outcome of another unit. 
+                        Consistency means that the observed outcome for a unit under a particular treatment is equal to the potential outcome 
+                        under that treatment i.e. if treatment a was assigned, then Y = Y(a)
 
-def compute_covariate_smds(df: pd.DataFrame, treat_col: str, covariates: List[str]) -> Dict[str, float]:
-    """SMD for each covariate; categorical collapsed to max|SMD| across levels."""
+                        Based on the description of the dataset and the variable, is it plausible that SUTVA holds here?
+                        First, say yes or not. Then, explain your reasoning. 
+                        """
+        
+        return self.invoke(sutva_prompt)
 
-    tmask = df[treat_col].values.astype(bool)
-    X, mapping = _one_hot_df(df, covariates)
-    smds: Dict[str, float] = {}
-    for base, cols in mapping.items():
-        vals_t = X[cols].values[tmask]
-        vals_c = X[cols].values[~tmask]
-        if len(cols) == 1:
-            smd = _smd_from_groups(vals_t.ravel(), vals_c.ravel())
+
+class IVTest(AssumptionTest):
+    """A class to test for IV assumptions in a dataset"""
+
+    def __init__(self, data, query, description, treat_var, outcome_var, iv_var, 
+                 covariates=None, is_rct=False):
+
+        super().__init__(data, query, description)
+        self.treat_var = treat_var
+        self.outcome_var = outcome_var
+        self.iv_var = iv_var
+        self.covariates = covariates if covariates is not None else []
+        self.is_rct = is_rct
+
+        self.results = {}
+
+    def relevance_test(self):
+        """
+        Test for relevance of the instrument i.e. whether or not the instrument is correlated with the treatment variable.
+        This is based on the F-statistic from the first stage regression. 
+        The rule of thum is that F-statistics should be greater than 10. We can either set this rule explicitly or 
+        have an LLM interpret the results as a whole
+        """
+
+        first_stage_reg = smf.ols(f"{self.treat_var} ~ {self.iv_var} + {' + '.join(self.covariates)}", 
+                                  data=self.data).fit()
+        summary = first_stage_reg.summary()
+        f_stat = summary.tables[1].data[1][3]  
+
+        return f_stat
+    
+    def exclusion_test(self):
+        """
+        Test for the exclusion restriction i.e. it tests if the instrument affects the outcome variable only through the treatment variable. 
+        This cannot be tested directly, and is the most controversial assumption of IV analysis. We can argue this quanlitatively. 
+        """
+
+        sample_prompt = f"""I am considering using instrumental variable analysis to estimate the causal effect of {self.treat_var} on 
+                            {self.outcome_var} using {self.iv_var} as an instrument. The goal is to answer the query: {self.query}.
+                            The dataset and its variables is described as follows: {self.description}.
+
+                            I need to assess whether the instrument {self.iv_var} satisfies the exclusion restriction, which states that 
+                            the instrument affects the outcome variable {self.outcome_var} only through the treatment variable {self.treat_var} i.e.
+                            there is no direct effect of {self.iv_var} on {self.outcome_var}.
+                            Based on the description of the dataset and variables, does it seem plausible that {self.iv_var} satisfies the exclusion restriction?
+
+                            Explain your reasoning. Be critical of your assessment. 
+                        """
+        
+        result = self.invoke(sample_prompt) ## whatever the function is to invoke an LLM. 
+
+        return result
+    
+    def unconfoundedness_test(self):
+        """
+        Test for unconfoundedness of the instrument i.e. whether or not the instrument is independent of unobserved confounders that affect both the treatment and outcome variables.
+        This cannot be tested directly, and is another controversial assumption of IV analysis. We can argue this quanlitatively. 
+        """
+
+        sample_prompt = f"""I am considering using instrumental variable analysis to estimate the causal effect of {self.treat_var} on 
+                            {self.outcome_var} using {self.iv_var} as an instrument. The goal is to answer the query: {self.query}.
+                            The dataset and its variables is described as follows: {self.description}.
+
+                            I need to assess whether the instrument {self.iv_var} satisfies the unconfoundedness assumption, which states that 
+                            the instrument is independent of unobserved confounders that affect both the treatment variable {self.treat_var} 
+                            and the outcome variable {self.outcome_var}.
+
+                            Based on the description of the dataset and variables, does it seem plausible that {self.iv_var} satisfies the unconfoundedness assumption?
+
+                            Explain your reasoning. Be critical of your assessment. 
+                        """
+        
+        result = self.invoke(sample_prompt) ## whatever the function is to invoke an LLM. 
+
+        return result
+    
+    def defier_test(self):
+        """
+        Test if the no-defier assumption holds i.e. there are no individuals who would do the opposite of their assigned treatment 
+        Note that, here treatment assigned is not the same as actual treatment uptake. Actual treatment is opposed to assigned treatment.
+        This is again an untestable assumption, and we can argue this qualitatively. In general, qualitative arguments for this assumption
+        is easy to justify compared to exclusion restriction and unconfoundedness.
+        """
+
+        sample_prompt = f"""I am considering using instrumental variable analysis to estimate the causal effect of {self.treat_var} on 
+                            {self.outcome_var} using {self.iv_var} as an instrument. The goal is to answer the query: {self.query}.
+                            The dataset and its variables is described as follows: {self.description}.
+
+                            I need to assess whether the instrument {self.iv_var} satisfies the no-defier assumption, which states that 
+                            there are no individuals who would always do the opposite of their assigned treatment based on the instrument.
+
+                            Based on the description of the dataset and variables, does it seem plausible that the the no-defier assumption 
+                            is satisfied here?
+
+                            Explain your reasoning. Be critical of your assessment. 
+                        """
+        
+        result = self.invoke(sample_prompt) ## whatever the function is to invoke an LLM. 
+
+        return result
+
+
+    def run_tests(self):
+        """
+        Runs the IV assumptions tests
+        """
+
+        # Test for relevance 
+        relevance_result = self.relevance_test()
+
+        ## Test for exclusion restriction 
+        exclusion_result = self.exclusion_test()
+
+        ## uncounfoundedness 
+        unconfoundedness_result = self.unconfoundedness_test()
+
+        ## test for defier (this is useful only in RCTs where non-compliance is an issue)
+        if self.is_rct:
+            defier_result = "Not applicable since this is not an RCT"
         else:
-            smd = float(np.max([abs(_smd_from_groups(vals_t[:, i], vals_c[:, i])) for i in range(len(cols))]))
-        smds[base] = smd
+            defier_result = self.defier_test()
+        
+        final_llm_prompt = f"""You need to assess the validity of the instrumental variable {self.iv_var} for estimating the 
+                                causal effect of {self.treat_var} on {self.outcome_var}. 
 
-    return smds
+                                The goal is to answer the query: {self.query}. For reference, here is the description of the dataset and its variables: {self.description}.
+                                Here are the results for each of the IV assumptions tests:
 
-def estimate_propensity_scores(df: pd.DataFrame, treat_col: str, covariates: List[str]) -> np.ndarray:
-    """Logistic regression propensity scores on one-hot covariates."""
+                                1. F-stat from Relevance test: {relevance_result}
+                                2. Exclusion restriction test: {exclusion_result}
+                                3. Unconfoundedness test: {unconfoundedness_result}
+                                4. No-defier assumption test: {defier_result}
 
-    y = df[treat_col].values.astype(int)
-    X, _ = _one_hot_df(df, covariates)
-    if X.shape[1] == 0:
-        return np.full(len(df), fill_value=y.mean(), dtype=float)
-    lr = LogisticRegression(max_iter=200, solver="lbfgs")
-    lr.fit(X, y)
+                                Based on these results, provide whether the instrumental variable regression is valid or not? 
+                                First, say yes or no. Then, justify your answer. 
+                            """
+        
+        final_result = self.invoke(final_llm_prompt)
+        return final_result
 
-    return lr.predict_proba(X)[:, 1]
 
-def compute_ps_smd(ps: np.ndarray, treat: np.ndarray) -> float:
-    """SMD of the propensity score itself (single summary metric)."""
+class DiDTest(AssumptionTest):
+    """A class to test for DiD assumptions in panel datasets"""
 
-    tmask = treat.astype(bool)
+    def __init__(self, data, query, description, treat_var, outcome_var, time_var, group_var, 
+                    covariates=None):
 
-    return _smd_from_groups(ps[tmask], ps[~tmask])
+        super().__init__(data, query, description)
+        self.treat_var = treat_var
+        self.outcome_var = outcome_var
+        self.time_var = time_var
+        self.group_var = group_var
+        self.covariates = covariates if covariates is not None else []
+    
+    def no_anticipation_test(self):
+        """
+        Test for no-anticipation assumption in DiD i.e. effect of the treatment does not occur before the treatment is actually applied. 
+        This is again an untestable assumption.
+        """
 
-def summarize_ps_overlap(ps: np.ndarray, treat: np.ndarray) -> Dict[str, Any]:
-    """Simple overlap summary (min/max & quantiles)."""
+        no_anticipation_prompt = f"""I am considering using Difference-in-Differences (DiD) to estimate the causal effect of {self.treat_var} on {self.outcome_var}.
+                                    The goal is to answer the question: {self.query}. The dataset and its variables is described as follows: {self.description}.
+                                    Likewise, the time variable is {self.time_var} and the group variable is {self.group_var}.
 
-    tmask = treat.astype(bool)
-    def stats(v):
-        return {
-            "min": float(np.min(v)),
-            "quantile_25": float(np.quantile(v, 0.25)),
-            "median": float(np.median(v)),
-            "quantile_75": float(np.quantile(v, 0.75)),
-            "max": float(np.max(v)),
-        }
-    treated_stats = stats(ps[tmask])
-    control_stats = stats(ps[~tmask])
-    overlap = not (treated_stats["min"] > control_stats["max"] or control_stats["min"] > treated_stats["max"])
-    return {
-        "treated": treated_stats,
-        "control": control_stats,
-        "range_overlap": overlap,
-    }
+                                    For the validity of DiD, I need to assess whether the no-anticipation assumption holds or not in this context. 
+                                    No-anticipation means that the effect of the treatment does not occur before the treatment is actually applied.
+                                    Based on the description of the dataset and the variable, is it plausible that the no-anticipation assumption holds here?
+                                    First, say yes or not. Then, explain your reasoning.
+                                    """
+        result = self.invoke(no_anticipation_prompt)
 
-def psm_diagnostics(df: pd.DataFrame, treatment: str, covariates: List[str]) -> Dict[str, Any]:
-    """Bundle: covariate SMDs, PS array, PS SMD, and overlap summary."""
+        return result
+    
+    def parallel_trends_test(self):
+        """
+        Test for parallel trends assumption in DiD i.e. in the absence of treatment, the average change in outcome for treated and control groups would have been the same over time.
+        If we have data available for multiple time periods before the treatment, we can test this visually. This involves plotting the outcomes for 
+        variables over time for both the treated and control groups to see if the outcomes are roughly parallel. 
+        This test is easier for the classical DiD setup with two groups (treated and control) and two time periods (pre and post treatment).
+        If we know the exact nature of the data, we can run this ourselves. Otherwise, we might have to invoke an LLM to help with this. 
 
-    smds = compute_covariate_smds(df, treatment, covariates)
-    ps = estimate_propensity_scores(df, treatment, covariates)
-    ps_smd = compute_ps_smd(ps, df[treatment].values.astype(int))
-    overlap = summarize_ps_overlap(ps, df[treatment].values.astype(int))
+        Moreover, if we don't have data for periods before treatment, we cannot test this assumption. 
+        For now let's argue qualitatively using an LLM.
+        """
 
-    return {
-        "covariate_SMDs": smds,
-        "propensity_scores": ps,
-        "propensity_SMD": ps_smd,
-        "ps_overlap": overlap,
-    }
+        ## later we can code + ask LLM to visually inspect the trends
+        parallel_trends_prompt = f"""I am considering using Difference-in-Differences (DiD) to estimate the causal effect of {self.treat_var} on {self.outcome_var}.
+                                    The goal is to answer the question: {self.query}. The dataset and its variables is described as follows: {self.description}.
+                                    Likewise, the time variable is {self.time_var}. 
+                                    Based on the description, is it plausible that parallel trends assumption holds here?
+                                    Parallel trends means that in the absence of treatment, the change in outcome for the treated and control groups 
+                                    before and after treatment would have been the same over time. First, say yes or not. 
+                                    Then,justify your answer.
+                                    """
+        parallel_trends_result = self.invoke(parallel_trends_prompt)
 
-## ----------------------------- For Difference-in-Differences --------------------------------
+        return parallel_trends_result
+    
+    def run_tests(self):
+        """
+        Runs tests to validate the assumptions of DiD
+        """
 
-def _as_categorical_time(df: pd.DataFrame, time_col: str):
-    # Ensure sortable time; create an integer index for regression
+        # 1. SUTVA test
+        sutva_result = self.sutva_test(self.treat_var, self.outcome_var, self.description, self.query)
 
-    tvals = pd.Categorical(df[time_col], ordered=True)
-    if not tvals.ordered:
-        # try to order by unique sorted values
-        uniq = sorted(df[time_col].unique())
-        tvals = pd.Categorical(df[time_col], categories=uniq, ordered=True)
-    t_idx = tvals.codes  # -1 if NA
+        # 2. No-anticipation test
+        no_anticipation_result = self.no_anticipation_test()
 
-    return tvals, t_idx
+        # 3. Parallel trends test
+        parallel_trends_result = self.parallel_trends_test()
 
-## This will work only if time_col is non-binary
-def infer_treatment_timing(df: pd.DataFrame, time_col: str, group_col: str, treat_col: str,
-                           treated_value: Optional[int]=1) -> Dict[str, Any]:
+        final_llm_prompt = f"""You need to check if differeence-in-differences (DiD) is a valid method to estimate the causal effect of {self.treat_var} on {self.outcome_var}.
+                                The results of the analysis will be used to answer the query: {self.query}. 
+                                For reference, here is the description of the dataset and its variables: {self.description}.
+
+                                Here are the results for each of the DiD assumptions tests:
+                                1. SUTVA test: {sutva_result}
+                                2. No-anticipation test: {no_anticipation_result}
+                                3. Parallel trends test: {parallel_trends_result}
+                                Based on these results, provide whether the difference-in-differences method is valid or not?
+                                First, say yes or no. Then, justify your answer.
+                            """
+        
+        return self.invoke(final_llm_prompt)
+
+class RDDTest(AssumptionTest):
+    """A class to test for RDD assumptions in datasets"""
+
+    def __init__(self, data, query, description, treat_var, outcome_var, running_var, cutoff, 
+                    covariates=None):
+
+        super().__init__(data, query, description)
+        self.treat_var = treat_var
+        self.outcome_var = outcome_var
+        self.running_var = running_var
+        self.cutoff = cutoff
+        self.covariates = covariates if covariates is not None else []
+
+    
+    def visual_inspection_test(self):
+        """This test visually inspects the running variable around the cutoff to check for the presence of discontinuity. 
+            For RDD, to be valid, there should be a discontinuity in the outcome values around the cutoff point"""
+        
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+        treat_data = self.data[self.data[self.running_var] > self.cutoff]
+        control_data = self.data[self.data[self.running_var] < self.cutoff]
+        ax.scatter(treat_data[self.running_var], treat_data[self.outcome_var], color='blue', label='Treated')
+        ax.scatter(control_data[self.running_var], control_data[self.outcome_var], color='red', label='Control')
+        ax.axvline(x=self.cutoff, color='black', linestyle='--', label='Cutoff')
+        ax.set_xlabel(self.running_var)
+        ax.set_ylabel(self.outcome_var)
+        ax.set_title('Visual Inspection of RDD')
+        
+        ax.legend()
+
+        llm_prompt = f"""I am considering using Regression Disconntinuity Design in the process of answering the query: {self.query}.
+                        The dataset and its variables is described as follows: {self.description}.
+                        The running variable is {self.running_var} with a cutoff at {self.cutoff}, and the outcome variable is {self.outcome_var}.
+                        I have plotted the outcome against the running variable. Based on the plot, do you observe a discontinuity in the outcome variable around the cutoff point?
+                        First, answer yes or no. Then explain your reasoning.
+                    """
+        ## if calling LLM with image is not possible, we can either skip this or convey some information about the discontinuity numerically.
+        result = self.invoke_image(llm_prompt, ax)
+
+        return result
+    
+    def mccrary_test(self):
+        """Note that for RDD, we need treatment assignment to be as good as random around the cutoff. 
+        Hence, we can check for manipulation of the running variable about the cutoff using the McCrary test """
+
+        test = rddensity(self.data[self.running_var], self.cutoff)
+
+        return test 
+
+    
+    
+    def run_tests(self):
+        """
+        Runs tests to validate the assumptions of RDD
+        """
+
+        ## 1 Visual inspection test
+        visual_inspection_result = self.visual_inspection_test()
+
+        ## 2. McCrary test
+        mccrary_result = self.mccrary_test()
+
+        final_llm_prompt = f"""You need to check if regression discontinuity design (RDD) is a valid method to answer the query: {self.query}. 
+                            For reference, here is the description of the dataset and its variables: {self.description}.
+                            The running variable is {self.running_var} with a cutoff at {self.cutoff}, and the outcome variable is {self.outcome_var}.
+                                Here are the results for each of the RDD assumptions tests:
+                                1. Visual inspection test: {visual_inspection_result}
+                                2. McCrary test: {mccrary_result}
+                                Based on these results, provide whether the regression discontinuity design is valid or not?
+                                First, say yes or no. Then, justify your answer.
+                        """
+        
+        return self.invoke(final_llm_prompt)
+    
+class ObervationalTest(AssumptionTest):
     """
-    Infer if the time variable encodes treatment timing:
-    - Finds treated group (assumes binary group_col with values {0,1} or two categories)
-    - Finds the first time period where treated group's treatment share jumps.
+        A class to test for assumptions of observational causal inference methods in datasets. The focus is on SUTVA, conditional ignorability, and positivity. 
+        Our focus is on propensity score based methods at the moment. This includes PS matching and IPW, and OLS for randomized data. 
     """
-    out: Dict[str, Any] = {"ok": False, "treated_group": None, "adoption_time": None,
-                           "pre_periods": [], "post_periods": [], "notes": ""}
-
-    # Identify treated group as the group whose mean treatment eventually becomes high
-    grp_values = df[group_col].dropna().unique()
-    if len(grp_values) != 2:
-        out["notes"] = "group_variable not binary; cannot infer clear treated/control groups."
-        return out
-
-    # compute by group & time
-    mean_t = df.groupby([group_col, time_col], as_index=False)[treat_col].mean()
-    # Rename the treatment column to avoid conflicts
-    mean_t = mean_t.rename(columns={treat_col: 'mean_treatment'})
-    #print(mean_t)
-    # choose group with larger max mean treatment as treated_group
-    max_by_group = mean_t.groupby(group_col)['mean_treatment'].max()
-    treated_group = max_by_group.idxmax()
-    control_group = [g for g in grp_values if g != treated_group][0]
-
-    # adoption time: first time where treated_group mean_t >= 0.5 and strictly above its pre-history
-    tg = mean_t[mean_t[group_col] == treated_group].sort_values(time_col)
-    # any time periods?
-    if tg.empty:
-        out["notes"] = "No time variation for treated group."
-        return out
-    # pick earliest period with high treatment share
-    adopt_rows = tg.loc[tg['mean_treatment'] >= 0.5]
-    if adopt_rows.empty:
-        out["notes"] = "Treated group never shows high treatment intensity."
-        return out
-    adoption_time = adopt_rows.iloc[0][time_col]
-
-    # pre/post sets
-    all_times = sorted(df[time_col].dropna().unique().tolist())
-    pre = [t for t in all_times if t < adoption_time]
-    post = [t for t in all_times if t >= adoption_time]
-
-    # sanity: control should remain mostly untreated overall
-    ctrl_max = mean_t.loc[mean_t[group_col] == control_group, 'mean_treatment'].max()
-    ok_ctrl_untreated = ctrl_max < 0.5
-
-    # sanity: treated pre periods should be mostly untreated
-    tg_pre = tg[tg[time_col].isin(pre)]['mean_treatment'] if pre else pd.Series([], dtype=float)
-    ok_no_anticipation = True
-    if len(tg_pre) > 0:
-        ok_no_anticipation = float(tg_pre.max()) < 0.5
-
-    out.update({
-        "ok": bool(ok_ctrl_untreated),
-        "treated_group": treated_group,
-        "control_group": control_group,
-        "adoption_time": adoption_time,
-        "pre_periods": pre,
-        "post_periods": post,
-        "ok_no_anticipation": bool(ok_no_anticipation),
-        "notes": out["notes"]
-    })
-    return out
-
-def pretrend_parallel_test(df: pd.DataFrame, time_col: str, group_col: str, outcome_col: str,
-                           treated_group) -> Dict[str, Any]:
-    """
-    Parallel trends visual proxy using pre-periods only:
-    Regress outcome on time_index * treated_group (interaction) with group and time fixed effects disabled
-    (simple slopes model over aggregated means). Reports interaction slope diff and p-value.
-    If < 3 pre periods, mark as insufficient and skip test.
-    """
-    # Build aggregated mean outcome by group-time for stability
-    agg = df.groupby([group_col, time_col])[outcome_col].mean().reset_index()
-
-    # Determine ordering/index for time
-    tcat, t_idx = _as_categorical_time(agg, time_col)
-    agg = agg.assign(t_idx=t_idx)
-
-    # pre-periods: strictly before treated group's adoption (caller should subset already if desired)
-    # Here we select all periods that exist before any observed treatment jump; caller provides pre list if needed.
-    # To align with the "visual slopes" idea, we only need >= 3 distinct pre periods.
-    # We'll detect number of unique times where treated group's mean treatment is low; caller can pass pre list.
-    # For simplicity, we infer pre as the first K unique times (K >= 3) without treatment info;
-    # but better: caller supplies pre periods from infer_treatment_timing. We support both.
-    return {"ok": None, "pval": None, "slope_diff": None, "n_pre_periods": None, "insufficient_pre_periods": True}
-
-def pretrend_parallel_test_with_periods(df: pd.DataFrame, time_col: str, group_col: str, outcome_col: str,
-                                        pre_periods: list, treated_group) -> Dict[str, Any]:
-    """
-    Preferred version: use explicit pre_periods (from infer_treatment_timing). 
-    Fit outcome ~ t_idx * I[group==treated] on pre-periods and test the interaction coefficient.
-    """
-    out = {"ok": None, "pval": None, "slope_diff": None, "n_pre_periods": len(set(pre_periods)),
-           "insufficient_pre_periods": False}
-    if len(set(pre_periods)) < 3:
-        out["insufficient_pre_periods"] = True
-        return out
-
-    sub = df[df[time_col].isin(pre_periods)].copy()
-    if sub.empty:
-        out["insufficient_pre_periods"] = True
-        return out
-
-    # aggregate means by group-time for stability (visual-style slopes)
-    agg = sub.groupby([group_col, time_col])[outcome_col].mean().reset_index()
-    tcat, t_idx = _as_categorical_time(agg, time_col)
-    agg["t_idx"] = t_idx
-    agg["treated_grp_flag"] = (agg[group_col] == treated_group).astype(int)
-
-    X = sm.add_constant(agg[["t_idx", "treated_grp_flag"]])
-    X["t_idx_x_treated"] = agg["t_idx"] * agg["treated_grp_flag"]
-    y = agg[outcome_col].values
-
-    ols = sm.OLS(y, X).fit(cov_type="HC1")
-    coef_name = "t_idx_x_treated"
-    slope_diff = float(ols.params.get(coef_name, np.nan))
-    pval = float(ols.pvalues.get(coef_name, np.nan))
-
-    out.update({
-        "ok": bool(pval >= 0.10),  # fail to reject difference in pre-trends at 10%
-        "pval": pval,
-        "slope_diff": slope_diff
-    })
-    return out
 
 
-## ----------------------------- For Instrumental Variables --------------------------------
+    def __init__(self, data, query, description, treat_var, outcome_var, confounders=None):
 
-def iv_first_stage_relevance(df: pd.DataFrame,
-                             instrument: Union[str, List[str]],
-                             treatment: str,
-                             controls: List[str] | None = None) -> Dict[str, Any]:
-    """
-    Compute first-stage F-statistic for IV relevance: regress D on Z (+ X).
-    - If multiple instruments, returns the joint F for all Z.
-    - Uses HC1 robust covariance.
-    """
-    Z = [instrument] if isinstance(instrument, str) else list(instrument)
-    X = pd.DataFrame(index=df.index)
-    X[Z] = df[Z]
-    if controls:
-        X[controls] = df[controls]
-    X = sm.add_constant(X, has_constant="add")
+        super().__init__(data, query, description)
+        self.treat_var = treat_var
+        self.outcome_var = outcome_var
+        self.confounders = confounders if confounders is not None else []
+    
+    def no_confounder_test(self):
+        """
+        In this test, we qualitatively argue whether or not there are any uboserved confounders that affect both treatment and outcome variable. 
+        This is again an untestable assumption. We will first argue this qualitatively. 
+        """
 
-    y = df[treatment]
-    ols = sm.OLS(y, X).fit(cov_type="HC1")
+        no_confounder_prompt = f"""I am considering using an observational causal inference method to estimate the causal effect of {self.treat_var} on {self.outcome_var}.
+                                    The goal is to answer the question: {self.query}. The dataset and its variables is described as follows: {self.description}.
+                                    I need to assess whether there are any unobserved confounders that affect both the treatment variable {self.treat_var} and the outcome variable {self.outcome_var}.
+                                    Based on the description of the dataset and variables, does it seem plausible that there are no unobserved confounders here? 
+                                    The confounders under consideration are: {', '.join(self.confounders)}.
+                                    First, say yes or no. Then, explain your reasoning.
+                                    """
+        result = self.invoke(no_confounder_prompt)
 
-    # Joint F-test that all instrument coefficients == 0
-    z_idx = [X.columns.get_loc(z) for z in Z]
-    R = np.zeros((len(Z), len(X.columns)))
-    for i, j in enumerate(z_idx):
-        R[i, j] = 1.0
-    ftest = ols.f_test(R)
+        return result
+    
+    def covariate_balance_test(self):
+        """
+        In this test, we will test for covariate balance between the treated and control groups. 
+        This is to assess whether or not the observed confounders are balanced between the treated and control groups.  
+        """
 
-    fval = float(ftest.fvalue) if np.ndim(ftest.fvalue) == 0 else float(ftest.fvalue.item())
-    pval = float(ftest.pvalue)
-    return {
-        "first_stage_F": fval,
-        "first_stage_F_p": pval,
-        "n_instruments": len(Z),
-        "weak_iv_flag": bool(fval < 10.0)  # Stock–Yogo rule-of-thumb
-    }
+        balance_results = {}
+        treated = self.data[self.data[self.treat_var] == 1]
+        control = self.data[self.data[self.treat_var] == 0]
 
-## ----------------------------- For Regression Discontinuity Design --------------------------------
+        for confounder in self.confounders:
+            treated_mean = treated[confounder].mean()
+            control_mean = control[confounder].mean()
+            treated_std = treated[confounder].std()
+            control_std = control[confounder].std()
+            smd = abs(treated_mean - control_mean) / np.sqrt((treated_std ** 2 + control_std ** 2) / 2)
+            balance_results[confounder] = smd
+        
+        balance_string = ", ".join([f"{confounder}: {smd:.3f}" for confounder, smd in balance_results.items()])
 
-def rdd_design_compliance(df: pd.DataFrame, running: str, treatment: str, cutoff: float, 
-                          thresh_comply: float=0.8) -> Dict[str, Any]:
-    """
-    Check if treatment is (approximately) assigned by cutoff: T ≈ 1{running >= cutoff}.
-    Returns compliance rate and misclassification share.
-    """
-    try:
-        if running not in df.columns or treatment not in df.columns:
-            return {"ok": False, "error": "Missing running/treatment column."}
+        balance_prompt = f"""I am considering using an causal inference method for observational studies to estimate the causal effect of {self.treat_var} on {self.outcome_var}.
+                                Thus, we need to check if conditional ignorability is plausible or not. 
+                                The main goal is to answer the query: {self.query}. The dataset and its variables is described as follows: {self.description}.
+                                To assess the plausibility of conditional ignorability, we can check for the distribution of observed confounders. 
+                                To this end, I have calculated the standardized mean difference (SMD) for each of the observed confounders between the treated and control groups.
+                                The SMD values for the confounders are as follows: {balance_string}.
+                            
+                                Based on these results, does it seem plausible that conditional ignorability holds here?
+                                First, say yes or no. Then, explain your reasoning.
+                        """
+        
+        result = self.invoke(balance_prompt)
+
+        return result
+    
+    def positivity_test(self):
+        """
+        In this test, we will check for positivity assumption. This means that given the observed coufounders, each unit has a positive probability of receiving each level of treatment. 
+            We will look at the distribution of propensity scores. Additionally, this also checks for propensity score overlap. 
+            We do not want only one group to have propensity scores close to 0 or 1. Ideally, we would do this visually, but for now we will use a simple heursitic. 
+        """
+
+        treated_data = self.data[self.data[self.treat_var] == 1]
+        control_data = self.data[self.data[self.treat_var] == 0]
+
+        log_model = LogisticRegression()
+        log_model.fit(self.data[self.confounders], self.data[self.treat_var])
+        propensity_scores = log_model.predict_proba(self.data[self.confounders])[:, 1]
+
+        treated_propensity = propensity_scores[self.data[self.treat_var] == 1]
+        control_propensity = propensity_scores[self.data[self.treat_var] == 0]
+
+        mean_treated_propensity = treated_propensity.mean()
+        mean_control_propensity = control_propensity.mean()
+
+        std_treated_propensity = treated_propensity.std()
+        std_control_propensity = control_propensity.std()
+        var = (std_treated_propensity ** 2 + std_control_propensity ** 2) / 2
+
+        smd_propensity = abs(mean_treated_propensity - mean_control_propensity) / np.sqrt(var)
+
+        propensity_prompt = f"""I am considering using an causal inference method for observational studies to estimate the causal effect of {self.treat_var} on {self.outcome_var}.
+                                Thus, we need to check if positivity assumption is plausible or not. We will do this using propensity scores. 
+                                At the same time, we will also check for propensity score overlap.
+                                The main goal is to answer the query: {self.query}. The dataset and its variables is described as follows: {self.description}.
+                                We compute propensity scores using a logistic regression model with the following observed confounders: {', '.join(self.confounders)}.
+                                The standardized mean difference (SMD) of the propensity scores between the treated and control groups is {smd_propensity:.3f}.
+                                The distribution of propensity scores for the treatment group is,
+                                mean: {mean_treated_propensity:.3f}, std: {std_treated_propensity:.3f}, max: {treated_propensity.max():.3f}, min: {treated_propensity.min():.3f}.
+                                median: {np.median(treated_propensity):.3f}.
+                                The distribution of propensity scores for the control group is,
+                                mean: {mean_control_propensity:.3f}, std: {std_control_propensity:.3f}, max: {control_propensity.max():.3f}, min: {control_propensity.min():.3f}.
+                                median: {np.median(control_propensity):.3f}.
+                                Based on these results, does it seem plausible that positivity assumption and propensity score overlap holds here?
+                                First, say yes or no. Then, explain your reasoning.
+                        """
+        result = self.invoke(propensity_prompt)
+
         
 
-
-        assign = (df[running] >= cutoff).astype(int)
-        t = df[treatment].astype(int)
-        if t.nunique() != 2:
-            return {"ok": False, "error": "Treatment variable not binary."}
         
-        agree = (assign == t)
-        rate = float(agree.mean())
-        return {
-            "ok": bool(rate >= thresh_comply),          # loose gate; tune as needed
-            "compliance_rate": rate,
-            "misclassified_share": float(1.0 - rate),
-            "n": int(len(df))}
-    except Exception as e:
-        logger.warning(f"RDD Design compliance failed: {e}")
-        return {"ok": False, "error": e}
+    def run_tests(self):
+        
+        ## 1. SUTVA test
+        sutva_result = self.sutva_test(self.treat_var, self.outcome_var, self.description, self.query)
 
-def rdd_window_summary(df: pd.DataFrame, running: str, outcome: str, cutoff: float,
-                       h: Optional[float] = None) -> Dict[str, Any]:
-    """
-    Summarize outcome means just around the cutoff for visual inspection.
-    To determine h i.e. the bandwidth we use the Imbens-Kalyanaraman optimal bandwidth selector, in the 
-    rdd package.
-    """
+        ## 2. No unobserved confounder test
+        no_confounder_result = self.no_confounder_test()
 
-    x = df[running].astype(float)
-    y = df[outcome].astype(float)
-    mean_running = float(np.nanmean(x))
-    ## data is already centered
-    if abs(mean_running) < 0.01:
-        cutoff = 0.0  # snap to zero if close
-    if h is None:
-        #sd = float(np.nanstd(x))
-        #h = 0.2 * sd if sd > 0 else np.nanmax(np.abs(x - cutoff)) * 0.2
-        h = optimal_bandwidth(y.values, x.values, cutoff)
+        ## 3. Covariate balance test
+        covariate_balance_result = self.covariate_balance_test()
 
-    mask = (x >= cutoff - h) & (x <= cutoff + h)
-    subx, suby = x[mask], y[mask]
-    left = suby[subx < cutoff]
-    right = suby[subx >= cutoff]
-
-    return {
-        "window_h": float(h),
-        "n_left": int(left.size),
-        "n_right": int(right.size),
-        "mean_left": float(np.nanmean(left)) if left.size else None,
-        "mean_right": float(np.nanmean(right)) if right.size else None,
-        "jump_right_minus_left": (float(np.nanmean(right) - np.nanmean(left))
-                                  if left.size and right.size else None)}
-
-def rdd_bins_for_plot(df: pd.DataFrame, running: str, outcome: str, cutoff: float,
-                      h: float, bins_per_side: int = 10) -> Dict[str, Any]:
-    """
-    Prepare simple binned averages for a binscatter near cutoff (purely for plotting later).
-    """
-
-    x = df[running].astype(float)
-    y = df[outcome].astype(float)
-    mask = (x >= cutoff - h) & (x <= cutoff + h)
-    sub = df.loc[mask, [running, outcome]].copy()
-    left = sub[sub[running] < cutoff]
-    right = sub[sub[running] >= cutoff]
-
-    def binside(side_df, start, end, n):
-        if side_df.empty: return []
-        edges = np.linspace(start, end, n + 1)
-        idx = np.digitize(side_df[running], edges, right=False) - 1
-        out = []
-        for b in range(n):
-            sel = side_df[idx == b]
-            if sel.empty: continue
-            out.append({
-                "x_center": float((edges[b] + edges[b+1]) / 2),
-                "y_mean": float(sel[outcome].mean()),
-                "n": int(len(sel))
-            })
-        return out
-
-    left_bins = binside(left, cutoff - h, cutoff, bins_per_side)
-    right_bins = binside(right, cutoff, cutoff + h, bins_per_side)
-
-    return {"cutoff": float(cutoff), "h": float(h), "left_bins": left_bins, "right_bins": right_bins}
+        ## 4. Positivity test
+        positivity_result = self.positivity_test()
 
 
-def mccrary_test(df, running_var, cutoff):
-    """
-    Performs the McCrary density test
-
-    Args:
-        df (pd.DataFrame): DataFrame containing the running variable 
-        running_var (str): Column name of the running variable 
-        cutoff (float): cutoff value for the running variable 
-    Returns:
-         (float) the p-value of the test 
-    """
-
-    if running_var not in df.columns:
-        return np.nan 
-
-    running_vals = df[running_var].values
-    test = rddensity(running_vals, c=cutoff)
-    p_val = float(test.test['p_jk'])
-
-    return p_val
+        final_llm_prompt = f"""You need to check if an observational causal inference method is valid to estimate the causal effect of {self.treat_var} on {self.outcome_var}.
+                                The results of the analysis will be used to answer the query: {self.query}. 
+                                For reference, here is the description of the dataset and its variables: {self.description}.
+                                Here are the results for each of the assumptions tests:
+                                1. SUTVA test: {sutva_result}
+                                2. No unobserved confounder test: {no_confounder_result}
+                                3. Covariate balance test: {covariate_balance_result}
+                                4. Positivity test: {positivity_result}
+                                Based on these results, provide whether the observational causal inference method is valid or not?
+                                First, say yes or no. Then, justify your answer.
+                            """
+        
+        return self.invoke(final_llm_prompt)

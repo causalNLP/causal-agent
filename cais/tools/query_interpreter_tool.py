@@ -32,7 +32,7 @@ from cais.components.state_manager import create_workflow_state_update
 def query_interpreter_tool(
     dataset_analysis: DatasetAnalysis, 
     dataset_description: str, 
-    original_query: Optional[str] = None # Keep optional original_query
+    original_query: Optional[str] = None, # Keep optional original_query
 ) -> QueryInterpreterOutput:
     """
     Interpret a causal query in the context of a specific dataset.

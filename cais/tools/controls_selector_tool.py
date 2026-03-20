@@ -7,7 +7,7 @@ control variables based on the chosen causal inference method and dataset charac
 
 import logging
 from typing import Dict, Any, Optional
-from langchain_core.tools import tool
+#from langchain_core.tools import tool
 
 # Import component function and central LLM factory
 from cais.components.controls_selector import select_controls
@@ -23,7 +23,7 @@ from cais.models import (
 
 logger = logging.getLogger(__name__)
 
-@tool(args_schema=ControlsSelectorInput)
+#@tool(args_schema=ControlsSelectorInput)
 def controls_selector_tool(
     method_name: str,
     variables: Variables,
