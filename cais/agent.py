@@ -8,6 +8,7 @@ from cais.estimator_lib import Estimators
 from cais.tools.input_parser_tool import input_parser_tool
 from cais.tools.dataset_analyzer_tool import dataset_analyzer_tool
 from cais.tools.query_interpreter_tool import query_interpreter_tool
+from cais.tools.iv_discovery_tool import iv_discovery_tool
 from cais.tools.method_selector_tool import method_selector_tool
 from cais.tools.controls_selector_tool import controls_selector_tool
 from cais.tools.method_validator_tool import method_validator_tool
@@ -49,6 +50,11 @@ convert = {
     
 # Set up basic logging
 os.makedirs('./logs/', exist_ok=True)
+logging.basicConfig(
+    filename='./logs/agent_debug.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 
@@ -153,6 +159,23 @@ class CausalAgent():
         self.selected_method = self.method_info.selected_method
         return self.selected_method
 
+    def discover_instruments(self, query=None):
+        query = self.checkq(query)
+
+        iv_discovery_output = iv_discovery_tool.func(
+            variables=self.variables,
+            dataset_analysis=self.dataset_analysis,
+            dataset_description=self.dataset_description,
+            original_query=query
+        )
+        
+        if hasattr(iv_discovery_output, "model_dump"):
+            iv_discovery_output_dict = iv_discovery_output.model_dump()
+        else:
+            iv_discovery_output_dict = iv_discovery_output
+            
+        self.variables = Variables(**iv_discovery_output_dict["variables"])
+        return self.variables
 
     def validate_method(self, query=None):
         '''
@@ -176,7 +199,7 @@ class CausalAgent():
 
         query = self.checkq(query)
 
-        controls_selector_output = controls_selector_tool(
+        controls_selector_output = controls_selector_tool.func(
             method_name=self.selected_method,
             variables=self.variables,
             dataset_analysis=self.dataset_analysis,
@@ -197,7 +220,16 @@ class CausalAgent():
             original_query=query,
             causal_method=self.selected_method
         )
-        self.cleaned_dataset_path = cleaning_output.get("cleaned_dataset_path", self.dataset_path)
+        self.cleaned_dataset_path = cleaning_output.get("cleaned_dataset_path")
+        
+        # Check if file was actually created/returned
+        if not self.cleaned_dataset_path or not os.path.exists(self.cleaned_dataset_path):
+            stderr = cleaning_output.get("stderr", "No stderr available.")
+            logger.error(f"Dataset cleaning failed to produce a file at {self.cleaned_dataset_path}. Stderr: {stderr}")
+            # Fallback to original dataset if cleaning failed but we want to attempt execution?
+            # Or raise error. Let's raise for now to be safe.
+            raise FileNotFoundError(f"Cleaned dataset NOT found at {self.cleaned_dataset_path}. Cleaning stderr: {stderr}")
+            
         return self.cleaned_dataset_path
 
     def execute_method(self, query=None, remove_cleaned=True):
@@ -253,6 +285,11 @@ class CausalAgent():
             query=query,
             llm_decision=llm_method_selection
         )
+        if self.selected_method == INSTRUMENTAL_VARIABLE:
+            logger.info("Instrumental Variable method selected. Running IV Discovery...")
+            self.discover_instruments(
+                query=query
+            )
         self.select_controls(
             query=query
         )

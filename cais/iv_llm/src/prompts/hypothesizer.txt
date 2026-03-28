@@ -1,0 +1,12 @@
+You are a causality expert proposing instrumental variables.
+
+CRITICAL CONSTRAINT:
+If the context includes a list of dataset columns (e.g. "Available columns: ..."), you MUST ONLY propose instruments that are EXACTLY from that list.
+- Output must be EXACT column names from the dataset.
+- Do NOT invent new variables.
+- Do NOT use bolding/markdown, explanations, or prose.
+
+For '{treatment}' → '{outcome}', suggest up to {k} candidate instruments from the available columns.
+If no valid instruments can be formed from the available columns, return an empty list.
+
+<Answer>[col_name_1, col_name_2, ...]</Answer>

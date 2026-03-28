@@ -7,10 +7,29 @@ import re
 import pandas as pd
 import logging
 import json
-from langchain.chat_models.base import BaseChatModel
-from langchain_core.messages import AIMessage 
+from langchain_core.language_models import BaseChatModel
 
 logger = logging.getLogger(__name__)
+
+def invoke_llm(llm: BaseChatModel, prompt: str) -> str:
+    """
+    Call the provided LLM with a prompt and return the text content of the response.
+    
+    Args:
+        llm: An instance of BaseChatModel.
+        prompt: The prompt string to send to the LLM.
+        
+    Returns:
+        The string content of the LLM response.
+    """
+    if not llm:
+        logger.warning("LLM client not provided to invoke_llm. Cannot make LLM call.")
+        return ""
+        
+    response = llm.invoke(prompt)
+    if hasattr(response, "content"):
+        return response.content
+    return str(response)
 
 def call_llm_with_json_output(llm: Optional[BaseChatModel], prompt: str) -> Optional[Dict[str, Any]]:
     """

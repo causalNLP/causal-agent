@@ -147,6 +147,22 @@ class MethodSelectorInput(BaseModel):
     original_query: Optional[str] = None
     # Note: is_rct is expected inside inputs.variables
 
+class IVDiscoveryInput(BaseModel):
+    """Input structure for the IV discovery tool."""
+    variables: Variables
+    dataset_analysis: DatasetAnalysis
+    dataset_description: Optional[str] = None
+    original_query: Optional[str] = None
+
+class IVDiscoveryOutput(BaseModel):
+    """Structured output for the IV discovery tool."""
+    variables: Variables
+    dataset_analysis: DatasetAnalysis
+    dataset_description: Optional[str] = None
+    original_query: Optional[str] = None
+    iv_discovery_results: Dict[str, Any] = Field(default_factory=dict)
+    workflow_state: Dict[str, Any] = Field(default_factory=dict)
+
 # --- Models for Method Validator Tool --- 
 
 class MethodInfo(BaseModel):

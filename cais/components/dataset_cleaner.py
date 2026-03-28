@@ -1,11 +1,13 @@
 # cais/components/dataset_cleaner.py
 
-import os, io, json, traceback, contextlib, sys
+import os, io, json, traceback, contextlib, sys, logging
 from typing import Dict, Any, Optional, Tuple
 import pandas as pd
 
 from langchain_core.messages import SystemMessage, HumanMessage
 from cais.config import get_llm_client  # returns a LangChain chat model
+
+logger = logging.getLogger(__name__)
 
 PLANNER_SYSTEM = """You are “CausalPrep-Planner”, a senior data engineer and analyst.
 
@@ -70,13 +72,13 @@ CODEGEN_SYSTEM  = """You are “CausalPrep-Codegen”.
 Input: (dataset_path, Transformation Spec JSON).
 Output: A SINGLE Python script as text that:
 - imports only: json, os, pandas as pd, numpy as np
-- loads the dataset from dataset_path (infer CSV/Parquet by extension)
+- loads the dataset from the path provided in global variable `__DATASET_PATH__`
 - applies ONLY what the Spec asks for (row_filters, column_ops, method_constructs, etc.)
 - keeps all original columns unless Spec explicitly drops them
 - creates any new columns explicitly; suffix where needed; no silent overwrite
 - produces a dataframe named clean_df
 - writes:
-  - cleaned_df.csv (same directory as dataset_path)
+  - clean_df.csv to the path provided in global variable `__CLEANED_PATH__`
   - preprocessing_manifest.json (the Spec actually executed)
   - derived_columns.json (list of new columns with one-line descriptions)
 - prints a concise, human-readable summary report to stdout
@@ -181,7 +183,15 @@ def _run_script_text(script: str, dataset_path: str, cleaned_path: str) -> Tuple
         with contextlib.redirect_stdout(stdout_io), contextlib.redirect_stderr(stderr_io):
             # Provide dataset_path as a global the script can read (it should anyway use the passed JSON)
             gbls["__DATASET_PATH__"] = dataset_path
-            script=script.replace('cleaned_df.csv', cleaned_path)
+            gbls["__CLEANED_PATH__"] = cleaned_path
+            
+            # We restore the replacements but use json.dumps for safe quoting on Windows
+            # This handles models that hardcode the path despite instructions
+            for placeholder in ["cleaned_df.csv", "clean_df.csv", "manifest.json", "derived_columns.json"]:
+                if placeholder in script:
+                    script = script.replace(f'"{placeholder}"', json.dumps(cleaned_path if "csv" in placeholder else placeholder))
+                    script = script.replace(f"'{placeholder}'", json.dumps(cleaned_path if "csv" in placeholder else placeholder))
+            
             exec(script, gbls, lcls)
     except Exception as e:
         tb = traceback.format_exc()
@@ -246,7 +256,10 @@ def run_cleaning_stage(dataset_path: str,
     """
     llm = get_llm_client()
 
-    cleaned_path = os.path.join(os.path.dirname(os.path.abspath(dataset_path)) or ".", f"{dataset_path.split('/')[-1][:-4]}_cleaned_{os.getpid()}.csv")
+    dataset_path = dataset_path.replace("\\", "/")
+    base_name = os.path.basename(dataset_path)
+    file_stem = os.path.splitext(base_name)[0]
+    cleaned_path = os.path.join(os.path.dirname(os.path.abspath(dataset_path)) or ".", f"{file_stem}_cleaned_{os.getpid()}.csv").replace("\\", "/")
 
     # 1) PLAN
     method = causal_method or variables.get("method") or ""
@@ -275,9 +288,22 @@ def run_cleaning_stage(dataset_path: str,
     report.append(f"Method: {method}")
     report.append(f"Causal Query: {original_query or ''}")
     report.append(f"Rows/Cols before: see planner profile in memory.")
+    
+    # 4) FINISH - Check if LLM script actually wrote the file. 
+    # If not, and no error occurred, provide a copy of the original as a fallback to keep the pipeline moving.
+    if not os.path.exists(cleaned_path) and not ("Traceback" in stderr_all):
+        logger.warning(f"Cleaning script did not produce {cleaned_path}. Creating a copy of the original dataset.")
+        import shutil
+        shutil.copy2(dataset_path, cleaned_path)
+        report.append("\n⚠️ LLM cleaning script did not output a file. Used original dataset as cleaned fallback.")
+    
     report.append(f"Artifacts expected: {cleaned_path}, preprocessing_manifest.json, derived_columns.json")
     if ("Traceback" in stderr_all) or ("Error" in stderr_all):
         report.append("\n⚠️ LLM pipeline produced errors. Check stderr; artifacts may be missing or partial.")
+        logger.error(f"Cleaning script failed with stderr:\n{stderr_all}")
+    
+    logger.info(f"Generated Cleaning Code:\n{code}")
+    logger.info(f"Cleaning stdout:\n{stdout_all}")
 
     return {
         "cleaned_dataset_path": cleaned_path,
