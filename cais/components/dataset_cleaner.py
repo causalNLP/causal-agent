@@ -1,13 +1,11 @@
 # cais/components/dataset_cleaner.py
 
-import os, io, json, traceback, contextlib, sys, logging
+import os, io, json, traceback, contextlib, sys
 from typing import Dict, Any, Optional, Tuple
 import pandas as pd
 
 from langchain_core.messages import SystemMessage, HumanMessage
 from cais.config import get_llm_client  # returns a LangChain chat model
-
-logger = logging.getLogger(__name__)
 
 PLANNER_SYSTEM = """You are “CausalPrep-Planner”, a senior data engineer and analyst.
 
@@ -288,22 +286,9 @@ def run_cleaning_stage(dataset_path: str,
     report.append(f"Method: {method}")
     report.append(f"Causal Query: {original_query or ''}")
     report.append(f"Rows/Cols before: see planner profile in memory.")
-    
-    # 4) FINISH - Check if LLM script actually wrote the file. 
-    # If not, and no error occurred, provide a copy of the original as a fallback to keep the pipeline moving.
-    if not os.path.exists(cleaned_path) and not ("Traceback" in stderr_all):
-        logger.warning(f"Cleaning script did not produce {cleaned_path}. Creating a copy of the original dataset.")
-        import shutil
-        shutil.copy2(dataset_path, cleaned_path)
-        report.append("\n⚠️ LLM cleaning script did not output a file. Used original dataset as cleaned fallback.")
-    
     report.append(f"Artifacts expected: {cleaned_path}, preprocessing_manifest.json, derived_columns.json")
     if ("Traceback" in stderr_all) or ("Error" in stderr_all):
         report.append("\n⚠️ LLM pipeline produced errors. Check stderr; artifacts may be missing or partial.")
-        logger.error(f"Cleaning script failed with stderr:\n{stderr_all}")
-    
-    logger.info(f"Generated Cleaning Code:\n{code}")
-    logger.info(f"Cleaning stdout:\n{stdout_all}")
 
     return {
         "cleaned_dataset_path": cleaned_path,
