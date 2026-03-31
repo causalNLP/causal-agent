@@ -279,6 +279,10 @@ def run_cleaning_stage(dataset_path: str,
     if ("Traceback" in stderr_all) or ("Error" in stderr_all):
         report.append("\n⚠️ LLM pipeline produced errors. Check stderr; artifacts may be missing or partial.")
 
+    if not os.path.exists(cleaned_path):
+        report.append(f"\n⚠️ Cleaned file not found at expected path; falling back to original dataset.")
+        cleaned_path = dataset_path
+    
     return {
         "cleaned_dataset_path": cleaned_path,
         "cleaning_report_md": "\n".join(report),
