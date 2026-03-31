@@ -234,7 +234,7 @@ class CausalAgent():
 
         if self.cleaned_dataset_path and remove_cleaned:
             if isinstance(self.load_dataset(cleaned=True), pd.DataFrame):
-                os.remove(self.cleaned_dataset_path)
+                # os.remove(self.cleaned_dataset_path)
                 self.cleaned_dataset_path=None
                 logger.info("Succesfully Removed Cleaned Dataset.")
 
@@ -462,8 +462,8 @@ def run_causal_analysis(query: str, dataset_path: str,
         logger.info("Causal analysis run finished.")
         
         # Remove the cleaned csv
-        logger.info("Removing cleaned csv.")
-        os.remove(cleaned_path)
+        # logger.info("Removing cleaned csv.")
+        # os.remove(cleaned_path)
 
         # Ensure result is a dict and extract the 'output' part
         if isinstance(result, dict):
