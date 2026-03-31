@@ -161,13 +161,13 @@ def main():
 
                 print('Starting run!')
 
-                cais = CausalAgent()
+                cais = CausalAgent(
+                    dataset_path=data_path,
+                    dataset_description=desc,
+                )
                 
                 cais.run_analysis(
                     query=row["natural_language_query"],
-                    dataset_path=data_path,
-                    dataset_description=desc,
-                    use_decision_tree=True
                 )
 
             except Exception as e:
