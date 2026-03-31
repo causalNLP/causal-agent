@@ -341,7 +341,7 @@ def run_causal_analysis(query: str, dataset_path: str,
         instrument_hints=input_parsing_result["extracted_variables"].get("instruments_mentioned")
         )
 
-        query_interpreter_output = query_interpreter_tool.func(query_info=query_info, dataset_analysis=dataset_analysis_result, dataset_description=input_parsing_result["dataset_description"], original_query = input_parsing_result["original_query"]).variables
+        query_interpreter_output = query_interpreter_tool.func(dataset_analysis=dataset_analysis_result, dataset_description=input_parsing_result["dataset_description"], original_query=input_parsing_result["original_query"]).variables
 
         # print('LOG RESULTS')
         # print(input_parsing_result['extracted_variables'])
