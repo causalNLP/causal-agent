@@ -166,9 +166,21 @@ def main():
                     dataset_description=desc,
                 )
                 
-                cais.run_analysis(
+                res = cais.run_analysis(
                     query=row["natural_language_query"],
                 )
+                
+                # write result to file
+                formatted_result = {
+                    "query": row["natural_language_query"],
+                    "method": row["method"],
+                    "answer": row["answer"],
+                    "dataset_description": desc,
+                    "dataset_path": data_path,
+                    "keywords": row.get("keywords", "Causality, Average treatment effect"),
+                    "final_result": res
+                }
+                file.write(json.dumps({idx: formatted_result}) + "\n")
 
             except Exception as e:
                 logging.error(f"[row {idx}] Error: {e}")
