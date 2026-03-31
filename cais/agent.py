@@ -447,6 +447,16 @@ def run_causal_analysis(query: str, dataset_path: str,
             dataset_description=input_parsing_result["dataset_description"],
             original_query = input_parsing_result["original_query"])
         result = explainer_output
+        
+        # include query_info in result
+        result["query_info"] = {
+            "query_text": input_parsing_result["original_query"],
+            "potential_treatments": input_parsing_result["extracted_variables"].get("treatment"),
+            "potential_outcomes": input_parsing_result["extracted_variables"].get("outcome"),
+            "covariates_hints": input_parsing_result["extracted_variables"].get("covariates_mentioned"),
+            "instrument_hints": input_parsing_result["extracted_variables"].get("instruments_mentioned")
+        }
+        
         #result['results']['results']["method_used"] = method_validator_output.get('method')
         logger.debug(result)
         logger.info("Causal analysis run finished.")
