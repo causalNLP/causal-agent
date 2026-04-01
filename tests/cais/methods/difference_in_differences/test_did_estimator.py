@@ -6,9 +6,6 @@ from unittest.mock import patch, MagicMock
 
 # Module containing the function to test
 ESTIMATOR_MODULE = "cais.methods.difference_in_differences.estimator"
-UTILS_MODULE = "cais.methods.difference_in_differences.utils"
-ASSIST_MODULE = "cais.methods.difference_in_differences.llm_assist"
-DIAGNOSTICS_MODULE = "cais.methods.difference_in_differences.diagnostics"
 
 # Import the function to test AFTER defining the module path
 from cais.methods.difference_in_differences.estimator import estimate_effect
@@ -72,11 +69,11 @@ def sample_did_data():
 # --- Test Cases ---
 
 # Mock all imported helper functions from estimator module
-@patch(f'{ASSIST_MODULE}.identify_time_variable')
-@patch(f'{ASSIST_MODULE}.determine_treatment_period')
-@patch(f'{ASSIST_MODULE}.identify_treatment_group')
-@patch(f'{UTILS_MODULE}.create_post_indicator')
-@patch(f'{DIAGNOSTICS_MODULE}.validate_parallel_trends')
+@patch(f'{ESTIMATOR_MODULE}.identify_time_variable')
+@patch(f'{ESTIMATOR_MODULE}.determine_treatment_period')
+@patch(f'{ESTIMATOR_MODULE}.identify_treatment_group')
+@patch(f'{ESTIMATOR_MODULE}.create_post_indicator')
+@patch(f'{ESTIMATOR_MODULE}.validate_parallel_trends')
 @patch(f'{ESTIMATOR_MODULE}.format_did_results') # Also mock the formatter
 @patch(f'{ESTIMATOR_MODULE}.smf.ols') # Mock statsmodels itself
 def test_estimate_effect_twfe_no_covariates(
@@ -111,6 +108,7 @@ def test_estimate_effect_twfe_no_covariates(
         sample_did_data, 
         treatment='group', 
         outcome='outcome', 
+        time_variable='time_period',
         covariates=[],
         dataset_description={}
         )
@@ -161,11 +159,11 @@ def test_estimate_effect_missing_outcome(sample_did_data):
             estimate_effect(sample_did_data, treatment='group', outcome='missing_outcome', covariates=[], dataset_description={})
 
 # Example for variable identification test
-@patch(f'{ASSIST_MODULE}.identify_time_variable')
-@patch(f'{ASSIST_MODULE}.determine_treatment_period')
-@patch(f'{ASSIST_MODULE}.identify_treatment_group')
-@patch(f'{UTILS_MODULE}.create_post_indicator')
-@patch(f'{DIAGNOSTICS_MODULE}.validate_parallel_trends')
+@patch(f'{ESTIMATOR_MODULE}.identify_time_variable')
+@patch(f'{ESTIMATOR_MODULE}.determine_treatment_period')
+@patch(f'{ESTIMATOR_MODULE}.identify_treatment_group')
+@patch(f'{ESTIMATOR_MODULE}.create_post_indicator')
+@patch(f'{ESTIMATOR_MODULE}.validate_parallel_trends')
 @patch(f'{ESTIMATOR_MODULE}.format_did_results') 
 @patch(f'{ESTIMATOR_MODULE}.smf.ols') 
 def test_treatment_col_identification(

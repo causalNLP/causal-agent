@@ -3,7 +3,7 @@ import statsmodels.formula.api as smf
 import statsmodels.api as sm
 
 # --- Step 1: Load Data ---
-df = pd.read_csv("benchmark/all_data/billboard_impact.csv")
+df = pd.read_csv("../data/all_data/billboard_impact.csv")
 
 # --- Step 2: Create Interaction Term ---
 # poa = 1 for treatment group (Porto Alegre), 0 otherwise

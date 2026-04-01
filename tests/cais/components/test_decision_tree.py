@@ -4,7 +4,7 @@ import pytest
 from cais.components.decision_tree import (
     select_method,
     METHOD_ASSUMPTIONS, # Import assumptions map
-    REGRESSION_ADJUSTMENT, LINEAR_REGRESSION, LINEAR_REGRESSION_COV,
+    LINEAR_REGRESSION, 
     DIFF_IN_DIFF, REGRESSION_DISCONTINUITY, PROPENSITY_SCORE_MATCHING,
     INSTRUMENTAL_VARIABLE
 )
