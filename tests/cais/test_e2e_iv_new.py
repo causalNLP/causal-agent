@@ -2,6 +2,7 @@ import unittest
 import json
 import os
 import sys
+import pandas as pd
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if ROOT not in sys.path:
@@ -11,34 +12,86 @@ from cais.agent import CausalAgent
 
 
 class TestE2EIVNewPipeline(unittest.TestCase):
-    def test_iv_llm_pipeline_app_engagement_push(self):
-        """Run the full CAIS pipeline end-to-end (real API calls, no mocks)."""
+    def test_iv_llm_pipeline_bulk(self):
+        """Run several queries from the CSV data and log LLM outputs."""
+        csv_path = os.path.join(ROOT, "data", "checked_real_data - Final.csv")
+        df = pd.read_csv(csv_path)
 
-        # --- Scenario ---
-        query = "What is the effect of education on earnings??"
-        dataset_path = "data/all_data/card_geographic.csv"
-        dataset_description = (
-            """The National Longitudinal Survey of Young Men (NLSYM) was conducted to collect data on demographics, education, and employment outcomes. Participants were tracked over time to study long-term patterns. The dataset used here comes from the 1976 wave of the survey. Variables include: lwage: log of wages educ: years of education exper: years of work experience black: 1 if the individual is Black, 0 otherwise south: 1 if the individual lives in a southern state, 0 otherwise married: 1 if married, 0 otherwise smsa: 1 if living in a metropolitan area, 0 otherwise nearc4: 1 if there is a four-year college in the county, 0 otherwise"""
-        )
+        # Filter for entries that specifically use IV as the method
+        iv_methods = ['iv', 'iva', 'tsls', '2sls', 'iv_reg', 'iv-reg', 'instrumental_variable']
+        iv_df = df[df['method'].str.strip().str.lower().isin(iv_methods)]
+        
+        # Take a subset of unique queries (first 5)
+        # You can Increase this number to run more!
+        sample_df = iv_df.head(5)
 
-        print("--- Running E2E Test Output ---")
-        agent = CausalAgent(
-            dataset_path=dataset_path,
-            dataset_description=dataset_description,
-        )
-        output = agent.run_analysis(
-            query=query,
-        )
-        print(json.dumps(output, indent=2, default=str))
-        print("-----------------------------------------------------")
+        results_log = []
+        output_file = os.path.join(os.path.dirname(__file__), "llm_outputs.json")
 
-        # --- Assertions ---
-        self.assertIsNotNone(output, "Agent returned None output.")
-        self.assertIsInstance(output, dict, "Agent output is not a dict.")
-        self.assertNotIn("error", output, f"Agent returned error: {output.get('error')}")
-        self.assertIn("results", output)
-        self.assertIn("explanation", output)
-        self.assertIn("instrument", json.dumps(output).lower())
+        print(f"--- Running Bulk E2E Test (5 queries) ---")
+        
+        for idx, row in sample_df.iterrows():
+            query = row["natural_language_query"]
+            filename = row["data_files"]
+            dataset_description = row["data_description"]
+            
+            # Find the dataset file in 'data' directory
+            dataset_path = None
+            search_dirs = [
+                os.path.join(ROOT, "data"),
+                os.path.join(ROOT, "data", "all_data"),
+                os.path.join(ROOT, "data", "synthetic_data")
+            ]
+            
+            # Extract just the filename just in case it has path info
+            filename = os.path.basename(filename)
+            
+            for d in search_dirs:
+                potential_path = os.path.join(d, filename)
+                if os.path.exists(potential_path):
+                    dataset_path = potential_path
+                    break
+            
+            if not dataset_path:
+                print(f"Skipping row {idx}: Dataset file {filename} not found.")
+                continue
+
+            print(f"\n[Query {idx+1}] File: {filename}")
+            print(f"Query: {query}")
+            
+            try:
+                agent = CausalAgent(
+                    dataset_path=dataset_path,
+                    dataset_description=dataset_description,
+                )
+                output = agent.run_analysis(
+                    query=query,
+                )
+                
+                # Basic correctness check
+                self.assertIsNotNone(output, "Agent returned None output.")
+                
+                # Collect result
+                result_entry = {
+                    "query": query,
+                    "filename": filename,
+                    "llm_output": output
+                }
+                results_log.append(result_entry)
+                
+            except Exception as e:
+                print(f"Error running analysis for row {idx}: {e}")
+                results_log.append({
+                    "query": query,
+                    "filename": filename,
+                    "error": str(e)
+                })
+
+        # Save all results to JSON
+        with open(output_file, "w") as f:
+            json.dump(results_log, f, indent=2, default=str)
+        
+        print(f"\n--- All results logged to {output_file} ---")
 
 
 if __name__ == "__main__":

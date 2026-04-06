@@ -66,9 +66,11 @@ class CausalAgent():
             dataset_description: Optional[str] = None, # Description of the dataset
             model_name: Optional[str] = None,
             provider: Optional[str] = None,
+            use_iv_pipeline: bool = False,
     ):
         # Query not passed to constructor or saved so we can rerun different queries on the same dataset
 
+        self.use_iv_pipeline = use_iv_pipeline
         self.llm_info = {
             'model_name' : model_name,
             'provider' : provider
@@ -127,6 +129,7 @@ class CausalAgent():
             dataset_path=self.dataset_path,
             dataset_description=self.dataset_description,
             original_query=query,
+            use_iv_pipeline=self.use_iv_pipeline,
             llm=self.llm
         ).analysis_results        
         
@@ -285,7 +288,7 @@ class CausalAgent():
             query=query,
             llm_decision=llm_method_selection
         )
-        if self.selected_method == INSTRUMENTAL_VARIABLE:
+        if self.selected_method == INSTRUMENTAL_VARIABLE and self.use_iv_pipeline:
             logger.info("Instrumental Variable method selected. Running IV Discovery...")
             self.discover_instruments(
                 query=query
@@ -312,7 +315,8 @@ class CausalAgent():
 def run_causal_analysis(query: str, dataset_path: str,
                         dataset_description: Optional[str] = None,
                         api_key: Optional[str] = None,
-                        use_method_validator: bool = True) -> Dict[str, Any]:
+                        use_method_validator: bool = True,
+                        use_iv_pipeline: bool = False) -> Dict[str, Any]:
     """
     Run causal analysis on a dataset based on a user query.
     
@@ -368,7 +372,7 @@ def run_causal_analysis(query: str, dataset_path: str,
         # This just returns query, dataset_path for the csv file and dataset_description
         # and workflow state update but that's probably not needed
 
-        dataset_analysis_result = dataset_analyzer_tool.func(dataset_path=input_parsing_result["dataset_path"], dataset_description=input_parsing_result["dataset_description"], original_query=input_parsing_result["original_query"]).analysis_results
+        dataset_analysis_result = dataset_analyzer_tool.func(dataset_path=input_parsing_result["dataset_path"], dataset_description=input_parsing_result["dataset_description"], original_query=input_parsing_result["original_query"], use_iv_pipeline=use_iv_pipeline).analysis_results
         
         query_info = QueryInfo(
         query_text=input_parsing_result["original_query"],
@@ -439,6 +443,22 @@ def run_causal_analysis(query: str, dataset_path: str,
                     "suggestions": []
                 }
             }
+        
+        if method_name == INSTRUMENTAL_VARIABLE and use_iv_pipeline:
+            logger.info("Instrumental Variable method selected. Running IV Discovery...")
+            iv_discovery_output = iv_discovery_tool.func(
+                variables=query_interpreter_output,
+                dataset_analysis=dataset_analysis_result,
+                dataset_description=input_parsing_result["dataset_description"],
+                original_query=input_parsing_result["original_query"]
+            )
+            # update variables
+            if hasattr(iv_discovery_output, "model_dump"):
+                iv_discovery_output_dict = iv_discovery_output.model_dump()
+            else:
+                iv_discovery_output_dict = iv_discovery_output
+            query_interpreter_output = Variables(**iv_discovery_output_dict["variables"])
+
         controls_selector_output = controls_selector_tool.func(
             method_name=method_name,
             variables=query_interpreter_output,

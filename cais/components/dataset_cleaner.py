@@ -70,6 +70,7 @@ CODEGEN_SYSTEM  = """You are “CausalPrep-Codegen”.
 Input: (dataset_path, Transformation Spec JSON).
 Output: A SINGLE Python script as text that:
 - imports only: json, os, pandas as pd, numpy as np
+- NEVER RE-DEFINE `__DATASET_PATH__` or `__CLEANED_PATH__`. They are already provided.
 - loads the dataset from the path provided in global variable `__DATASET_PATH__`
 - applies ONLY what the Spec asks for (row_filters, column_ops, method_constructs, etc.)
 - keeps all original columns unless Spec explicitly drops them
