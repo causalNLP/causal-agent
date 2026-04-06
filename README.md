@@ -176,7 +176,7 @@ Args:
 * output_name (str): Name of the JSON file where the outputs will be saved
 * llm_name (str): Name of the LLM to be used (e.g., 'gpt-4o', 'claude-3-5-sonnet', etc.)
 * llm_provider (str): Name of the LLM service provider (e.g., 'openai', 'anthropic', 'together', etc.)
-* iv_llm (bool, optional): If flag is present, enables the advanced experimental IV LLM pipeline for instrument discovery and validation.
+* iv_llm (bool, optional): If flag is present, enables the advanced experimental [IV LLM pipeline](https://arxiv.org/pdf/2602.07943) for instrument discovery and validation.
   
 A specific example, 
 ```python

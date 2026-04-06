@@ -50,6 +50,10 @@ docs = [
   "sphinx>=7",
   "myst-parser>=3",
   "sphinx-rtd-theme>=2",
+  "nbsphinx>=0.9",
+  "sphinx-sitemap>=2.5",
+  "sphinxcontrib-mermaid>=1.0",
+  "sphinxext-opengraph>=0.9",
 ]
 
 [project.urls]
