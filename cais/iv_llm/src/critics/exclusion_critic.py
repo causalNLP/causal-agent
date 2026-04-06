@@ -4,7 +4,6 @@ from typing import List
 
 from langchain_core.language_models import BaseChatModel
 
-from cais.utils.llm_helpers import invoke_llm
 from ..prompts.prompt_loader import PromptLoader
 
 logger = logging.getLogger(__name__)
@@ -18,7 +17,7 @@ class ExclusionCritic:
         # Exclusion restriction: does IV affect outcome only through treatment?
         # Confounders not directly relevant here - just check direct pathways
         prompt = self.prompt_loader.format_exclusion_prompt(iv, treatment, outcome, confounders)
-        response = invoke_llm(self.llm, prompt)
+        response = self.llm.invoke(prompt)
         result = self._parse_validity(response)
         
         # Log detailed output

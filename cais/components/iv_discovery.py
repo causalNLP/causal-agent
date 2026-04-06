@@ -6,13 +6,14 @@ from cais.iv_llm.src.agents.hypothesizer import Hypothesizer
 from cais.iv_llm.src.agents.confounder_miner import ConfounderMiner
 from cais.iv_llm.src.critics.exclusion_critic import ExclusionCritic
 from cais.iv_llm.src.critics.independence_critic import IndependenceCritic
+from cais.iv_llm.src.llm.client import LLMClient
 
 
 logger = logging.getLogger(__name__)
 
 class IVDiscovery:
     def __init__(self):
-        llm = get_llm_client()
+        llm = LLMClient()
         self.hypothesizer = Hypothesizer(llm, k=5)
         self.confounder_miner = ConfounderMiner(llm, j=5)
         self.exclusion_critic = ExclusionCritic(llm)

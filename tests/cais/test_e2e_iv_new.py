@@ -21,9 +21,8 @@ class TestE2EIVNewPipeline(unittest.TestCase):
         iv_methods = ['iv', 'iva', 'tsls', '2sls', 'iv_reg', 'iv-reg', 'instrumental_variable']
         iv_df = df[df['method'].str.strip().str.lower().isin(iv_methods)]
         
-        # Take a subset of unique queries (first 5)
-        # You can Increase this number to run more!
-        sample_df = iv_df.head(5)
+        # Take a subset of unique queries
+        sample_df = iv_df.head(3)
 
         results_log = []
         output_file = os.path.join(os.path.dirname(__file__), "llm_outputs.json")

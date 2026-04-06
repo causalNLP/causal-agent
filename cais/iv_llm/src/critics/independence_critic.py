@@ -4,7 +4,6 @@ from typing import List
 
 from langchain_core.language_models import BaseChatModel
 
-from cais.utils.llm_helpers import invoke_llm
 from ..prompts.prompt_loader import PromptLoader
 
 logger = logging.getLogger(__name__)
@@ -20,7 +19,7 @@ class IndependenceCritic:
         
         for confounder in confounders:
             prompt = self.prompt_loader.format_independence_prompt(iv, treatment, outcome, confounder)
-            response = invoke_llm(self.llm, prompt)
+            response = self.llm.invoke(prompt)
             responses[confounder] = response
             
             if not self._parse_validity(response):

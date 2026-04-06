@@ -4,7 +4,6 @@ from typing import List
 
 from langchain_core.language_models import BaseChatModel
 
-from cais.utils.llm_helpers import invoke_llm
 from ..prompts.prompt_loader import PromptLoader
 from ..variable_utils import extract_available_columns, filter_to_available, fallback_candidates
 
@@ -18,7 +17,7 @@ class Hypothesizer:
     
     def propose_ivs(self, treatment: str, outcome: str, context: str = "") -> List[str]:
         prompt = self.prompt_loader.format_hypothesizer_prompt(treatment, outcome, self.k, context=context)
-        response = invoke_llm(self.llm, prompt)
+        response = self.llm.invoke(prompt)
         ivs_raw = self._parse_ivs(response)
 
         available_cols = extract_available_columns(context)

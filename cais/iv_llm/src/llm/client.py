@@ -5,12 +5,6 @@ from cais.config import get_llm_client
 from langchain_core.language_models import BaseChatModel
 
 
-def invoke_llm(llm: BaseChatModel, prompt: str) -> str:
-    """Call llm with prompt and return the text content"""
-    response = llm.invoke(prompt)
-    if hasattr(response, "content"):
-        return response.content
-    return str(response)
 
 
 class LLMClient:
@@ -24,6 +18,9 @@ class LLMClient:
         else:
             self._llm = get_llm_client()
 
-    def invoke(self, prompt: str):
-        """Delegate to the underlying LangChain model."""
-        return self._llm.invoke(prompt)
+    def invoke(self, prompt: str) -> str:
+        """Delegate to the underlying LangChain model and return string content."""
+        response = self._llm.invoke(prompt)
+        if hasattr(response, "content"):
+            return response.content
+        return str(response)
