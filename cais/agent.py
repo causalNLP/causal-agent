@@ -229,8 +229,6 @@ class CausalAgent():
         if not self.cleaned_dataset_path or not os.path.exists(self.cleaned_dataset_path):
             stderr = cleaning_output.get("stderr", "No stderr available.")
             logger.error(f"Dataset cleaning failed to produce a file at {self.cleaned_dataset_path}. Stderr: {stderr}")
-            # Fallback to original dataset if cleaning failed but we want to attempt execution?
-            # Or raise error. Let's raise for now to be safe.
             raise FileNotFoundError(f"Cleaned dataset NOT found at {self.cleaned_dataset_path}. Cleaning stderr: {stderr}")
             
         return self.cleaned_dataset_path
