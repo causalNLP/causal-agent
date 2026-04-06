@@ -37,9 +37,6 @@ Causal effect estimation is central to evidence-based decision-making across dom
 - Execute the method using predefined code templates and validate the results.
 - Interpret the numerical output in the context of the original query.
 
-<div align="center">
-  <img src="blob/main/asset/CAIS-arch.png" width="990" alt="CAIS Architecture" />
-</div>
 
 **Supported Methods:**
 - **Econometric:** Difference-in-Differences (DiD), Instrumental Variables (IV), Ordinary Least Squares (OLS), Regression Discontinuity Design (RDD)
