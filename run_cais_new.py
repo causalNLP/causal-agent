@@ -168,9 +168,16 @@ def main():
                     query=row["natural_language_query"],
                     dataset_path=data_path,
                     dataset_description=desc,
-                    use_decision_tree=True
+                    model_name=args.llm_name,
+                    provider=args.llm_provider
+                )
+                
+                results = cais.run_analysis(
+                    query=row["natural_language_query"],
+                    llm_method_selection=False
                 )
 
+                file.write(json.dumps({idx: results}) + "\n")
             except Exception as e:
                 logging.error(f"[row {idx}] Error: {e}")
                 file.write(json.dumps({idx: str(e)}) + "\n")

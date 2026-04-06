@@ -37,7 +37,9 @@ def test_parse_input_with_real_llm():
         f.write("A,2009,0,5.5,10000\n")
         f.write("A,2011,1,6.0,10200\n")
         
-    result1 = input_parser.parse_input(query=query1, dataset_info=dataset_info1)
+    from cais.config import get_llm_client
+    llm = get_llm_client()
+    result1 = input_parser.parse_input(query=query1, dataset_info=dataset_info1, llm=llm)
     
     # Clean up dummy file
     if os.path.exists(dummy_file_path):
@@ -73,7 +75,7 @@ def test_parse_input_with_real_llm():
         'column_types': { 'Date': 'datetime64[ns]', 'Sales': 'float64', 'Summer Sale': 'int64', 'Competitor Activity': 'float64'}
     }
     
-    result2 = input_parser.parse_input(query=query2, dataset_info=dataset_info2)
+    result2 = input_parser.parse_input(query=query2, dataset_info=dataset_info2, llm=llm)
     
     # Assertions for Test Case 2
     assert result2 is not None
@@ -91,7 +93,7 @@ def test_parse_input_with_real_llm():
         'columns': ['sales', 'ads'],
         'column_types': {'sales': 'float', 'ads': 'float'}
     }
-    result3 = input_parser.parse_input(query=query3, dataset_info=dataset_info3)
+    result3 = input_parser.parse_input(query=query3, dataset_info=dataset_info3, llm=llm)
     assert result3 is not None
     # LLM might fail extraction; check default/fallback values
     # Query type might default to OTHER or CORRELATION/DESCRIPTIVE

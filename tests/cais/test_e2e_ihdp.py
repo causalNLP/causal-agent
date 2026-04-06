@@ -39,7 +39,7 @@ class TestE2EIHDP(unittest.TestCase):
 
         # Check if data file exists
         if not os.path.exists(cls.dataset_path):
-            raise FileNotFoundError(f"E2E test requires dataset at: {cls.dataset_path}")
+            raise unittest.SkipTest(f"Skipping E2E test: dataset not found at {cls.dataset_path}")
         
         # Ensure API key is available (or skip test)
         # This check will now happen *after* load_dotenv attempts to load it

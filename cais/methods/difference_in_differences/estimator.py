@@ -13,6 +13,9 @@ from .diagnostics import validate_parallel_trends
 from .llm_assist import interpret_did_results
 from cais.config import get_llm_client
 from cais.methods.causal_method import CausalMethod
+from cais.methods.difference_in_differences.utils import create_post_indicator
+from cais.methods.difference_in_differences.diagnostics import validate_parallel_trends, assess_trends_visually, run_placebo_test
+from cais.methods.difference_in_differences.llm_assist import identify_time_variable, identify_treatment_group, interpret_did_results, determine_treatment_period
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +38,12 @@ class DiDRegression(CausalMethod):
     def estimate_effect(self, df, variables, query=None):
 
         assert (
-            hasattr(variables, 'time_variable') and
             hasattr(variables, 'group_variable') and
             hasattr(variables, 'did_term') and
             hasattr(variables, 'outcome_variable')
         )
         
-        time_var = variables.time_variable
+        time_var = variables.get('time_variable')
         group_var = variables.group_variable
         outcome = variables.outcome_variable
         treatment = variables.treatment_variable

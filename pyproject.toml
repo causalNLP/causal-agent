@@ -63,5 +63,8 @@ Issues = "https://github.com/causalNLP/causal-agent/issues"
 [project.scripts]
 cais = "cais.cli:main"
 
+[tool.pytest.ini_options]
+testpaths = ["tests/cais"]
+
 [tool.setuptools.packages.find]
 exclude = ["tests*", "reproduce_results*", "replication_codes*"]

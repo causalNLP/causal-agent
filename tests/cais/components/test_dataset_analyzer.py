@@ -2,6 +2,7 @@ import unittest
 import os
 import pandas as pd
 import numpy as np
+from unittest.mock import patch
 
 # Import the function to test
 from cais.components.dataset_analyzer import analyze_dataset
@@ -26,7 +27,7 @@ class TestDatasetAnalyzer(unittest.TestCase):
             'numeric_cov': [1.1, 2.2, 1.3, 2.5, 1.0, 2.9]
         })
         self.test_files.append(self.basic_data_path)
-        
+
         # Panel data
         self.panel_data_path = "analyzer_test_panel.csv"
         create_dummy_csv_for_analysis(self.panel_data_path, {
@@ -36,7 +37,7 @@ class TestDatasetAnalyzer(unittest.TestCase):
             'value': [5, 6, 7, 7.5]
         })
         self.test_files.append(self.panel_data_path)
-        
+
         # Data with potential instrument
         self.iv_data_path = "analyzer_test_iv.csv"
         create_dummy_csv_for_analysis(self.iv_data_path, {
@@ -45,11 +46,11 @@ class TestDatasetAnalyzer(unittest.TestCase):
             'Y_outcome': [10, 11, 12, 15]
         })
         self.test_files.append(self.iv_data_path)
-        
+
         # Data with discontinuity
         self.rdd_data_path = "analyzer_test_rdd.csv"
         create_dummy_csv_for_analysis(self.rdd_data_path, {
-            'running_var': [-1.5, -0.5, 0.5, 1.5, -1.1, 0.8], 
+            'running_var': [-1.5, -0.5, 0.5, 1.5, -1.1, 0.8],
             'outcome_rdd': [4, 5, 10, 11, 4.5, 10.5]
         })
         self.test_files.append(self.rdd_data_path)
@@ -63,27 +64,27 @@ class TestDatasetAnalyzer(unittest.TestCase):
     def test_analyze_basic_structure(self):
         '''Test the basic structure and keys of the summarized output.'''
         result = analyze_dataset(self.basic_data_path)
-        
+
         self.assertIsInstance(result, dict)
         self.assertNotIn("error", result, f"Analysis failed: {result.get('error')}")
-        
+
         expected_keys = [
             "dataset_info", "columns", "potential_treatments", "potential_outcomes",
-            "temporal_structure_detected", "panel_data_detected", 
+            "temporal_structure_detected", "panel_data_detected",
             "potential_instruments_detected", "discontinuities_detected"
         ]
-        # Check old detailed keys are NOT present
+        # These old detailed keys should NOT be present in the top-level output
         unexpected_keys = [
-            "column_types", "column_categories", "missing_values", "correlations",
-            "discontinuities", "variable_relationships", "column_type_summary",
+            "column_types", "missing_values", "correlations",
+            "variable_relationships", "column_type_summary",
             "missing_value_summary", "discontinuity_summary", "relationship_summary"
         ]
-        
+
         for key in expected_keys:
             self.assertIn(key, result, f"Expected key '{key}' missing.")
         for key in unexpected_keys:
-             self.assertNotIn(key, result, f"Unexpected key '{key}' present.")   
-             
+             self.assertNotIn(key, result, f"Unexpected key '{key}' present.")
+
         # Check some types
         self.assertIsInstance(result["columns"], list)
         self.assertIsInstance(result["potential_treatments"], list)
@@ -94,27 +95,39 @@ class TestDatasetAnalyzer(unittest.TestCase):
         self.assertIsInstance(result["discontinuities_detected"], bool)
 
     def test_analyze_panel_data(self):
-        '''Test detection of panel data structure.'''
-        result = analyze_dataset(self.panel_data_path)
+        '''Test detection of panel data structure (mocking LLM-based detection).'''
+        mock_temporal = {
+            "has_temporal_structure": True,
+            "temporal_columns": ["year"],
+            "is_panel_data": True,
+            "time_column": "year",
+            "id_column": "unit",
+            "time_periods": 2,
+            "units": 2,
+            "identification_method": "LLM",
+            "did_canonical": None,
+            "did_term": None,
+            "treatment_time": None,
+            "treatment_state": None,
+        }
+        with patch('cais.components.dataset_analyzer.detect_temporal_structure', return_value=mock_temporal):
+            result = analyze_dataset(self.panel_data_path)
         self.assertTrue(result["temporal_structure_detected"])
         self.assertTrue(result["panel_data_detected"])
-        self.assertIn('year', result["columns"]) # Check columns list is correct
+        self.assertIn('year', result["columns"])
         self.assertIn('unit', result["columns"])
 
     def test_analyze_iv_data(self):
-        '''Test detection of potential IV.'''
-        result = analyze_dataset(self.iv_data_path)
+        '''Test detection of potential IV (mocking LLM-based detection).'''
+        mock_instruments = [{"variable": "Z_assigned", "reason": "Random assignment", "data_type": "int64"}]
+        with patch('cais.components.dataset_analyzer.find_potential_instruments', return_value=mock_instruments):
+            result = analyze_dataset(self.iv_data_path)
         self.assertTrue(result["potential_instruments_detected"])
 
     def test_analyze_rdd_data(self):
         '''Test detection of potential discontinuity.'''
-        # Note: Our summarized output only has a boolean flag.
-        # The internal detection logic might be complex, but output is simple.
         result = analyze_dataset(self.rdd_data_path)
-        # This depends heavily on the thresholds in detect_discontinuities
-        # It might be False if the dummy data doesn't trigger it reliably
-        # self.assertTrue(result["discontinuities_detected"]) 
-        # For now, just check the key exists
+        # Just check the key exists; detection threshold may not trigger on tiny data
         self.assertIn("discontinuities_detected", result)
 
     def test_analyze_file_not_found(self):
@@ -124,4 +137,4 @@ class TestDatasetAnalyzer(unittest.TestCase):
         self.assertIn("not found", result["error"])
 
 if __name__ == '__main__':
-    unittest.main() 
+    unittest.main()

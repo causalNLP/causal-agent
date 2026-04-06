@@ -80,9 +80,9 @@ class TestPropensityScoreMatching:
         #assert 'plots' in results['diagnostics']
         #assert 'percent_treated_matched' in results['diagnostics']
 
-    @patch('cais.methods.propensity_score.llm_assist.get_llm_parameters')
+    @patch('cais.methods.propensity_score.matching.get_llm_parameters')
     @patch('cais.methods.propensity_score.llm_assist.determine_optimal_caliper')
-    @patch('cais.methods.propensity_score.base.select_propensity_model')
+    @patch('cais.methods.propensity_score.matching.select_propensity_model')
     def test_llm_parameter_usage(self, mock_select_model, mock_determine_caliper, mock_get_llm_params):
         """Test that LLM helper functions are called and their results are potentially used."""
         df = generate_synthetic_psm_data(n_samples=100, seed=456) # Smaller sample for this test
@@ -117,6 +117,19 @@ class TestPropensityScoreMatching:
         assert results['parameters']['n_neighbors'] == 2
         assert results['parameters']['propensity_model'] == 'logistic' # Came from fallback
 
-    # TODO: Add tests for diagnostic outputs (checking balance improvement)
-    # TODO: Add tests for edge cases (e.g., no matches found)
-    # TODO: Add tests for different parameter inputs (e.g., specifying caliper directly) 
+    def test_estimate_effect_no_treated_units(self):
+        """estimate_effect raises ValueError when there are no treated units."""
+        df = generate_synthetic_psm_data(n_samples=100, seed=99)
+        df['treatment'] = 0  # Force all units to control
+
+        with pytest.raises(ValueError):
+            ps_matching.estimate_effect(df, 'treatment', 'outcome', ['X1', 'X2'])
+
+    def test_estimate_effect_missing_covariate_column(self):
+        """estimate_effect raises an error when a covariate column does not exist."""
+        df = generate_synthetic_psm_data(n_samples=100, seed=10)
+
+        with pytest.raises((KeyError, ValueError, TypeError)):
+            ps_matching.estimate_effect(
+                df, 'treatment', 'outcome', ['X1', 'nonexistent_col']
+            )
