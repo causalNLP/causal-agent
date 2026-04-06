@@ -130,7 +130,7 @@ class CausalAgent():
         )
         
         self.dataset_analysis = dataset_analysis
-        self.query_interpreter_output = query_interpreter_output
+        #self.query_interpreter_output = query_interpreter_output
         self.variables = query_interpreter_output.variables
 
     def select_method(self, query=None, llm_decision=True):
@@ -223,11 +223,10 @@ class CausalAgent():
         except:
             method_executor_input = MethodExecutorInput(
                         method = self.selected_method,
-                        variables=self.query_interpreter_output,
+                        variables=self.variables,
                         dataset_path=self.cleaned_dataset_path,
                         dataset_analysis=self.dataset_analysis,
                         dataset_description=self.dataset_description,
-                        # validation_info=method_validator_output,
                         original_query = query
                     )
             logger.debug(method_executor_input)
@@ -345,15 +344,7 @@ def run_causal_analysis(query: str, dataset_path: str,
 
         dataset_analysis_result = dataset_analyzer_tool.func(dataset_path=input_parsing_result["dataset_path"], dataset_description=input_parsing_result["dataset_description"], original_query=input_parsing_result["original_query"]).analysis_results
         
-        query_info = QueryInfo(
-        query_text=input_parsing_result["original_query"],
-        potential_treatments=input_parsing_result["extracted_variables"].get("treatment"),
-        potential_outcomes=input_parsing_result["extracted_variables"].get("outcome"),
-        covariates_hints=input_parsing_result["extracted_variables"].get("covariates_mentioned"),
-        instrument_hints=input_parsing_result["extracted_variables"].get("instruments_mentioned")
-        )
-
-        query_interpreter_output = query_interpreter_tool.func(query_info=query_info, dataset_analysis=dataset_analysis_result, dataset_description=input_parsing_result["dataset_description"], original_query = input_parsing_result["original_query"]).variables
+        query_interpreter_output = query_interpreter_tool.func(dataset_analysis=dataset_analysis_result, dataset_description=input_parsing_result["dataset_description"], original_query=input_parsing_result["original_query"]).variables
 
         # print('LOG RESULTS')
         # print(input_parsing_result['extracted_variables'])
@@ -378,9 +369,6 @@ def run_causal_analysis(query: str, dataset_path: str,
         
 
         print('METHOD SELECTOR OUTPUT: ', method_selector_output)
-
-        import sys
-        sys.exit()
 
         # NEW: Select control variables based on chosen method
         method_info = MethodInfo(
