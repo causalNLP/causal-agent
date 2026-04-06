@@ -171,9 +171,7 @@ Instructions for reproducing results from the paper will be updated soon.
 
 ## 7. Citation
 
-If you use CAIS in your research, please cite our paper:
-
-If you use CAIS or build on this work, please cite:
+If you use CAIS or build on this work, we would appreciate it if you could cite:
 
 ```bibtex
 @inproceedings{
