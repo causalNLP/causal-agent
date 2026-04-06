@@ -29,7 +29,7 @@ Causal AI Scientist: Facilitating Causal Data Science with Large Language Models
 
 ## 1. Introduction
 
-Causal effect estimation is central to evidence-based decision-making across domains like social sciences, healthcare, and economics, but it requires substantial methodological expertise to apply correctly.
+Causal effect estimation is central to evidence-based decision-making across domains such as the social sciences, healthcare, and economics, but it requires substantial methodological expertise to apply correctly.
 
 **CAIS** automates this process end-to-end using Large Language Models (LLMs) to:
 - Parse a natural language causal query and analyze dataset characteristics.
@@ -86,7 +86,7 @@ If the **Instrumental Variable (IV)** method is selected and the `--iv_llm` pipe
 **Step 1: Clone the repository and copy the example configuration**
 ```bash
 git clone https://github.com/your-repo/cais.git
-cd cais
+cd causal-agent
 cp .env.example .env
 ```
 
@@ -130,7 +130,7 @@ All datasets used to evaluate CAIS and the baseline models are available in the 
 ## 5. Running CAIS
 
 ```bash
-python main/run_cais.py \
+python main/run_cais_new.py \
     --metadata_path <path_to_metadata_csv> \
     --data_dir <path_to_data_folder> \
     --output_dir <output_folder> \
@@ -163,13 +163,8 @@ python main/run_cais.py \
 
 ---
 
-## 6. Reproducing Paper Results
 
-Instructions for reproducing results from the paper will be updated soon.
-
----
-
-## 7. Citation
+## 6. Citation
 
 If you use CAIS or build on this work, we would appreciate it if you could cite:
 
@@ -200,6 +195,6 @@ The IV-LLM pipeline builds on the methodology introduced in [IV Co-Scientist](ht
 
 ---
 
-## 8. License
+## 7. License
 
 Distributed under the MIT License. See `LICENSE` for more information.
