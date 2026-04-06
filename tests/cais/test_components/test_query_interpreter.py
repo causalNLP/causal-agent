@@ -29,8 +29,8 @@ MOCK_DATASET_ANALYSIS_REF_LEVEL = {
     },
     "columns_data_preview": { # Fallback if value_counts isn't structured as expected
         "fertilizer_type": ["Nitro", "Phos", "Control", "Nitro", "Control"]
-    }
-    # Add other necessary fields from DatasetAnalysis model if interpret_query uses them
+    },
+    "dataset_info": {"file_path": None, "file_name": None}
 }
 
 MOCK_DATASET_DESCRIPTION_REF_LEVEL = "A dataset from an agricultural experiment."
@@ -48,32 +48,38 @@ def test_interpret_query_identifies_treatment_reference_level():
     # The other LLM calls (for T, O, C, IV, RDD, RCT) also need to be considered
     # or made to return benign defaults for this specific test.
 
-    # Simulate LLM responses for different calls within interpret_query
-    def mock_llm_call_router(*args, **kwargs):
-        # The first argument to _call_llm_for_var is the llm instance,
-        # The second is the prompt string
-        # The third is the Pydantic model for structured output
+    from cais.models import (
+        LLMTreatmentReferenceLevel, LLMSelectedVariable, LLMSelectedCovariates,
+        LLMIVars, LLMRDDVars, LLMRCTCheck, LLMInteractionSuggestion, LLMEstimand,
+    )
 
+    # Simulate LLM responses for different calls within interpret_query
+    # Match by pydantic_model type (args[2]) which is more robust than prompt string matching
+    def mock_llm_call_router(*args, **kwargs):
         # args[0] is llm, args[1] is prompt, args[2] is pydantic_model
         pydantic_model_passed = args[2]
 
         if pydantic_model_passed == LLMTreatmentReferenceLevel:
             return LLMTreatmentReferenceLevel(reference_level="Control", reasoning="Identified from query text.")
-        # Add mocks for other LLM calls if interpret_query strictly needs them to proceed
-        # For example, for identifying treatment, outcome, covariates, IV, RDD, RCT:
-        elif "most likely treatment variable" in args[1]: # Simplified check for treatment prompt
-            return MagicMock(variable_name="fertilizer_type")
-        elif "most likely outcome variable" in args[1]: # Simplified check for outcome prompt
-             return MagicMock(variable_name="crop_yield")
-        elif "valid covariates" in args[1]: # Simplified check for covariates prompt
-             return MagicMock(covariates=["soil_ph", "rainfall"])
-        elif "Instrumental Variables" in args[1]: # Check for IV prompt
+        elif pydantic_model_passed == LLMSelectedVariable:
+            # Return treatment or outcome based on prompt content
+            if "treatment" in args[1].lower():
+                return MagicMock(variable_name="fertilizer_type")
+            else:
+                return MagicMock(variable_name="crop_yield")
+        elif pydantic_model_passed == LLMSelectedCovariates:
+            return MagicMock(covariates=["soil_ph", "rainfall"])
+        elif pydantic_model_passed == LLMIVars:
             return MagicMock(instrument_variable=None)
-        elif "Regression Discontinuity Design" in args[1]: # Check for RDD prompt
+        elif pydantic_model_passed == LLMRDDVars:
             return MagicMock(running_variable=None, cutoff_value=None)
-        elif "Randomized Controlled Trial" in args[1]: # Check for RCT prompt
+        elif pydantic_model_passed == LLMRCTCheck:
             return MagicMock(is_rct=False, reasoning="No indication of RCT.")
-        return MagicMock() # Default mock for other calls
+        elif pydantic_model_passed == LLMInteractionSuggestion:
+            return MagicMock(interaction_needed=False, interaction_variable=None)
+        elif pydantic_model_passed == LLMEstimand:
+            return MagicMock(estimand="ate")
+        return MagicMock()  # Default mock for other calls
 
     # Patch _call_llm_for_var which is used internally by interpret_query's helpers
     with patch('cais.components.query_interpreter._call_llm_for_var', side_effect=mock_llm_call_router) as mock_llm_call:

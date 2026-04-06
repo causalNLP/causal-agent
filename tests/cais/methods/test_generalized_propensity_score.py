@@ -167,10 +167,7 @@ class TestGeneralizedPropensityScore(unittest.TestCase):
     def test_estimate_effect_gps_end_to_end_smoke(self):
         df = self._generate_synthetic_data(n=200, seed=123)
         results = estimate_effect_gps(
-            df, 
-            treatment_var='T', 
-            outcome_var='Y', 
-            covariate_vars=['X1', 'X2'],
+            df, 'T', 'Y', ['X1', 'X2'],
             t_values_for_adrf=np.linspace(df['T'].min(), df['T'].max(), 7).tolist() # specify t_values
         )
         
@@ -191,10 +188,7 @@ class TestGeneralizedPropensityScore(unittest.TestCase):
         # Test case where GPS estimation might fail (e.g., no covariates)
         df = self._generate_synthetic_data(n=50)
         results = estimate_effect_gps(
-            df, 
-            treatment_var='T', 
-            outcome_var='Y', 
-            covariate_vars=[] # No covariates
+            df, 'T', 'Y', []  # No covariates
         )
         self.assertIn("error", results)
         self.assertEqual(results["error"], "GPS estimation failed.")

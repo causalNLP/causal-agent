@@ -46,11 +46,9 @@ convert = {
     INSTRUMENTAL_VARIABLE: IVRegression.name,
     PROPENSITY_SCORE_MATCHING: PropensityScoreMatching.name
 }
-    
-# Set up basic logging
+
 os.makedirs('./logs/', exist_ok=True)
 logger = logging.getLogger(__name__)
-
 
 class CausalAgent():
     
@@ -59,7 +57,7 @@ class CausalAgent():
             dataset_path: Union[str, pd.DataFrame], # dataset path or dataframe directly
             dataset_description: Optional[str] = None, # Description of the dataset
             model_name: Optional[str] = None,
-            provider: Optional[str] = None,
+            provider: Optional[str] = None
     ):
         # Query not passed to constructor or saved so we can rerun different queries on the same dataset
 
@@ -203,24 +201,39 @@ class CausalAgent():
     def execute_method(self, query=None, remove_cleaned=True):
         
         query = self.checkq(query)
+        logger.info(f"Starting method execution. Trying to run {self.selected_method}")
+        try:
+            estimator = self.estimators[
+                convert[self.selected_method]
+            ]
 
-        estimator = self.estimators[
-            convert[self.selected_method]
-        ]
-
-        df = self.load_dataset(cleaned=True)
-        df.dropna(subset=[
-            self.variables.outcome_variable,
-            self.variables.treatment_variable
-            ] + self.variables.confounders,
-            inplace=True
-        ) # safety
-
-        self.results = estimator(
-            df=df,
-            variables=self.variables,
-            query=query
-        ) | self.llm_info # append llm info
+            df = self.load_dataset(cleaned=True)
+            df.dropna(subset=[
+                self.variables.outcome_variable,
+                self.variables.treatment_variable
+                ] + self.variables.confounders,
+                inplace=True
+            ) # safety
+            
+            self.results = estimator(
+                df=df,
+                variables=self.variables,
+                query=query
+            ) | self.llm_info # append llm info
+        except:
+            method_executor_input = MethodExecutorInput(
+                        method = self.selected_method,
+                        variables=self.variables,
+                        dataset_path=self.cleaned_dataset_path,
+                        dataset_analysis=self.dataset_analysis,
+                        dataset_description=self.dataset_description,
+                        original_query = query
+                    )
+            logger.debug(method_executor_input)
+            self.results = method_executor_tool.func(
+                method_executor_input,
+                original_query=query
+            )
 
         self.explanations = explanation_generator_tool.func(
             method_info=self.method_info,
@@ -238,7 +251,10 @@ class CausalAgent():
                 self.cleaned_dataset_path=None
                 logger.info("Succesfully Removed Cleaned Dataset.")
 
-        return self.results
+        return {
+            "results" : self.results,
+            "explanation": self.explanations
+        }
     
     def run_analysis(self, query, llm_method_selection: Optional[bool] = True):
 
@@ -259,14 +275,9 @@ class CausalAgent():
         self.clean_dataset(
             query=query
         )
-        self.execute_method(
+        return self.execute_method(
             query=query
         )
-
-        return {
-            "results" : self.results,
-            "explanation": self.explanations
-        }
 
 
 # ===== DEPRECIATED ======
@@ -333,15 +344,7 @@ def run_causal_analysis(query: str, dataset_path: str,
 
         dataset_analysis_result = dataset_analyzer_tool.func(dataset_path=input_parsing_result["dataset_path"], dataset_description=input_parsing_result["dataset_description"], original_query=input_parsing_result["original_query"]).analysis_results
         
-        query_info = QueryInfo(
-        query_text=input_parsing_result["original_query"],
-        potential_treatments=input_parsing_result["extracted_variables"].get("treatment"),
-        potential_outcomes=input_parsing_result["extracted_variables"].get("outcome"),
-        covariates_hints=input_parsing_result["extracted_variables"].get("covariates_mentioned"),
-        instrument_hints=input_parsing_result["extracted_variables"].get("instruments_mentioned")
-        )
-
-        query_interpreter_output = query_interpreter_tool.func(query_info=query_info, dataset_analysis=dataset_analysis_result, dataset_description=input_parsing_result["dataset_description"], original_query = input_parsing_result["original_query"]).variables
+        query_interpreter_output = query_interpreter_tool.func(dataset_analysis=dataset_analysis_result, dataset_description=input_parsing_result["dataset_description"], original_query=input_parsing_result["original_query"]).variables
 
         # print('LOG RESULTS')
         # print(input_parsing_result['extracted_variables'])
@@ -366,9 +369,6 @@ def run_causal_analysis(query: str, dataset_path: str,
         
 
         print('METHOD SELECTOR OUTPUT: ', method_selector_output)
-
-        import sys
-        sys.exit()
 
         # NEW: Select control variables based on chosen method
         method_info = MethodInfo(
