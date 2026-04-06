@@ -3,17 +3,10 @@ from typing import Dict, Any
 import pandas as pd
 import argparse
 from datetime import datetime
-from cais.agent import run_causal_analysis
+from cais.agent import run_causal_analysis, CausalAgent
 
 # Constants
 RATE_LIMIT_SECONDS = 1
-def run_caia(desc, question, df, use_method_validator: bool = True):
-    return run_causal_analysis(
-        query=question,
-        dataset_path=df,
-        dataset_description=desc,
-        use_method_validator=use_method_validator
-    )
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run batch causal analysis (CAIS).")
@@ -31,8 +24,9 @@ def parse_args():
     parser.add_argument("--llm_name", type=str, required=False, help="LLM model name (e.g., gpt-4o-mini).")
     parser.add_argument("--llm_provider", type=str, required=False, help="LLM provider (e.g., openai, anthropic).")
     parser.add_argument("--skip-method-validator", action="store_true", help="Skip method validation step.")
-    parser.add_argument("--use-llm-rule-engine", action="store_true", help="Use LLM-based method selection.")
+    parser.add_argument("--use-decision-tree", action="store_true", help="Use LLM-based method selection.")
     parser.add_argument("--rows", type=str, required=False, help="Path to text file containing specific rows to run.")
+    parser.add_argument("--iv_llm", action="store_true", help="Use the separate IV_LLM pipeline for discovering instrumental variables.")
 
     # Back-compat aliases (older/other scripts)
     parser.add_argument("--csv_path", type=str, required=False, help=argparse.SUPPRESS)
@@ -102,6 +96,8 @@ class TimeoutException(Exception):
 def timeout_handler(signum, frame):
     raise TimeoutException
 
+
+
 def main():
     args = parse_args()
     os.makedirs('./logs/', exist_ok=True)
@@ -134,8 +130,8 @@ def main():
     output_json = args.output_file
     os.environ["LLM_MODEL"] = args.llm_name
     os.environ["LLM_PROVIDER"] = args.llm_provider
-    if args.use_llm_rule_engine:
-        os.environ["CAIS_USE_LLM_RULE_ENGINE"] = "1"
+    if args.use_decision_tree:
+        os.environ["CAIS_USE_DECISION_TREE"] = "1"
     print("[main] Starting batch processing…")
 
     if not os.path.exists(csv_meta):
@@ -148,6 +144,7 @@ def main():
         meta_df = pd.read_csv(csv_meta, encoding='latin-1')
     print(f"[main] Loaded metadata CSV with {len(meta_df)} rows.")
 
+    
     os.makedirs(os.path.dirname(output_json) or ".", exist_ok=True)
     with open(output_json, "a") as file:
         leftoff = get_last_idx(output_json)
@@ -162,38 +159,18 @@ def main():
                 signal.signal(signal.SIGALRM, timeout_handler)
                 signal.alarm(600) # timeout after 10 minutes
                 logger.info(f"Attempting to run CAIS on row [{idx}/{meta_df.shape[0]}]")
-                res = run_caia(
-                    desc=desc,
-                    question=row["natural_language_query"],
-                    df=data_path,
-                    use_method_validator=not args.skip_method_validator
-                )
+
+                print('Starting run!')
+
+                cais = CausalAgent(use_iv_pipeline=args.iv_llm)
                 
-                # Format result according to specified structure
-                formatted_result = {
-                    "query": row["natural_language_query"],
-                    "method": row["method"],
-                    "answer": row["answer"],
-                    "dataset_description": desc,
-                    "dataset_path": data_path,
-                    "keywords": row.get("keywords", "Causality, Average treatment effect"),
-                    "final_result": {
-                        "method": res.get("method_used"),
-                        "causal_effect": res['results'].get("effect_estimate"),
-                        "standard_deviation": res['results'].get("standard_error"),
-                        "treatment_variable": res['variables'].get("treatment_variable", None),
-                        "outcome_variable": res['variables'].get("outcome_variable", None),
-                        "covariates": res['variables'].get("covariates", []),
-                        "instrument_variable": res['variables'].get("instrument_variable", None),
-                        "running_variable": res['variables'].get("running_variable", None),
-                        "temporal_variable": res['variables'].get("time_variable", None),
-                        "statistical_test_results": res.get("summary", ""),
-                        "explanation_for_model_choice": res.get("explanation", ""),
-                        "regression_equation": res.get("regression_equation", "")
-                    }
-                }
-                file.write(json.dumps({idx: formatted_result}) + "\n")
-                print(f"[main] Formatted result for row {idx+1}")
+                cais.run_analysis(
+                    query=row["natural_language_query"],
+                    dataset_path=data_path,
+                    dataset_description=desc,
+                    use_decision_tree=True
+                )
+
             except Exception as e:
                 logging.error(f"[row {idx}] Error: {e}")
                 file.write(json.dumps({idx: str(e)}) + "\n")
