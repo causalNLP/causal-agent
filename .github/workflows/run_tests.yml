@@ -23,6 +23,8 @@ jobs:
       - name: Test with pytest  
         run: |  
           coverage run -m pytest  -v -s  
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       - name: Generate Coverage Report  
         run: |  
           coverage report -m
