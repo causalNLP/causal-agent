@@ -56,6 +56,13 @@ CAIS consists of three main stages, powered by a **decision-tree-driven reasonin
    - Traverses a predefined causal inference decision tree (Fig. B in paper).
    - Maps detected properties to the most appropriate estimation method.
 
+### **Stage 1.5: IV Discovery (Optional)**
+If the **Instrumental Variable (IV)** method is selected and the `--iv_llm` pipeline is enabled:
+1. **Hypothesis Generation**: The LLM hypothesizes potential instruments based on dataset context and variable names.
+2. **Confounder Mining**: Identifies potential confounders that might violate the independence or exclusion restrictions.
+3. **Critic Validation**: Uses specialized LLM "critics" (Exclusion, Independence) to reason about the validity of each candidate instrument.
+4. **Final Selection**: Selects the most robust instrument for the estimation stage.
+
 ---
 
 ### **Stage 2: Causal Inference Execution**
@@ -152,13 +159,14 @@ All datasets used to evaluate CAIs and the baseline models are available in the 
 ## Run 
 To execute CAIS, run
 ```python
-python main/run_cais.py \
+python run_cais.py \
     --metadata_path {path_to_metadata} \
     --data_dir {path_to_data_folder} \
     --output_dir {output_folder} \
     --output_name {output_filename} \
-    --llm_name {llm_name}
-    --llm_provider {llm_provider}
+    --llm_name {llm_name} \
+    --llm_provider {llm_provider} \
+    [--iv_llm]
 ```
 Args:
 
@@ -166,8 +174,9 @@ Args:
 * data_dir (str): Path to the folder containing the data in CSV format
 * output_dir (str): Path to the folder where the output JSON results will be saved
 * output_name (str): Name of the JSON file where the outputs will be saved
-* llm_name (str): Name of the LLM to be used (e.g., 'gpt-4', 'claude-3', etc.)
+* llm_name (str): Name of the LLM to be used (e.g., 'gpt-4o', 'claude-3-5-sonnet', etc.)
 * llm_provider (str): Name of the LLM service provider (e.g., 'openai', 'anthropic', 'together', etc.)
+* iv_llm (bool, optional): If flag is present, enables the advanced experimental [IV LLM pipeline](https://arxiv.org/pdf/2602.07943) for instrument discovery and validation.
   
 A specific example, 
 ```python

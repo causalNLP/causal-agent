@@ -96,7 +96,8 @@ def analyze_dataset(
     dataset_path: str, 
     llm_client: Optional[BaseChatModel] = None,
     dataset_description: Optional[str] = None,
-    original_query: Optional[str] = None
+    original_query: Optional[str] = None,
+    use_iv_pipeline: bool = False
 ) -> Dict[str, Any]:
     """
     Analyze a dataset to identify important characteristics for causal inference.
@@ -166,7 +167,8 @@ def analyze_dataset(
             llm_client=llm_client,
             potential_treatments=potential_variables.get("potential_treatments", []),
             potential_outcomes=potential_variables.get("potential_outcomes", []),
-            dataset_description=dataset_description
+            dataset_description=dataset_description,
+            use_iv_pipeline=use_iv_pipeline
         )
         
         # Other analyses
@@ -637,7 +639,8 @@ def find_potential_instruments(
     llm_client: Optional[BaseChatModel] = None,
     potential_treatments: List[str] = None,
     potential_outcomes: List[str] = None,
-    dataset_description: Optional[str] = None
+    dataset_description: Optional[str] = None,
+    use_iv_pipeline: bool = False
 ) -> List[Dict[str, Any]]:
     """
     Find potential instrumental variables in the dataset, using LLM if available.
@@ -653,6 +656,35 @@ def find_potential_instruments(
     Returns:
         List of potential instrumental variables with their properties
     """
+    if use_iv_pipeline and potential_treatments and potential_outcomes:
+        try:
+            from cais.components.iv_discovery import IVDiscovery
+            logger.info("Using IV LLM Pipeline to discover instrumental variables")
+            discovery = IVDiscovery()
+            treatment = potential_treatments[0]
+            outcome = potential_outcomes[0]
+            context = f"Dataset Description: {dataset_description}" if dataset_description else ""
+            
+            result = discovery.discover_instruments(treatment, outcome, context=context)
+            valid_ivs = result.get('valid_ivs', [])
+            
+            iv_list = []
+            for iv in valid_ivs:
+                if iv in df.columns:
+                    iv_list.append({
+                        "variable": iv,
+                        "reason": "Discovered and validated by IV LLM Pipeline critics",
+                        "data_type": str(df[iv].dtype)
+                    })
+            if iv_list:
+                logger.info(f"IV LLM Pipeline identified {len(iv_list)} valid instruments: {valid_ivs}")
+                return iv_list
+            else:
+                logger.warning("IV LLM Pipeline found no valid instruments, falling back to standard LLM or heuristic method")
+        except Exception as e:
+            logger.error(f"Error using IV LLM Pipeline: {e}", exc_info=True)
+            logger.info("Falling back to standard LLM or heuristic method")
+
     # Try LLM approach if client is provided
     if llm_client:
         try:
