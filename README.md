@@ -5,8 +5,8 @@ Causal AI Scientist: Facilitating Causal Data Science with Large Language Models
 </h1>
 
 <p align="center">
-  <a href="https://github.com/causalNLP/causal-agent"><b>[Code]</b></a> •
-  <a href="https://drive.google.com/file/d/1KvxAVIE3Ooe5V392Gw-1ZBAlQe39VVQI/view?usp=drive_link"><b>[Paper]</b></a>
+  <a href="https://github.com/your-repo/cais"><b>[Code]</b></a> •
+  <a href=""><b>[Paper (coming soon)]</b></a>
 </p>
 
 **Causal AI Scientist (CAIS)** is an LLM-powered tool for generating data-driven answers to natural language causal queries. Given a natural language query (e.g., *"Does participating in a job training program lead to higher income?"*), an accompanying dataset, and its description, CAIS frames a suitable causal estimation problem, selects an appropriate inference method, executes it, runs diagnostic checks, and interprets the results in plain language.
@@ -37,6 +37,9 @@ Causal effect estimation is central to evidence-based decision-making across dom
 - Execute the method using predefined code templates and validate the results.
 - Interpret the numerical output in the context of the original query.
 
+<div align="center">
+  <img src="blob/main/asset/CAIS-arch.png" width="990" alt="CAIS Architecture" />
+</div>
 
 **Supported Methods:**
 - **Econometric:** Difference-in-Differences (DiD), Instrumental Variables (IV), Ordinary Least Squares (OLS), Regression Discontinuity Design (RDD)
@@ -58,7 +61,7 @@ CAIS consists of four successive stages, powered by a decision-tree-driven reaso
 
 ### Stage 2b — IV-LLM Pipeline *(activated when IV is selected)*
 
-If the **Instrumental Variable (IV)** method is selected and the `--iv_llm` pipeline is enabled:
+If the **Instrumental Variable (IV)** method is selected and the `--iv_llm` pipeline is enabled (based on [IV Co-Scientist](https://arxiv.org/abs/2602.07943)):
 1. **Hypothesis Generation**: The LLM hypothesizes potential instruments based on dataset context and variable names.
 2. **Confounder Mining**: Identifies potential confounders that might violate the independence or exclusion restrictions.
 3. **Critic Validation**: Uses specialized LLM "critics" (Exclusion, Independence) to reason about the validity of each candidate instrument.
@@ -166,6 +169,39 @@ Instructions for reproducing results from the paper will be updated soon.
 
 ---
 
-## 7. License
+## 7. Citation
+
+If you use CAIS in your research, please cite our paper:
+
+If you use CAIS or build on this work, please cite:
+
+```bibtex
+@inproceedings{
+verma2025causal,
+title={Causal {AI} Scientist: Facilitating Causal Data Science with Large Language Models},
+author={Vishal Verma and Sawal Acharya and Devansh Bhardwaj and Samuel Simko and Yongjin Yang and Anahita Haghighat and Dominik Janzing and Mrinmaya Sachan and Bernhard Sch{\"o}lkopf and Zhijing Jin},
+booktitle={NeurIPS 2025 Workshop on CauScien: Uncovering Causality in Science},
+year={2025},
+url={https://openreview.net/forum?id=EDWTHMVOCj}
+}
+```
+
+The IV-LLM pipeline builds on the methodology introduced in [IV Co-Scientist](https://arxiv.org/abs/2602.07943). If you use that component, please also cite:
+
+```bibtex
+@misc{sheth2026ivcoscientistmultiagentllm,
+      title={IV Co-Scientist: Multi-Agent LLM Framework for Causal Instrumental Variable Discovery}, 
+      author={Ivaxi Sheth and Zhijing Jin and Bryan Wilder and Dominik Janzing and Mario Fritz},
+      year={2026},
+      eprint={2602.07943},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2602.07943}
+}
+```
+
+---
+
+## 8. License
 
 Distributed under the MIT License. See `LICENSE` for more information.
