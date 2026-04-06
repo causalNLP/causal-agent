@@ -32,14 +32,14 @@ def sample_data():
 
 def test_estimate_effect_no_covariates(sample_data):
     """Test estimating effect without covariates."""
-    results = estimate_effect(sample_data, 'treatment', 'outcome')
+    results = estimate_effect(sample_data, 'treatment', 'outcome', query_str="na")
     
     assert 'effect_estimate' in results
     assert 'p_value' in results
     assert 'confidence_interval' in results
     assert 'standard_error' in results
     assert 'formula' in results
-    assert 'model_summary' in results
+    assert 'model_summary_text' in results
     assert 'diagnostics' in results # Placeholder check
     assert 'interpretation' in results # Placeholder check
     assert 'method_used' in results
@@ -53,7 +53,7 @@ def test_estimate_effect_no_covariates(sample_data):
 def test_estimate_effect_with_covariates(sample_data):
     """Test estimating effect with covariates."""
     covariates = ['covariate1', 'covariate2']
-    results = estimate_effect(sample_data, 'treatment', 'outcome', covariates)
+    results = estimate_effect(sample_data, 'treatment', 'outcome', covariates, query_str="na")
     
     assert 'effect_estimate' in results
     assert 'p_value' in results
@@ -66,8 +66,7 @@ def test_estimate_effect_with_covariates(sample_data):
     assert 'covariate1' in results['formula']
     assert 'covariate2' in results['formula']
     assert results['method_used'] == 'Linear Regression (OLS)'
-    # Check summary type (basic check)
-    assert isinstance(results['model_summary'], sm.iolib.summary.Summary)
+    assert 'model_summary_text' in results
 
 def test_estimate_effect_missing_treatment(sample_data):
     """Test error handling for missing treatment column."""
@@ -107,9 +106,9 @@ def test_formula_generation(sample_data):
     """Test the formula string generation."""
     # No covariates
     results_no_cov = estimate_effect(sample_data, 'treatment', 'outcome')
-    assert results_no_cov['formula'] == "outcome ~ treatment + const"
+    assert results_no_cov['formula'] == "outcome ~ treatment"
     
     # With covariates
     results_with_cov = estimate_effect(sample_data, 'treatment', 'outcome', ['covariate1', 'covariate2'])
-    assert results_with_cov['formula'] == "outcome ~ treatment + covariate1 + covariate2 + const"
+    assert results_with_cov['formula'] == "outcome ~ treatment + covariate1 + covariate2"
 

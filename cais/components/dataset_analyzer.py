@@ -455,13 +455,9 @@ Example: {{"potential_treatments": ["treatment_a", "program_b"], "potential_outc
         "potential_outcomes": potential_outcomes
     }
 
-
-def detect_temporal_structure(
-    df: pd.DataFrame, 
-    llm_client: Optional[BaseChatModel] = None, 
-    dataset_description: Optional[str] = None,
-    original_query: Optional[str] = None
-) -> Dict[str, Any]:
+def detect_temporal_structure(df: pd.DataFrame, llm_client: Optional[BaseChatModel] = None, 
+                              dataset_description: Optional[str] = None, 
+                              original_query: Optional[str] = None) -> Dict[str, Any]:
     """
     Detect temporal structure in the dataset, using LLM for enhanced identification.
     
@@ -469,27 +465,28 @@ def detect_temporal_structure(
         df: DataFrame to analyze
         llm_client: Optional LLM client for enhanced identification
         dataset_description: Optional description of the dataset for context
+        original_query: Optional original user query for context
         
     Returns:
         Dict with information about temporal structure:
             - has_temporal_structure: Whether temporal structure exists
-            - temporal_columns: Primary time column identified (or list if multiple from heuristic)
+            - temporal_columns: Primary time column identified (or empty list if none)
             - is_panel_data: Whether data is in panel format
             - time_column: Primary time column identified for panel data
             - id_column: Primary unit ID column identified for panel data
             - time_periods: Number of time periods (if panel data)
             - units: Number of unique units (if panel data)
-            - identification_method: How time/unit vars were identified ('LLM', 'Heuristic', 'None')
+            - identification_method: How time/unit vars were identified ('LLM', 'LLM_NoIdentification', 'NoLLM', 'LLM_Error')
+            - did_canonical: Boolean indicating if canonical 2x2 DiD (True) or staggered TWFE (False)
+            - did_term: Binary treatment indicator column (for TWFE)
+            - treatment_time: Reference treatment time (for 2x2)
+            - treatment_state: Treated unit identifier (for 2x2)
     """
     result = {
-        "has_temporal_structure": False,
-        "temporal_columns": [], # Will store primary time column or heuristic list
-        "is_panel_data": False,
-        "time_column": None,
-        "id_column": None,
-        "time_periods": None,
-        "units": None,
-        "identification_method": "None"
+        "has_temporal_structure": False, "temporal_columns": [], "is_panel_data": False,
+        "time_column": None, "id_column": None, "time_periods": None, "units": None,
+        "identification_method": "NoLLM", "did_canonical": None, "did_term": None,
+        "treatment_time": None, "treatment_state": None
     }
     
     # --- Step 1: Heuristic identification (as before) ---
@@ -518,97 +515,122 @@ def detect_temporal_structure(
     #    if any(keyword in col_lower for keyword in id_keywords) and col not in heuristic_datetime_cols:
     #        heuristic_potential_id_cols.append(col)
 
-    # --- Step 2: LLM-assisted identification --- 
+    # --- Step 2: LLM-assisted identification ---
     llm_identified_time_var = None
     llm_identified_unit_var = None
-    heuristic_datetime_cols = []
-    heuristic_potential_id_cols = []
-    dataset_summary = df.describe(include='all')
-
+    
     if llm_client:
-        logger.info("Attempting LLM-assisted identification of temporal/unit variables.")
+        logger.info("Attempting LLM-assisted identification of temporal/unit variables for DiD.")
         column_names = df.columns.tolist()
         column_dtypes_dict = {col: str(df[col].dtype) for col in column_names}
         
+        # Convert dataset_summary to string for LLM
         try:
-            llm_suggestions = llm_identify_temporal_and_unit_vars(
-                column_names=column_names,
-                column_dtypes=column_dtypes_dict,
+            dataset_summary_str = str(df.describe(include='all'))
+        except Exception as e:
+            logger.warning(f"Could not generate dataset summary: {e}")
+            dataset_summary_str = "Dataset summary unavailable"
+        
+        try:
+            llm_suggestions = llm_identify_temporal_and_unit_vars(column_names=column_names, column_dtypes=column_dtypes_dict,
                 dataset_description=dataset_description if dataset_description else "No dataset description provided.",
-                dataset_summary=dataset_summary,
-                heuristic_time_candidates=heuristic_datetime_cols,
-                heuristic_id_candidates=heuristic_potential_id_cols,
-                query=original_query if original_query else "No query provided.",
-                llm=llm_client
-            )
+                dataset_summary=dataset_summary_str, query=original_query if original_query else "No query provided.",
+                llm=llm_client)
+            
+            logger.info(f"LLM suggestions for DiD variables: {llm_suggestions}")
+            
+            # Extract primary variables from LLM response
             llm_identified_time_var = llm_suggestions.get("time_variable")
             llm_identified_unit_var = llm_suggestions.get("unit_variable")
-            result["identification_method"] = "LLM"
             
-            if not llm_identified_time_var and not llm_identified_unit_var:
+            # Store all DiD-specific information directly (no conversion needed)
+            result["did_canonical"] = llm_suggestions.get("did_canonical")
+            result["did_term"] = llm_suggestions.get("did_term")
+            result["treatment_time"] = llm_suggestions.get("treatment_time")
+            result["treatment_state"] = llm_suggestions.get("treatment_state")
+            
+            # Set identification method based on success
+            if llm_identified_time_var or llm_identified_unit_var:
+                result["identification_method"] = "LLM"
+                logger.info(f"LLM successfully identified variables: time='{llm_identified_time_var}', unit='{llm_identified_unit_var}'")
+            else:
                 result["identification_method"] = "LLM_NoIdentification"
+                logger.warning("LLM did not identify any temporal or unit variables")
+                
         except Exception as e:
-            logger.warning(f"LLM call for temporal/unit vars failed: {e}. Falling back to heuristics.")
-            result["identification_method"] = "Heuristic_LLM_Error"
+            logger.warning(f"LLM call for temporal/unit vars failed: {e}. No fallback available.")
+            result["identification_method"] = "LLM_Error"
     else:
-        result["identification_method"] = "Heuristic_NoLLM"
+        logger.info("No LLM client provided for temporal structure detection.")
+        result["identification_method"] = "NoLLM"
 
-    # --- Step 3: Combine LLM and Heuristic Results --- 
-    final_time_var = None
-    final_unit_var = None
-
+    # Update temporal structure results based on LLM identification
     if llm_identified_time_var:
-        final_time_var = llm_identified_time_var
-        logger.info(f"Prioritizing LLM identified time variable: {final_time_var}")
-    elif heuristic_datetime_cols:
-        final_time_var = heuristic_datetime_cols[0] # Fallback to first heuristic time col
-        logger.info(f"Using heuristic time variable: {final_time_var}")
-    
-    if llm_identified_unit_var:
-        final_unit_var = llm_identified_unit_var
-        logger.info(f"Prioritizing LLM identified unit variable: {final_unit_var}")
-    elif heuristic_potential_id_cols:
-        final_unit_var = heuristic_potential_id_cols[0] # Fallback to first heuristic ID col
-        logger.info(f"Using heuristic unit variable: {final_unit_var}")
-
-    # Update results based on final selections
-    if final_time_var:
         result["has_temporal_structure"] = True
-        result["temporal_columns"] = [final_time_var] # Store as a list with the primary time var
-        result["time_column"] = final_time_var
-    else: # If no time var found by LLM or heuristic, use original heuristic list for temporal_columns
-        if heuristic_datetime_cols:
-            result["has_temporal_structure"] = True
-            result["temporal_columns"] = heuristic_datetime_cols
-        # time_column remains None
+        result["temporal_columns"] = [llm_identified_time_var]
+        result["time_column"] = llm_identified_time_var
+        logger.info(f"Time variable identified: {llm_identified_time_var}")
+    else:
+        logger.info("No time variable identified")
 
-    if final_unit_var:
-        result["id_column"] = final_unit_var
+    if llm_identified_unit_var:
+        result["id_column"] = llm_identified_unit_var
+        logger.info(f"Unit variable identified: {llm_identified_unit_var}")
+    else:
+        logger.info("No unit variable identified")
 
-    # --- Step 4: Update Panel Data Logic (based on final_time_var and final_unit_var) ---
-    if final_time_var and final_unit_var:
-        # Check if there are multiple time periods per unit using the identified variables
+    # Check for panel data structure
+    if llm_identified_time_var and llm_identified_unit_var:
         try:
             # Ensure columns exist before groupby
-            if final_time_var in df.columns and final_unit_var in df.columns:
-                if df.groupby(final_unit_var)[final_time_var].nunique().mean() > 1.0:
+            if llm_identified_time_var in df.columns and llm_identified_unit_var in df.columns:
+                # Check if units are observed across multiple time periods
+                time_periods_per_unit = df.groupby(llm_identified_unit_var)[llm_identified_time_var].nunique()
+                avg_periods_per_unit = time_periods_per_unit.mean()
+                
+                if avg_periods_per_unit > 1.0:
                     result["is_panel_data"] = True
-                    result["time_periods"] = df[final_time_var].nunique()
-                    result["units"] = df[final_unit_var].nunique()
-                    logger.info(f"Panel data detected: Time='{final_time_var}', Unit='{final_unit_var}', Periods={result['time_periods']}, Units={result['units']}")
+                    result["time_periods"] = df[llm_identified_time_var].nunique()
+                    result["units"] = df[llm_identified_unit_var].nunique()
+                    logger.info(f"Panel data detected: Time='{llm_identified_time_var}', Unit='{llm_identified_unit_var}', "
+                              f"Periods={result['time_periods']}, Units={result['units']}, "
+                              f"Avg periods per unit={avg_periods_per_unit:.2f}")
                 else:
                     logger.info("Not panel data: Each unit does not have multiple time periods.")
             else:
-                logger.warning(f"Final time ('{final_time_var}') or unit ('{final_unit_var}') var not in DataFrame. Cannot confirm panel structure.")
+                logger.warning(f"LLM time ('{llm_identified_time_var}') or unit ('{llm_identified_unit_var}') var not in DataFrame. "
+                             "Cannot confirm panel structure.")
         except Exception as e:
-            logger.error(f"Error checking panel data structure with time='{final_time_var}', unit='{final_unit_var}': {e}")
-            result["is_panel_data"] = False # Default to false on error
+            logger.error(f"Error checking panel data structure with time='{llm_identified_time_var}', "
+                        f"unit='{llm_identified_unit_var}': {e}")
+            result["is_panel_data"] = False
     else:
         logger.info("Not panel data: Missing either time or unit variable for panel structure.")
 
-    logger.debug(f"Final temporal structure detection result: {result}")
-    return result
+    # Log all DiD-specific information if available
+    if result["did_canonical"] is not None:
+        did_type_str = "canonical 2x2" if result["did_canonical"] else "staggered TWFE"
+        logger.info(f"DiD analysis type determined: {did_type_str}")
+        
+        if result["did_canonical"]:
+            logger.info(f"2x2 DiD setup - Treatment time: {result['treatment_time']}, "
+                       f"Treatment state: {result['treatment_state']}")
+        else:
+            logger.info(f"TWFE DiD setup - Treatment indicator column: {result['did_term']}")
+    else:
+        logger.info("DiD analysis type could not be determined")
 
+    # Log summary of all extracted DiD properties
+    did_properties = {
+        "did_canonical": result["did_canonical"],
+        "did_term": result["did_term"], 
+        "treatment_time": result["treatment_time"],
+        "treatment_state": result["treatment_state"]}
+    logger.info(f"All DiD properties extracted: {did_properties}")
+    
+    logger.debug(f"Final temporal structure detection result: {result}")
+
+    return result
 
 def find_potential_instruments(
     df: pd.DataFrame, 

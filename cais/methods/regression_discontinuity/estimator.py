@@ -1,21 +1,126 @@
 """
 Regression Discontinuity Design (RDD) Estimator.
 
-Tries to use DoWhy's RDD implementation first, falling back to a basic
-comparison of linear fits around the cutoff if DoWhy fails.
+Uses the evan-magnusson/rdd package implementation, falling back to a basic
+comparison of linear fits around the cutoff if the main method fails.
 """
 
 import pandas as pd
 import statsmodels.api as sm
-from dowhy import CausalModel
 from typing import Dict, Any, List, Optional
 import logging
 from langchain.chat_models.base import BaseChatModel 
+from cais.config import get_llm_client
 
 from .diagnostics import run_rdd_diagnostics
 from .llm_assist import interpret_rdd_results
+from cais.methods.causal_method import CausalMethod
+from cais.models import LLMRDDVars
+from pydantic import BaseModel, ValidationError
+from langchain_core.messages import HumanMessage
+from langchain_core.exceptions import OutputParserException
+from cais.prompts.method_identification_prompts import RDD_IDENTIFICATION_PROMPT_TEMPLATE
 
 logger = logging.getLogger(__name__)
+
+class RDDRegression(CausalMethod):
+
+    name="Regression Discontinuity Design"
+    description="Regression Discontinuity Design (RDD) is a pretest-posttest design that deteremines causal effects of interventions/treatments by assigning a threshold above or below which an intervention is assigned. By comparing observations close to the threshold, it is possible to estimate the local average treatment effect (LATE) in environemnts where random assignment is unfeasible."
+    assumptions=[
+        "Density Test", #TODO: Fill out
+        "Continuity"
+    ]
+
+    def __init__(self):
+        super().__init__()
+
+    def validate_assumptions(self, df, variables):
+        pass
+
+    def estimate_effect(self, df, variables, query=None):
+
+        assert (
+            hasattr(variables, 'treatment_variable') and
+            hasattr(variables, 'outcome_variable') and
+            hasattr(variables, 'running_variable') and
+            hasattr(variables, 'cutoff_value')
+        )
+
+        treatment = variables.treatment_variable
+        outcome = variables.outcome_variable
+        running_var = variables.running_variable
+        cutoff = variables.cutoff_value
+        covariates = variables.confounders
+        covariates = covariates if covariates else []
+
+        missing = self.check_missing(
+            df,
+            required=[running_var, outcome, treatment]
+        )
+        if missing:
+            raise ValueError(f"Missing at least one of required columns: {missing}")
+
+        try:
+            out = estimate_effect(
+                df=df,
+                treatment=treatment,
+                outcome=outcome,
+                running_variable=running_var,
+                cutoff_value=cutoff,
+                covariates=covariates
+            )
+        except Exception as e:
+            raise ValueError(f"Couldn't calculate effect using RDD: {e}")
+
+        return out
+        
+    @staticmethod
+    def get_cutoff(df, query, description, variables):
+
+        def _create_identify_prompt(target: str, query: str, description: Optional[str], columns: List[str], 
+                                    categories: Dict[str,str], treatment: Optional[str], outcome: Optional[str]) -> str:
+            """
+            Creates a prompt to ask LLM to identify specific roles like IV, RDD, or RCT by selecting and formatting a specific template
+            """
+            column_info = "\n".join([f"- '{c}' (Type: {categories.get(c, 'Unknown')})" for c in columns])
+            
+            # Select the appropriate detailed prompt template based on the target
+            template = RDD_IDENTIFICATION_PROMPT_TEMPLATE
+
+            # Format the selected template with the provided context
+            prompt = template.format(query=query, description=description or 'N/A', column_info=column_info,
+                                    treatment=treatment or 'N/A', outcome=outcome or 'N/A')
+            return prompt
+
+        def _call_llm_for_var(llm: BaseChatModel, prompt: str, pydantic_model: BaseModel) -> Optional[BaseModel]:
+            """Helper to call LLM with structured output and handle errors."""
+            try:
+                messages = [HumanMessage(content=prompt)]
+                structured_llm = llm.with_structured_output(pydantic_model)
+                parsed_result = structured_llm.invoke(messages)
+                return parsed_result
+            except (OutputParserException, ValidationError) as e:
+                logger.error(f"LLM call failed parsing/validation for {pydantic_model.__name__}: {e}")
+            except Exception as e:
+                logger.error(f"LLM call failed unexpectedly for {pydantic_model.__name__}: {e}", exc_info=True)
+            return None
+        
+        columns = df.columns
+        cats = df.dtypes
+        llm = get_llm_client()
+        prompt_rdd = _create_identify_prompt("regression discontinuity (running variable and cutoff)", query, description, columns, cats, variables.treatment_variable, variables.outcome_variable)
+        rdd_result = _call_llm_for_var(llm, prompt_rdd, LLMRDDVars)
+        if rdd_result:
+            running_variable = rdd_result.running_variable
+            cutoff_value = rdd_result.cutoff_value
+        if running_variable not in columns or cutoff_value is None:
+            running_variable = None
+            cutoff_value = None
+        logger.info(f"LLM identified RDD: Running={running_variable}, Cutoff={cutoff_value}")
+        return cutoff_value
+
+
 
 # Attempt to import specific functions from the evan-magnusson/rdd package
 _rdd_estimator_func_em = None
@@ -33,72 +138,9 @@ except Exception as e: # Catch other potential errors during import
     _rdd_em_import_error_message = f"An unexpected error occurred during import from evan-magnusson/rdd: {e}"
     logger.warning(_rdd_em_import_error_message)
 
-def estimate_effect_dowhy(df: pd.DataFrame, treatment: str, outcome: str, running_variable: str, cutoff_value: float, covariates: Optional[List[str]], **kwargs) -> Dict[str, Any]:
-    """Estimate RDD effect using DoWhy."""
-    logger.info("Attempting RDD estimation using DoWhy.")
-    if covariates:
-        logger.warning("Covariates provided but may not be used by the DoWhy RDD method_name='rdd'. Support varies.")
-    # For DoWhy RDD, we don't typically specify common causes in the model
-    # constructor in the same way as backdoor. The running variable is handled
-    # via method_params. Covariates might be used by specific underlying estimators
-    # if supported, but the basic RDD identification doesn't use them directly.
-    model = CausalModel(
-        data=df,
-        treatment=treatment,
-        outcome=outcome,
-        # No explicit graph needed for iv.regression_discontinuity method
-    )
-    
-    # Identify the effect (DoWhy internally identifies RDD as IV)
-    # Although potentially redundant if method_name implies identification, 
-    # the API requires identified_estimand as the first argument.
-    identified_estimand = model.identify_effect(proceed_when_unidentifiable=True)
-
-    # Estimate using RDD method
-    # Note: DoWhy's RDD often has limited direct support for covariates.
-    # Bandwidth selection is crucial and often done internally or specified.
-    bandwidth = kwargs.get('bandwidth') # Get user-specified bandwidth if provided
-    if bandwidth is None:
-        # Very basic default bandwidth if none provided - consider better methods
-        range_rv = df[running_variable].max() - df[running_variable].min()
-        bandwidth = 0.1 * range_rv 
-        logger.warning(f"No bandwidth specified, using basic default: {bandwidth:.3f}")
-
-    estimate = model.estimate_effect(
-        identified_estimand, # ADD identified_estimand argument
-        method_name="iv.regression_discontinuity",
-        method_params={
-            'rd_variable_name': running_variable,
-            'rd_threshold_value': cutoff_value,
-            'rd_bandwidth': bandwidth,
-            # 'covariates': covariates # Support depends on DoWhy version/estimator
-        },
-        test_significance=True # Ask DoWhy to calculate p-values if possible
-    )
-    
-    # Extract results - DoWhy's RDD estimate structure might vary
-    effect = estimate.value
-    # DoWhy's RDD significance testing might be limited/indirect
-    # Try to get p-value if estimate object supports it, else None
-    p_value = getattr(estimate, 'test_significance_pvalue', None)
-    if isinstance(p_value, (list, tuple)):
-        p_value = p_value[0] # Handle cases where it might be wrapped
-        
-    # Confidence intervals might not be directly available from this method easily
-    conf_int = getattr(estimate, 'confidence_interval', None)
-    std_err = getattr(estimate, 'standard_error', None)
-
-    return {
-        'effect_estimate': effect,
-        'p_value': p_value,
-        'confidence_interval': conf_int,
-        'standard_error': std_err,
-        'method_details': f"DoWhy RDD (Bandwidth: {bandwidth:.3f})",
-    }
-
 def estimate_effect_fallback(df: pd.DataFrame, treatment: str, outcome: str, running_variable: str, cutoff_value: float, covariates: Optional[List[str]], **kwargs) -> Dict[str, Any]:
     """Estimate RDD effect using simple linear regression comparison fallback."""
-    logger.warning("DoWhy RDD failed or not used. Falling back to simple linear regression comparison.")
+    logger.warning("Main RDD estimation failed. Using fallback simple linear regression comparison.")
     if covariates:
         logger.warning("Covariates provided but are ignored in the fallback RDD linear regression estimation.")
 
@@ -115,9 +157,22 @@ def estimate_effect_fallback(df: pd.DataFrame, treatment: str, outcome: str, run
         
     df_bw['above_cutoff'] = (df_bw[running_variable] >= cutoff_value).astype(int)
 
-    # Define predictors for the regression
-    # Interaction term allows different slopes above and below the cutoff
-    df_bw['running_centered'] = df_bw[running_variable] - cutoff_value
+    # Check if running variable is already centered (mean close to 0)
+    running_mean = df_bw[running_variable].mean()
+    is_already_centered = abs(running_mean) < 0.1  # Threshold for "close to 0"
+    
+    if is_already_centered:
+        logger.info(f"Running variable appears to be already centered (mean={running_mean:.4f}). Using as-is.")
+        df_bw['running_centered'] = df_bw[running_variable]
+        # For already centered data, cutoff should be at 0, but we'll use the provided cutoff_value
+        # Adjust above_cutoff calculation for centered data
+        df_bw['above_cutoff'] = (df_bw[running_variable] >= cutoff_value).astype(int)
+    else:
+        logger.info(f"Centering running variable around cutoff (mean={running_mean:.4f}, cutoff={cutoff_value}).")
+        # Define predictors for the regression
+        # Interaction term allows different slopes above and below the cutoff
+        df_bw['running_centered'] = df_bw[running_variable] - cutoff_value
+    
     df_bw['running_x_above'] = df_bw['running_centered'] * df_bw['above_cutoff']
     predictors = ['above_cutoff', 'running_centered', 'running_x_above']
 
@@ -161,23 +216,14 @@ def estimate_effect_fallback(df: pd.DataFrame, treatment: str, outcome: str, run
         'model_summary': results.summary()
     }
 
-def effect_estimate_rdd(
-    df: pd.DataFrame,
-    outcome: str,
-    running_variable: str,
-    cutoff_value: float,
-    treatment: Optional[str] = None, # Kept for API consistency, but unused by evan-magnusson/rdd
-    covariates: Optional[List[str]] = None,
-    bandwidth: Optional[float] = None,
-    **kwargs
-) -> Dict[str, Any]:
+def effect_estimate_rdd(df: pd.DataFrame, outcome: str, running_variable: str, cutoff_value: float,
+                        treatment: Optional[str] = None, covariates: Optional[List[str]] = None,
+                        bandwidth: Optional[float] = None, **kwargs) -> Dict[str, Any]:
     """
     Estimates RDD effect using the 'evan-magnusson/rdd' package.
     Uses IK optimal bandwidth selection from the same package by default.
     """
     logger.info(f"Attempting RDD estimation using 'evan-magnusson/rdd' for outcome '{outcome}' and running variable '{running_variable}'.")
-
-    
 
     if treatment:
         logger.info(f"Treatment variable '{treatment}' provided but is not explicitly used by the evan-magnusson/rdd estimation function.")
@@ -274,33 +320,25 @@ def effect_estimate_rdd(
         # Consider re-raising or returning a more structured error
         raise e # Or return a dict like in the import failure case
 
-def estimate_effect(
-    df: pd.DataFrame,
-    treatment: str, 
-    outcome: str,
-    running_variable: str, 
-    cutoff_value: float, 
-    covariates: Optional[List[str]] = None,
-    bandwidth: Optional[float] = None, # Optional bandwidth param
-    query: Optional[str] = None,
-    llm: Optional[BaseChatModel] = None,
-    **kwargs # Capture other args like rd_estimator from DoWhy if needed
-) -> Dict[str, Any]:
+def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str, running_variable: str, 
+                    cutoff_value: float, covariates: Optional[List[str]] = None, 
+                    bandwidth: Optional[float] = None, query: Optional[str] = None,
+                    llm: Optional[BaseChatModel] = None, **kwargs) -> Dict[str, Any]:
     """
     Estimates the causal effect using Regression Discontinuity Design.
 
-    Tries DoWhy implementation first if use_dowhy=True, otherwise uses fallback.
+    Uses the evan-magnusson/rdd package as the primary method, with a 
+    fallback to simple linear regression comparison if that fails.
 
     Args:
         df: Input DataFrame.
         treatment: Name of the treatment variable (often implicitly defined by cutoff).
-                   DoWhy might still need it, fallback doesn't use it directly.
+                   Used for API consistency but not directly used by evan-magnusson/rdd.
         outcome: Name of the outcome variable.
         running_variable: Name of the variable determining treatment assignment.
-        cutoff: The threshold value for the running variable.
-        covariates: Optional list of covariate names (support varies).
+        cutoff_value: The threshold value for the running variable.
+        covariates: Optional list of covariate names (support varies by method).
         bandwidth: Optional bandwidth around the cutoff. If None, a default is used.
-        use_dowhy: Whether to attempt using the DoWhy library first.
         query: Optional user query for context.
         llm: Optional Language Model instance.
         **kwargs: Additional keyword arguments for underlying methods.
@@ -313,7 +351,7 @@ def estimate_effect(
         "cutoff_value": cutoff_value
     }
     if any(val is None for val in required_args.values()):
-        raise ValueError(f"Missing required RDD arguments: running_variable and cutoff must be provided.")
+        raise ValueError(f"Missing required RDD arguments: running_variable and cutoff_value must be provided.")
 
     results = {}
     rdd_em_estimation_error = None # Error from effect_estimate_rdd (evan-magnusson)

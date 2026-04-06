@@ -1,14 +1,24 @@
 """
 Abstract base class for all causal inference methods.
 
-This module defines the interface that all causal inference methods
-must implement, ensuring consistent behavior across different methods.
+This module defines the interface that all causal inference methods must implement, ensuring consistent behavior across different methods.
+
+These can be turned into a tool using langchain_core.tools.Tool.from_function
+
+i.e.
+
+method = child of CausalMethod()
+tool = langchain_core.tools.Tool.from_function(
+    func=method,
+    name=method.name,
+    description=method.description
+)
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Set
+from cais.models import Variables
 import pandas as pd
-
 
 class CausalMethod(ABC):
     """Base class for all causal inference methods.
@@ -21,17 +31,18 @@ class CausalMethod(ABC):
     Each implementation should handle the specifics of the causal
     inference method while conforming to this interface.
     """
-    
+
+    name: str
+    description: str
+    assumptions: List[str]
+
     @abstractmethod
-    def validate_assumptions(self, df: pd.DataFrame, treatment: str, 
-                           outcome: str, covariates: List[str]) -> Dict[str, Any]:
-        """Validate method assumptions against the dataset.
+    def validate_assumptions(self, df: pd.DataFrame, variables: Variables) -> Dict[str, Any]:
+        """Validate method assumptions against the dataset. Checks whether any key variables for the method are None/missing
         
         Args:
             df: DataFrame containing the dataset
-            treatment: Name of the treatment variable column
-            outcome: Name of the outcome variable column
-            covariates: List of covariate column names
+            variables: Variables pydantic model containing the extract variables
             
         Returns:
             Dict containing validation results with keys:
@@ -43,15 +54,12 @@ class CausalMethod(ABC):
         pass
     
     @abstractmethod
-    def estimate_effect(self, df: pd.DataFrame, treatment: str,
-                      outcome: str, covariates: List[str]) -> Dict[str, Any]:
+    def estimate_effect(df: pd.DataFrame, variables: Variables) -> Dict[str, Any]:
         """Estimate causal effect using this method.
         
         Args:
             df: DataFrame containing the dataset
-            treatment: Name of the treatment variable column
-            outcome: Name of the outcome variable column
-            covariates: List of covariate column names
+            variables: Pydantic model with Variables and their types
             
         Returns:
             Dict containing estimation results with keys:
@@ -62,27 +70,42 @@ class CausalMethod(ABC):
         """
         pass
     
-    @abstractmethod
-    def generate_code(self, dataset_path: str, treatment: str,
-                    outcome: str, covariates: List[str]) -> str:
-        """Generate executable code for this causal method.
-        
-        Args:
-            dataset_path: Path to the dataset file
-            treatment: Name of the treatment variable column
-            outcome: Name of the outcome variable column
-            covariates: List of covariate column names
-            
+    @staticmethod
+    def check_missing(df: pd.DataFrame, required: list[str]) -> Set[str]:
+        """Checks for any missing columns in the dataset.
+
         Returns:
-            String containing executable Python code implementing this method
+            List with missing column names
         """
-        pass
-    
-    @abstractmethod
-    def explain(self) -> str:
-        """Explain this causal method, its assumptions, and when to use it.
+        return set([column for column in required if column not in df.columns])
+
+
+    def describe(self) -> str:
+        """Explain this causal method, its assumptions, and the required variables.
         
         Returns:
             String with detailed explanation of the method
         """
-        pass 
+        
+        desc = f"""Description: {self.description}
+        Assumptions: {self.assumptions}
+        """
+        return desc
+
+    def __call__(self, df, variables, query = None):
+        return self.estimate_effect(df, variables, query)
+    
+
+'''
+Can be made into tools for future LangChain workflows by
+
+class OLS(CausalMethod):
+    pass
+
+class input_schema(BaseModel):
+    variables: Field(variables, etc)
+
+@tool(args_schema=input_schema)
+def linear_regression(init_args, callable_args):
+    return OLS(callable_args)
+'''

@@ -16,6 +16,8 @@ def main(argv: Optional[list[str]] = None) -> None:
     single.add_argument("--desc", dest="description", default=None, help="Dataset description text")
     single.add_argument("--llm-name", dest="llm_name", default=None, help="LLM model name")
     single.add_argument("--llm-provider", dest="llm_provider", default=None, help="LLM provider (openai, anthropic, together, gemini, deepseek)")
+    single.add_argument("--skip-method-validator", action="store_true", help="Skip method validation step")
+    single.add_argument("--use-llm-rule-engine", action="store_true", help="Use LLM-based method selection")
 
     # Batch run compatible with existing metadata CSVs
     batch = subparsers.add_parser("batch", help="Run batch analyses from a metadata CSV")
@@ -24,6 +26,8 @@ def main(argv: Optional[list[str]] = None) -> None:
     batch.add_argument("output_file", help="Path to save output JSON")
     batch.add_argument("--llm-name", dest="llm_name", default=None)
     batch.add_argument("--llm-provider", dest="llm_provider", default=None)
+    batch.add_argument("--skip-method-validator", action="store_true", help="Skip method validation step")
+    batch.add_argument("--use-llm-rule-engine", action="store_true", help="Use LLM-based method selection")
 
     args = parser.parse_args(argv)
 
@@ -35,9 +39,16 @@ def main(argv: Optional[list[str]] = None) -> None:
         os.environ["LLM_MODEL"] = args.llm_name
     if getattr(args, "llm_provider", None):
         os.environ["LLM_PROVIDER"] = args.llm_provider
+    if getattr(args, "use_llm_rule_engine", False):
+        os.environ["CAIS_USE_LLM_RULE_ENGINE"] = "1"
 
     if args.command == "run":
-        result = run_causal_analysis(query=args.query, dataset_path=args.dataset, dataset_description=args.description)
+        result = run_causal_analysis(
+            query=args.query,
+            dataset_path=args.dataset,
+            dataset_description=args.description,
+            use_method_validator=not args.skip_method_validator
+        )
         import json
         print(json.dumps(result, indent=2))
         return
@@ -56,6 +67,7 @@ def main(argv: Optional[list[str]] = None) -> None:
                     query=row.get("natural_language_query"),
                     dataset_path=data_path,
                     dataset_description=row.get("data_description"),
+                    use_method_validator=not args.skip_method_validator
                 )
                 results[idx] = {
                     "query": row.get("natural_language_query"),
@@ -83,4 +95,3 @@ def main(argv: Optional[list[str]] = None) -> None:
             json.dump(results, f, indent=2)
 
         print(f"Saved results to {args.output_file}")
-

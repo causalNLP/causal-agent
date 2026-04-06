@@ -17,9 +17,31 @@ from sklearn.linear_model import LogisticRegression
 import logging
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def classify_treatment(treatment: pd.Series, cat_threshold: int = 10, density_threshold: float = 0.05):
+
+    unique_vals = treatment.unique()
+    n_unique = len(unique_vals)
+    n = len(treatment)
+
+    # is the treatment binary?
+    if n_unique == 2:
+        return "binary"
+
+    # is our data categorical explicitly?
+    if not pd.api.types.is_numeric_dtype(treatment): 
+        return "categorical"
+
+    # check for integers 
+    is_int_like = np.all(unique_vals == unique_vals.astype(int))
+
+    # low cardinality, infer categorical
+    if is_int_like and (n_unique <= cat_threshold or n_unique <= density_threshold * n):
+        return "categorical"
+
+    # default is numeric
+    return "numeric"
 
 def check_binary_treatment(treatment_series: pd.Series) -> bool:
     """
@@ -715,3 +737,25 @@ def check_collinearity(df: pd.DataFrame, covariates: List[str]) -> Optional[List
     # Implementation of check_collinearity function
     # This function should return a list of collinear variables or None
     pass 
+
+def convert_column_strings(
+        df: pd.DataFrame
+):
+    ctc = df.select_dtypes(object).columns.to_list() # columns to convert to integers
+    map_back = {}
+    for column in ctc:
+        try:
+            unique_vals = df[column].unique()
+            
+            if len(unique_vals) >= 100:
+                raise Exception
+
+            sti = dict(zip(unique_vals, range(len(unique_vals))))
+            df[column] = df[column].apply(lambda x: sti[x])
+
+            map_back[column] = dict(zip(range(len(unique_vals)), unique_vals))
+
+        except Exception as e:
+            logger.warning(f"Could not convert {column} to integers: {e}")
+    
+    return df, map_back

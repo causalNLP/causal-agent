@@ -1,4 +1,5 @@
 """
+DEPRECIATED ???
 Output formatter tool for causal inference results.
 
 This tool provides the LangChain interface for the output formatter component.

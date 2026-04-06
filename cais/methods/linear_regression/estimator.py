@@ -5,21 +5,27 @@ Uses Ordinary Least Squares (OLS) to estimate the treatment effect, potentially
 adjusting for covariates.
 """
 import pandas as pd
+import numpy as np
+
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
-from typing import Dict, Any, List, Optional, Union
-import logging
-from langchain.chat_models.base import BaseChatModel
-import re
-import json
+
 from pydantic import BaseModel, ValidationError
+from langchain.chat_models.base import BaseChatModel
 from langchain_core.messages import HumanMessage
 from langchain_core.exceptions import OutputParserException
 
+import re
+import json
+import logging
+from typing import Dict, Any, List, Optional, Union
 
-from cais.models import LLMIdentifiedRelevantParams
+
+from cais.models import LLMIdentifiedRelevantParams, Variables
 from cais.prompts.regression_prompts import STATSMODELS_PARAMS_IDENTIFICATION_PROMPT_TEMPLATE
 from cais.config import get_llm_client
+from cais.methods.utils import classify_treatment
+from cais.methods.causal_method import CausalMethod
 
 # Placeholder for potential future LLM assistance integration
 # from .llm_assist import interpret_lr_results, suggest_lr_covariates
@@ -27,6 +33,54 @@ from cais.config import get_llm_client
 # from .diagnostics import run_lr_diagnostics
 
 logger = logging.getLogger(__name__)
+
+# Wrapper around existing methods, works for formatting
+class LinearRegression(CausalMethod):
+    
+    name = "Linear Regression"
+    description = "Ordinary Least Squares (OLS) regression estimates causal effects, the average treatment effect, by modeling the linear relationship between a treatment and an outcome aiming to isolate the effect of the treatment while controlling for confounding variables. It is most commonly used to model data collected from randomized control trials."
+    assumptions = [
+        "Random Sampling: If the data was collected from a randomized control trial, no other assumptions are required. Otherwise, observations should be randomly drawn from the population to ensure the data is identitically and independently distributed (iid)."
+        "Ignoreability: All confounding variables that influence both the treatment and outcome are included in the model."
+    ]
+
+    def __init__(self):
+        super().__init__()
+
+    def validate_assumptions(self, df, variables):
+        pass
+
+    def estimate_effect(self, df: pd.DataFrame, variables: Variables, query: Optional[str] = None):
+        """Callable method for estimating the ATE using OLS regression. 
+
+        Args:
+            df (pd.DataFrame): Dataframe with the experimental data, preprocessed in the future
+            variables (Variables): Variable pydantic model; will be changed later to incorporate selected covariates
+
+        Raises:
+            ValueError: _description_
+            ValueError: _description_
+        """
+
+        assert (
+            hasattr(variables, 'treatment_variable') and
+            hasattr(variables, 'outcome_variable')
+        )
+
+        outcome = variables.outcome_variable
+        treatment = variables.treatment_variable
+        
+        covariates = variables.confounders
+        covariates = covariates if covariates else [] # TODO: Change to be the covariates selected by the model
+
+        return estimate_effect(
+            df=df,
+            treatment=treatment,
+            outcome=outcome,
+            covariates=covariates,
+            query_str=query,
+            llm=get_llm_client()
+        )
 
 def _call_llm_for_var(llm: BaseChatModel, prompt: str, pydantic_model: BaseModel) -> Optional[BaseModel]:
     """Helper to call LLM with structured output and handle errors."""

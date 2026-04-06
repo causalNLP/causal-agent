@@ -68,6 +68,8 @@ def method_executor_tool(inputs: MethodExecutorInput, original_query: Optional[s
         treatment = variables_dict.get("treatment_variable")
         outcome = variables_dict.get("outcome_variable")
         covariates = variables_dict.get("covariates", [])
+        if method in ["propensity_score_matching", "propensity_score_weighting", "generalized_propensity_score"]:
+            covariates = variables_dict.get("confounders", [])
         query_str = original_query if original_query is not None else inputs.original_query
         
         if not all([treatment, outcome]):
@@ -99,7 +101,7 @@ def method_executor_tool(inputs: MethodExecutorInput, original_query: Optional[s
         # Avoid passing the entire variables_dict as estimate_func expects specific args
         kwargs_for_method = {}
         for key in ["instrument_variable", "time_variable", "group_variable", 
-                    "running_variable", "cutoff_value"]:
+                    "running_variable", "cutoff_value", "did_term", "did_canonical", "treatment_time", "treatment_state"]:
             if key in variables_dict and variables_dict[key] is not None:
                  kwargs_for_method[key] = variables_dict[key]
         
@@ -181,15 +183,6 @@ def method_executor_tool(inputs: MethodExecutorInput, original_query: Optional[s
             "confidence_interval": results_dict.get("confidence_interval")
         }
         print(f"summary_dict: {summary_dict}")
-        print(f"CURRENT_OUTPUT_LOG_FILE: {CURRENT_OUTPUT_LOG_FILE}")
-        if CURRENT_OUTPUT_LOG_FILE and summary_dict:
-            try:
-                import json
-                log_entry = {"type": "analysis_result", "data": summary_dict}
-                with open(CURRENT_OUTPUT_LOG_FILE, mode='a', encoding='utf-8') as log_file:
-                    log_file.write('\n' + json.dumps(log_entry) + '\n')
-            except Exception as e:
-                print(f"[ERROR] method_executor_tool.py: Failed to write analysis results to log file '{CURRENT_OUTPUT_LOG_FILE}': {e}")
 
         return final_output
 

@@ -10,7 +10,7 @@ class LLMSelectedVariable(BaseModel):
 class LLMSelectedCovariates(BaseModel):
     """Pydantic model for selecting a list of covariates."""
     covariates: List[str] = Field(default_factory=list, description="The list of selected covariate column names.")
-
+    reasoning: Optional[str] = Field(None, description="The identified estimand")
 class LLMIVars(BaseModel):
     """Pydantic model for identifying IVs."""
     instrument_variable: Optional[str] = Field(None, description="The identified instrumental variable column name.")
@@ -51,6 +51,10 @@ class TemporalStructure(BaseModel):
     time_column: Optional[str] = None
     time_periods: Optional[int] = None
     units: Optional[int] = None
+    did_canonical: Optional[bool] = None
+    did_term: Optional[str] = None
+    treatment_time: Optional[float] = None
+    #treatment_state: Optional[str] = None
 
 class DatasetInfo(BaseModel):
     """Basic information about the dataset file."""
@@ -114,12 +118,17 @@ class Variables(BaseModel):
     covariates: Optional[List[str]] = Field(default_factory=list)
     time_variable: Optional[str] = None
     group_variable: Optional[str] = None # Often the unit ID
+    did_canonical: Optional[bool] = None
+    did_term: Optional[str] = None
+    treatment_time: Optional[float] = None
+    treatment_state: Optional[str] = None
     running_variable: Optional[str] = None
     cutoff_value: Optional[Union[float, int]] = None
     is_rct: Optional[bool] = Field(False, description="Flag indicating if the dataset is from an RCT.")
-    treatment_reference_level: Optional[str] = Field(None, description="The specified reference/control level for a multi-valued treatment variable.")
+    treatment_reference_level: Optional[Union[float, str]] = Field(None, description="The specified reference/control level for a multi-valued treatment variable.")
     interaction_term_suggested: Optional[bool] = Field(False, description="Whether the query or context suggests an interaction term with the treatment might be relevant.")
     interaction_variable_candidate: Optional[str] = Field(None, description="The covariate identified as a candidate for interaction with the treatment.")
+    confounders: Optional[List[str]] = Field(default_factory=list)
     
 class QueryInterpreterOutput(BaseModel):
     """Structured output for the query interpreter tool."""
@@ -148,6 +157,15 @@ class MethodInfo(BaseModel):
     method_assumptions: Optional[List[str]] = Field(default_factory=list)
     # Add alternative methods if it should be part of the standard info passed around
     alternative_methods: Optional[List[str]] = Field(default_factory=list)
+    decision_tree: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Decision tree details for method selection.")
+
+class ControlsSelectorInput(BaseModel):
+    """Input structure for the controls selector tool."""
+    method_name: str = Field(..., description="Selected causal inference method name")
+    variables: Variables
+    dataset_analysis: DatasetAnalysis
+    dataset_description: Optional[str] = None
+    original_query: Optional[str] = None
 
 class MethodValidatorInput(BaseModel):
     """Input structure for the method validator tool."""
@@ -202,6 +220,7 @@ class FormattedOutput(BaseModel):
     limitations: Optional[List[str]] = Field(default_factory=list, description="List of limitations or potential issues with the analysis.")
     assumptions: Optional[str] = Field("", description="Discussion of the key assumptions underlying the method and their validity.")
     practical_implications: Optional[str] = Field("", description="Discussion of the practical implications or significance of the findings.")
+    interpretation_text: Optional[str] = Field("", description="Single-paragraph interpretation of results.")
     # Optionally add dataset_analysis and dataset_description if they should be part of the final structure
     # dataset_analysis: Optional[DatasetAnalysis] = None # Example if using DatasetAnalysis model
     # dataset_description: Optional[str] = None
@@ -230,3 +249,9 @@ class RelevantParamInfo(BaseModel):
 class LLMIdentifiedRelevantParams(BaseModel):
     identified_params: List[RelevantParamInfo] = Field(description="A list of parameters identified as relevant to the query or representing all treatment effects for a general query.")
     all_parameters_successfully_identified: bool = Field(description="True if LLM is confident it identified all necessary params based on query type (e.g., all levels for a general query).") 
+
+class DatasetCleanerInput(BaseModel):
+    dataset_path: str
+    variables: Variables                      # treatment, outcome, covariates, time_variable (from Query Interpreter + Controls)
+    dataset_description: Optional[str] = None
+    original_query: Optional[str] = None

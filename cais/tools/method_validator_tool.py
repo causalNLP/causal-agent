@@ -69,7 +69,7 @@ def method_validator_tool(inputs: MethodValidatorInput) -> Dict[str, Any]: # Use
     
     # Call the component function to validate the method
     try:
-        validation_results = validate_method(method_info_dict, dataset_analysis_dict, variables_dict)
+        validation_results = validate_method(method_info_dict, dataset_analysis_dict, variables_dict, dataset_description_str)
         if not isinstance(validation_results, dict):
             raise TypeError(f"validate_method component did not return a dict. Got: {type(validation_results)}")
             
@@ -77,7 +77,11 @@ def method_validator_tool(inputs: MethodValidatorInput) -> Dict[str, Any]: # Use
         logger.error(f"Error during validate_method execution: {e}", exc_info=True)
         # Construct error output
         workflow_update = create_workflow_state_update(
-            current_step="method_validation", method_validated=False, error=f"Component failed: {e}"
+            current_step="method_validation",
+            step_completed_flag=False,
+            next_tool="error_handler_tool",
+            next_step_reason=f"Component failed: {e}",
+            error=f"Component failed: {e}"
         )
         # Pass context even on error
         return {"error": f"Method validation component failed: {e}",
@@ -94,8 +98,8 @@ def method_validator_tool(inputs: MethodValidatorInput) -> Dict[str, Any]: # Use
     
     # If validation failed, attempt to backtrack through decision tree
     if not assumptions_valid and failed_assumptions:
-        logger.info(f"Method {original_method} failed validation due to: {failed_assumptions}")
-        logger.info("Attempting to backtrack and select alternative method...")
+        logger.warning(f"Method {original_method} failed validation due to: {failed_assumptions}")
+        logger.warning("Attempting to backtrack and select alternative method...")
         
         try:
             # Extract properties for decision tree

@@ -118,15 +118,23 @@ We assess CAIS on:
 cp .env.example .env
 ```
 
-**Step 2: Create Python 3.10 environment**
+**Step 2: Load necessary modules**
+```bash
+# Load necessary compute modules to ensure dependencies are installed correctly
+module load rust
+module load gcc 
+module load openblas 
+```
+
+**Step 3: Create Python 3.10 environment**
 ```bash
 # Create a new conda environment with Python 3.10
 conda create -n cais python=3.10
 conda activate cais
-pip install -r requirement.txt
+pip install -r requirements.txt
 ```
 
-**Step3: Setup cais library**
+**Step 4: Setup CAIS library**
 ```bash
 pip install -e .
 ```

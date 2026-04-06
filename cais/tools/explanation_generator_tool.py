@@ -10,6 +10,7 @@ from langchain.tools import tool
 import logging
 
 from cais.components.explanation_generator import generate_explanation
+from cais.components.decision_tree import METHOD_ASSUMPTIONS
 from cais.components.state_manager import create_workflow_state_update
 from cais.config import get_llm_client
 
@@ -68,8 +69,31 @@ def explanation_generator_tool(
     try:
         llm_instance = get_llm_client() 
     except Exception as e:
-        logger.warning(f"Could not get LLM client for explainer: {e}")
+        logger.error(f"Could not get LLM client for explainer: {e}")
 
+    method_used = method_info_dict.get("selected_method")
+    validation_summary = None
+    if isinstance(validation_result_dict, dict):
+        method_used = validation_result_dict.get("method", method_used)
+        if isinstance(validation_result_dict.get("validation_info"), dict):
+            validation_summary = validation_result_dict.get("validation_info")
+        else:
+            validation_summary = validation_result_dict
+    if method_used is None and isinstance(validation_summary, dict):
+        assumptions_valid = validation_summary.get("assumptions_valid")
+        valid = validation_summary.get("valid")
+        if assumptions_valid is False or valid is False:
+            method_used = validation_summary.get("recommended_method")
+
+    if method_used and method_used != method_info_dict.get("selected_method"):
+        method_info_dict["selected_method"] = method_used
+        method_info_dict["method_name"] = method_used.replace("_", " ").title()
+        method_info_dict["method_assumptions"] = METHOD_ASSUMPTIONS.get(
+            method_used,
+            method_info_dict.get("method_assumptions", [])
+        )
+        
+    results['method_used'] = method_used
     # Call component to generate the single explanation string
     try:
         explanation_dict = generate_explanation(
@@ -99,13 +123,12 @@ def explanation_generator_tool(
             "error": f"Explanation generation component failed: {e}",
             # Pass necessary context for potential retry or next step
             "query": original_query or "N/A",
-            "method": method_info_dict.get('selected_method', "N/A"),
-            "results": results, # Include results even if explanation failed
+            #"results": results.get('results', results), # Include results even if explanation failed
             "explanation": {"error": str(e)}, # Include error in explanation part
             "dataset_analysis": dataset_analysis_dict,
             "dataset_description": dataset_description,
              **workflow_update.get('workflow_state', {})
-        }
+        } | results
 
     # Create workflow state update
     workflow_update = create_workflow_state_update(
@@ -119,14 +142,13 @@ def explanation_generator_tool(
     result_for_formatter = {
         # Pass the necessary pieces for the formatter
         "query": original_query or "N/A", # Use original_query directly
-        "method": method_info_dict.get('selected_method', 'N/A'),
-        "results": results, # Pass the numerical results directly
+        #"results": results.get, # Pass the numerical results directly
         "explanation": explanation_dict, # Pass the structured explanation
         # Avoid passing full analysis if not needed by formatter? Check formatter needs.
         # For now, keep them.
         "dataset_analysis": dataset_analysis_dict, 
         "dataset_description": dataset_description 
-    }
+    } | results
     
     # Add workflow state to the result
     result_for_formatter.update(workflow_update)

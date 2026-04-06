@@ -99,7 +99,7 @@ def estimate_effect(
             'model_summary': results.summary(), 
             'diagnostics': diag_results,
             'interpretation': interpretation,
-            'method_used': 'Difference in Means (OLS)'
+            'method_used': 'Difference in Means (OLS)' #TODO: change this, we shold have a fixed set of names for methods, maybe an enum?
         }
 
     except Exception as e:

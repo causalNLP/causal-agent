@@ -1,281 +1,281 @@
 """
-LangChain agent for the cais module.
-
-This module configures a LangChain agent with specialized tools for causal inference,
-allowing for an interactive approach to analyzing datasets and applying appropriate
-causal inference methods.
+Core class for the CausalAgent, which orchestrates the workflow of analyzing a dataset and query,
+selecting and validating methods, cleaning the dataset, executing the method, and generating explanations. 
 """
 
-import logging
 from typing import Dict, List, Any, Optional
-from langchain.agents.react.agent import create_react_agent
-from langchain.agents import AgentExecutor, create_structured_chat_agent, create_tool_calling_agent
-from langchain.chains.conversation.memory import ConversationBufferMemory
-from langchain_core.messages import SystemMessage, HumanMessage
-from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder
-from langchain.tools import tool
-
-from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
-
-from langchain.tools.render import render_text_description
-
-from langchain.agents.format_scratchpad.tools import format_to_tool_messages
-from langchain.agents.output_parsers.tools import ToolsAgentOutputParser
-from langchain_core.runnables import RunnablePassthrough
-from langchain_core.language_models import BaseChatModel
-from langchain_anthropic.chat_models import convert_to_anthropic_tool
-import os
-
+from cais.estimator_lib import Estimators
 from cais.tools.input_parser_tool import input_parser_tool
 from cais.tools.dataset_analyzer_tool import dataset_analyzer_tool
 from cais.tools.query_interpreter_tool import query_interpreter_tool
 from cais.tools.method_selector_tool import method_selector_tool
+from cais.tools.controls_selector_tool import controls_selector_tool
 from cais.tools.method_validator_tool import method_validator_tool
 from cais.tools.method_executor_tool import method_executor_tool
 from cais.tools.explanation_generator_tool import explanation_generator_tool
 from cais.tools.output_formatter_tool import output_formatter_tool
-from langchain_core.output_parsers import StrOutputParser
+
+from cais.methods.linear_regression.estimator import LinearRegression
+from cais.methods.regression_discontinuity.estimator import RDDRegression
+from cais.methods.difference_in_differences.estimator import DiDRegression
+from cais.methods.instrumental_variable.estimator import IVRegression
+from cais.methods.propensity_score.matching import PropensityScoreMatching
+from cais.models import Variables, MethodInfo
+from cais.components.assumption_checks import IVTest, ObervationalTest, DiDTest, RDDTest
+
 from .config import get_llm_client 
 #from .prompts import SYSTEM_PROMPT 
-from langchain_core.messages import AIMessage, AIMessageChunk
+from cais.models import *
+from cais.tools.dataset_cleaner_tool import dataset_cleaner_tool
+import pandas as pd
+import os, logging
 import re
 import json
-from typing import Union
-from langchain_core.output_parsers import BaseOutputParser
-from langchain.schema import AgentAction, AgentFinish
-from langchain_anthropic.output_parsers import ToolsOutputParser
-from langchain.agents.react.output_parser import ReActOutputParser
-from langchain.agents import AgentOutputParser
-from langchain.agents.agent import AgentAction, AgentFinish, OutputParserException
-import re
-from typing import Union, List
-from cais.models import *
 
-from langchain_core.agents import AgentAction, AgentFinish
-from langchain_core.exceptions import OutputParserException
+LINEAR_REGRESSION = "linear_regression"
+DIFF_IN_DIFF = "difference_in_differences"
+REGRESSION_DISCONTINUITY = "regression_discontinuity_design"
+PROPENSITY_SCORE_MATCHING = "propensity_score_matching"
+INSTRUMENTAL_VARIABLE = "instrumental_variable"
 
-from langchain.agents.agent import AgentOutputParser
-from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
-
-FINAL_ANSWER_ACTION = "Final Answer:"
-MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE = (
-    "Invalid Format: Missing 'Action:' after 'Thought:'"
-)
-MISSING_ACTION_INPUT_AFTER_ACTION_ERROR_MESSAGE = (
-    "Invalid Format: Missing 'Action Input:' after 'Action:'"
-)
-FINAL_ANSWER_AND_PARSABLE_ACTION_ERROR_MESSAGE = (
-    "Parsing LLM output produced both a final answer and parse-able actions"
-)
-
-
-class ReActMultiInputOutputParser(AgentOutputParser):
-    """Parses ReAct-style output that may contain multiple tool calls."""
-
-    def get_format_instructions(self) -> str:
-        
-        return FORMAT_INSTRUCTIONS + (
-            "\n\nIf you need to call more than one tool, simply repeat:\n"
-            "Action: <tool_name>\n"
-            "Action Input: <json or text>\n"
-            "…for each tool in sequence."
-        )
-
-    @property
-    def _type(self) -> str:
-        return "react-multi-input"
-
-    def parse(self, text: str) -> Union[List[AgentAction], AgentFinish]:
-        includes_answer = FINAL_ANSWER_ACTION in text
-        print('-------------------')
-        print(text)
-        print('-------------------')
-        # Grab every Action / Action Input block
-        pattern = (
-            r"Action\s*\d*\s*:[\s]*(.*?)\s*"
-            r"Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*?)(?=(?:Action\s*\d*\s*:|$))"
-        )
-        matches = list(re.finditer(pattern, text, re.DOTALL))
-
-        # If we found tool calls…
-        if matches:
-            if includes_answer:
-                # both a final answer *and* tool calls is ambiguous
-                raise OutputParserException(
-                    f"{FINAL_ANSWER_AND_PARSABLE_ACTION_ERROR_MESSAGE}: {text}"
-                )
-
-            actions: List[AgentAction] = []
-            for m in matches:
-                tool_name = m.group(1).strip()
-                tool_input = m.group(2).strip().strip('"')
-                print('\n--------------------------')
-                print(tool_input)
-                print('--------------------------')
-                actions.append(AgentAction(tool_name, json.loads(tool_input), text))
-
-            return actions
-
-        # Otherwise, if there's a final answer, finish
-        if includes_answer:
-            answer = text.split(FINAL_ANSWER_ACTION, 1)[1].strip()
-            return AgentFinish({"output": answer}, text)
-
-        # No calls and no final answer → figure out which error to throw
-        if not re.search(r"Action\s*\d*\s*Input\s*\d*:", text):
-            raise OutputParserException(
-                f"Could not parse LLM output: `{text}`",
-                observation=MISSING_ACTION_INPUT_AFTER_ACTION_ERROR_MESSAGE,
-                llm_output=text,
-                send_to_llm=True,
-            )
-
-        # Fallback
-        raise OutputParserException(f"Could not parse LLM output: `{text}`")
-
+# Temporary name conversion
+convert = {
+    LINEAR_REGRESSION: LinearRegression.name,
+    DIFF_IN_DIFF: DiDRegression.name,
+    REGRESSION_DISCONTINUITY: RDDRegression.name,
+    INSTRUMENTAL_VARIABLE: IVRegression.name,
+    PROPENSITY_SCORE_MATCHING: PropensityScoreMatching.name
+}
+    
 # Set up basic logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+os.makedirs('./logs/', exist_ok=True)
 logger = logging.getLogger(__name__)
 
 
-def create_agent_prompt(tools: List[tool]) -> ChatPromptTemplate:
-    """Create the prompt template for the causal inference agent, emphasizing workflow and data handoff.
-       (This is the version required by the LCEL agent structure below)
-    """
-    # Get the tool descriptions
-    tool_description = render_text_description(tools)
-    tool_names = ", ".join([t.name for t in tools])
-
-    # Define the system prompt template string
-    system_template = """
-You are a causal inference expert helping users answer causal questions by following a strict workflow using specialized tools.
-
-Remember you always have to always generate the Thought, Action and Action Input block.
-TOOLS:
-------
-You have access to the following tools:
-
-{tools}
-
-To use a tool, please use the following format:
-
-Thought: Do I need to use a tool? Yes
-Action: the action to take, should be one of [{tool_names}]
-Action Input: the input to the action, as a single, valid JSON object string. Check the tool definition for required arguments and structure.
-Observation: the result of the action, often containing structured data like 'variables', 'dataset_analysis', 'method_info', etc.
-
-When you have a response to say to the Human, or if you do not need to use a tool, you MUST use the format:
-
-Thought: Do I need to use a tool? No
-Final Answer: [your response here]
-
-DO NOT UNDER ANY CIRCUMSTANCE CALL MORE THAN ONE TOOL IN A  STEP
-
-**IMPORTANT TOOL USAGE:**
-1.  **Action Input Format:** The value for 'Action Input' MUST be a single, valid JSON object string. Do NOT include any other text or formatting around the JSON string.
-2.  **Argument Gathering:** You MUST gather ALL required arguments for the Action Input JSON from the initial Human input AND the 'Observation' outputs of PREVIOUS steps. Look carefully at the required arguments for the tool you are calling.
-3.  **Data Handoff:** The 'Observation' from a previous step often contains structured data needed by the next tool. For example, the 'variables' output from `query_interpreter_tool` contains fields like `treatment_variable`, `outcome_variable`, `covariates`, `time_variable`, `instrument_variable`, `running_variable`, `cutoff_value`, and `is_rct`. When calling `method_selector_tool`, you MUST construct its required `variables` input argument by including **ALL** these relevant fields identified by the `query_interpreter_tool` in the previous Observation. Similarly, pass the full `dataset_analysis`, `dataset_description`, and `original_query` when required by the next tool.
-
-IMPORTANT WORKFLOW:
--------------------
-You must follow this exact workflow, selecting the appropriate tool for each step:
-
-1. ALWAYS start with `input_parser_tool` to understand the query
-2. THEN use `dataset_analyzer_tool` to analyze the dataset
-3. THEN use `query_interpreter_tool` to identify variables (output includes `variables` and `dataset_analysis`)
-4. THEN use `method_selector_tool` (input requires `variables` and `dataset_analysis` from previous step)
-5. THEN use `method_validator_tool` (input requires `method_info` and `variables` from previous step)
-6. THEN use `method_executor_tool` (input requires `method`, `variables`, `dataset_path`)
-7. THEN use `explanation_generator_tool` (input requires results, method_info, variables, etc.)
-8. FINALLY use `output_formatter_tool` to return the results 
-
-REASONING PROCESS:
-------------------
-EXPLICITLY REASON about:
-1. What step you're currently on (based on previous tool's Observation)
-2. Why you're selecting a particular tool (should follow the workflow)
-3. How the output of the previous tool (especially structured data like `variables`, `dataset_analysis`, `method_info`) informs the inputs required for the current tool.
-
-IMPORTANT RULES:
-1. Do not make more than one tool call in a single step.
-2. Do not include ``` in your output at all.
-3. Don't use action names like default_api.dataset_analyzer_tool, instead use tool names like dataset_analyzer_tool.
-4. Always start, action, and observation with a new line.
-5. Don't use '\\' before double quotes
-6. Don't include ```json for Action Input. Also ensure that Action Input is a valid json. DO no add any text after Action Iput.
-7. You have to always choose one of the tools unless it's the final answer.
-Begin!
-""" 
-
-    # Create the prompt template
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system_template),
-        MessagesPlaceholder("chat_history", optional=True), # Use MessagesPlaceholder
-        # MessagesPlaceholder("agent_scratchpad"),  
-
-        ("human", "{input}\n Thought:{agent_scratchpad}"),
-        # ("ai", "{agent_scratchpad}"),
-        # MessagesPlaceholder("agent_scratchpad" ), # Use MessagesPlaceholder
-        # "agent_scratchpad"
-    ])
-    return prompt
-
-def create_causal_agent(llm: BaseChatModel) -> AgentExecutor:
-    """
-    Create and configure the LangChain agent with causal inference tools.
-    (Using explicit LCEL construction, compatible with shared LLM client)
-    """
-    # Define tools available to the agent
-    agent_tools = [
-        input_parser_tool,
-        dataset_analyzer_tool,
-        query_interpreter_tool,
-        method_selector_tool,
-        method_validator_tool,
-        method_executor_tool,
-        explanation_generator_tool,
-        output_formatter_tool
-    ]
-    # anthropic_agent_tools = [ convert_to_anthropic_tool(anthropic_tool) for anthropic_tool in agent_tools]
-    # Create the prompt using the helper
-    prompt = create_agent_prompt(agent_tools)
-    # Bind tools to the LLM (using the passed shared instance)
+class CausalAgent():
     
-    
-    # Create memory
-    # Consider if memory needs to be passed in or created here
-    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+    def __init__(
+            self,
+            dataset_path: Union[str, pd.DataFrame], # dataset path or dataframe directly
+            dataset_description: Optional[str] = None, # Description of the dataset
+            model_name: Optional[str] = None,
+            provider: Optional[str] = None,
+    ):
+        # Query not passed to constructor or saved so we can rerun different queries on the same dataset
 
-    # Manually construct the agent runnable using LCEL
-    from langchain_anthropic.output_parsers import ToolsOutputParser
-    from langchain.agents.output_parsers.json import JSONAgentOutputParser
-    # from langchain.agents.react.output_parser import MultiActionAgentOutputParsers ReActMultiInputOutputParser
-    provider = os.getenv("LLM_PROVIDER", "openai")
-    if provider == "gemini":
-        base_parser=ReActMultiInputOutputParser()
-        llm_with_tools = llm.bind_tools(agent_tools)
-    else:
-        base_parser=ToolsAgentOutputParser()
-        llm_with_tools = llm.bind_tools(agent_tools, tool_choice="any")
-    agent = create_react_agent(llm_with_tools, agent_tools, prompt, output_parser=base_parser)
-    
-    
-    # Create executor (should now work with the manually constructed agent)
-    executor = AgentExecutor(
-        agent=agent,
-        tools=agent_tools,
-        memory=memory, # Pass the memory object
-        verbose=True,
-        callbacks=[ConsoleCallbackHandler()], # Optional: for console debugging
-        handle_parsing_errors=True, # Let AE handle parsing errors
-        max_retries = 100
-    )
-    
-    return executor
+        self.llm_info = {
+            'model_name' : model_name,
+            'provider' : provider
+        }
+        
+        # MUST PASS
+        self.llm = get_llm_client(
+            provider=provider,
+            model_name=model_name
+        )
 
-def run_causal_analysis(query: str, dataset_path: str, 
-                        dataset_description: Optional[str] = None, 
-                        api_key: Optional[str] = None) -> Dict[str, Any]:
+        # Estimator library
+        self.estimators = Estimators()
+
+        # Metadata
+        self.dataset_path = dataset_path # store dataset; stop saving then rewriting
+        self.cleaned_dataset_path: Optional[str] = None
+        self.dataset_description = dataset_description # will need checks for None
+
+        # Pipeline states 
+        self.dataset_analysis: Optional[DatasetAnalysis] = None
+        self.query_interpreter_output: Optional[QueryInterpreterOutput] = None # Unnecessary
+        self.variables: Optional[Variables] = None
+        self.selected_method: Optional[MethodInfo] = None
+
+        # Outputs
+        self.results: Optional[Dict[str, Any]] = None
+        self.explanations: Optional[Dict[str, Any]] = None
+
+        self.last_used_query = None
+
+    def checkq(self, query):
+        '''
+        Checks if a query was passed; if not, uses the most recently used query.
+        '''
+        if not query:
+            query = self.last_used_query
+        self.last_used_query = query
+        return query
+
+    def load_dataset(self, cleaned=False):
+        
+        if not cleaned or not self.cleaned_dataset_path:
+            if cleaned:
+                print("Warning: Cleaned dataset not found. Please run clean_dataset() before loading dataset.")
+            return pd.read_csv(self.dataset_path)
+        else:
+            return pd.read_csv(self.cleaned_dataset_path)
+
+    def analyse_dataset(self, query=None):
+        
+        query = self.checkq(query)
+
+        # Analyse dataset based on provided description 
+        dataset_analysis = dataset_analyzer_tool.func(
+            dataset_path=self.dataset_path,
+            dataset_description=self.dataset_description,
+            original_query=query,
+            llm=self.llm
+        ).analysis_results        
+        
+        # Analyse query based on dataset analysis and dataset description
+        query_interpreter_output = query_interpreter_tool.func(
+            dataset_analysis=dataset_analysis,
+            dataset_description=self.dataset_description,
+            original_query=query
+        )
+        
+        self.dataset_analysis = dataset_analysis
+        #self.query_interpreter_output = query_interpreter_output
+        self.variables = query_interpreter_output.variables
+
+    def select_method(self, query=None, llm_decision=True):
+
+        query = self.checkq(query)
+
+        excluded = set(convert.values()) - self.estimators.names()
+        method_selector_output = method_selector_tool.func(
+            variables=self.variables,
+            dataset_analysis=self.dataset_analysis,
+            dataset_description=self.dataset_description,
+            original_query=query,
+            excluded_methods=excluded,
+            use_decision_tree=llm_decision, # LLM Decision Tree vs. Rule-based Decision Tree
+        )
+
+        self.method_info = MethodInfo(**method_selector_output['method_info'])
+        self.selected_method = self.method_info.selected_method
+        return self.selected_method
+
+
+    def validate_method(self, query=None):
+        '''
+        Do not use yet
+        '''
+        query = self.checkq(query)
+
+        # TODO: Move changes from assumption_checker branch to refactoring (this branch)
+
+        method_validator_input = MethodValidatorInput(
+                method_info=self.method_info,
+                variables=self.variables,
+                dataset_analysis=self.dataset_analysis,
+                dataset_description=self.dataset_description,
+                original_query=query,
+            )
+        method_validator_output = method_validator_tool.func(method_validator_input)
+        method_name = method_validator_output.get('method')
+
+    def select_controls(self, query=None) -> list:
+
+        query = self.checkq(query)
+
+        controls_selector_output = controls_selector_tool(
+            method_name=self.selected_method,
+            variables=self.variables,
+            dataset_analysis=self.dataset_analysis,
+            dataset_description=self.dataset_description,
+            original_query=query,
+        )
+      
+        self.variables = Variables(**controls_selector_output['variables']) # refined controls; need to update after cleaning
+
+    def clean_dataset(self, query=None):   
+
+        query = self.checkq(query)
+
+        cleaning_output = dataset_cleaner_tool.func(
+            dataset_path=self.dataset_path,
+            variables=self.variables.model_dump(),
+            dataset_description=self.dataset_description,
+            original_query=query,
+            causal_method=self.selected_method
+        )
+        self.cleaned_dataset_path = cleaning_output.get("cleaned_dataset_path", self.dataset_path)
+        return self.cleaned_dataset_path
+
+    def execute_method(self, query=None, remove_cleaned=True):
+        
+        query = self.checkq(query)
+
+        estimator = self.estimators[
+            convert[self.selected_method]
+        ]
+
+        df = self.load_dataset(cleaned=True)
+        df.dropna(subset=[
+            self.variables.outcome_variable,
+            self.variables.treatment_variable
+            ] + self.variables.confounders,
+            inplace=True
+        ) # safety
+
+        self.results = estimator(
+            df=df,
+            variables=self.variables,
+            query=query
+        ) | self.llm_info # append llm info
+
+        self.explanations = explanation_generator_tool.func(
+            method_info=self.method_info,
+            variables=self.variables,
+            results=self.results,
+            dataset_analysis=self.dataset_analysis,
+            validation_info=None,
+            dataset_description=self.dataset_description,
+            original_query=query
+        )['explanation']
+
+        if self.cleaned_dataset_path and remove_cleaned:
+            if isinstance(self.load_dataset(cleaned=True), pd.DataFrame):
+                os.remove(self.cleaned_dataset_path)
+                self.cleaned_dataset_path=None
+                logger.info("Succesfully Removed Cleaned Dataset.")
+
+        return self.results
+    
+    def run_analysis(self, query, llm_method_selection: Optional[bool] = True):
+
+        logger.info("[Causal AI Scientist Stage 1] - Dataset and Query analysis")
+
+        self.query = query
+
+        self.analyse_dataset(
+            query=query
+        )
+        self.select_method(
+            query=query,
+            llm_decision=llm_method_selection
+        )
+        self.select_controls(
+            query=query
+        )
+        self.clean_dataset(
+            query=query
+        )
+        self.execute_method(
+            query=query
+        )
+
+        return {
+            "results" : self.results,
+            "explanation": self.explanations
+        }
+
+
+# ===== DEPRECIATED ======
+
+
+def run_causal_analysis(query: str, dataset_path: str,
+                        dataset_description: Optional[str] = None,
+                        api_key: Optional[str] = None,
+                        use_method_validator: bool = True) -> Dict[str, Any]:
     """
     Run causal analysis on a dataset based on a user query.
     
@@ -284,13 +284,12 @@ def run_causal_analysis(query: str, dataset_path: str,
         dataset_path: Path to the dataset
         dataset_description: Optional textual description of the dataset
         api_key: Optional OpenAI API key (DEPRECATED - will be ignored)
+        use_method_validator: Whether to run the method validator step
         
     Returns:
         Dictionary containing the final formatted analysis results from the agent's last step.
     """
-    # Log the start of the analysis
     logger.info("Starting causal analysis run...")
-    
     try:
         # --- Instantiate the shared LLM client --- 
         model_name = os.getenv("LLM_MODEL", "gpt-4")
@@ -299,7 +298,8 @@ def run_causal_analysis(query: str, dataset_path: str,
             shared_llm = get_llm_client()
         else:
             shared_llm = get_llm_client(temperature=0) # Or read provider/model from env
-        
+
+        logger.info(f"Initializing LLM client: Provider='{os.getenv('LLM_PROVIDER')}', Model='{os.getenv('LLM_MODEL')}'")
         # --- Dependency Injection Note (REMAINS RELEVANT) --- 
         # If tools need the LLM, they must be adapted. Example using partial:
         # from functools import partial
@@ -321,40 +321,123 @@ def run_causal_analysis(query: str, dataset_path: str,
         if dataset_description:
             input_text += f"Dataset Description: {dataset_description}\n"
         input_text += "Please perform the causal analysis following the workflow."
-        
         # Log the constructed input text
-        logger.info(f"Constructed input for agent: \n{input_text}")
-
+        logger.debug(f"Constructed input for agent: \n{input_text}")
+        
+        
+        logger.info("[Causal AI Scientist Stage 1] - Data Processing")
+        
         input_parsing_result = input_parser_tool(input_text)
+        # This just returns query, dataset_path for the csv file and dataset_description
+        # and workflow state update but that's probably not needed
+
         dataset_analysis_result = dataset_analyzer_tool.func(dataset_path=input_parsing_result["dataset_path"], dataset_description=input_parsing_result["dataset_description"], original_query=input_parsing_result["original_query"]).analysis_results
+        
         query_info = QueryInfo(
         query_text=input_parsing_result["original_query"],
         potential_treatments=input_parsing_result["extracted_variables"].get("treatment"),
         potential_outcomes=input_parsing_result["extracted_variables"].get("outcome"),
         covariates_hints=input_parsing_result["extracted_variables"].get("covariates_mentioned"),
         instrument_hints=input_parsing_result["extracted_variables"].get("instruments_mentioned")
-    )
+        )
 
         query_interpreter_output = query_interpreter_tool.func(query_info=query_info, dataset_analysis=dataset_analysis_result, dataset_description=input_parsing_result["dataset_description"], original_query = input_parsing_result["original_query"]).variables
+
+        # print('LOG RESULTS')
+        # print(input_parsing_result['extracted_variables'])
+        # print(input_parsing_result['extracted_variables'].get("treatment"))
+        # print(input_parsing_result['extracted_variables'].get("outcome"))
+        # print(input_parsing_result['extracted_variables'].get("covariates_mentioned"))
+        # print(input_parsing_result['extracted_variables'].get("instruments_mentioned"))
+
+        # print('QUERY INTERPRETER OUTPUT')
+        # print(query_interpreter_output)
+
+
+        logger.info("[Causal AI Scientist Stage 2] - Method Selection")
+        
+        
         method_selector_output = method_selector_tool.func(variables=query_interpreter_output,
             dataset_analysis=dataset_analysis_result,
             dataset_description=input_parsing_result["dataset_description"],
             original_query = input_parsing_result["original_query"],
             excluded_methods=None)
+
+        
+
+        print('METHOD SELECTOR OUTPUT: ', method_selector_output)
+
+        import sys
+        sys.exit()
+
+        # NEW: Select control variables based on chosen method
         method_info = MethodInfo(
             **method_selector_output['method_info']
         )
-        method_validator_input = MethodValidatorInput(
-            method_info=method_info,
+
+        
+
+        logger.info("[Causal AI Scientist Stage 3] - Method Validation")
+        if use_method_validator:
+            method_validator_input = MethodValidatorInput(
+                method_info=method_info,
+                variables=query_interpreter_output,
+                dataset_analysis=dataset_analysis_result,
+                dataset_description=input_parsing_result["dataset_description"],
+                original_query = input_parsing_result["original_query"]
+            )
+            method_validator_output = method_validator_tool.func(method_validator_input)
+            # method_validator_output['method'] = "linear_regression"
+            method_name = method_validator_output.get('method')
+        else:
+            method_name = method_info.selected_method
+            method_validator_output = {
+                "method": method_name,
+                "validation_info": {
+                    "original_method": method_info.selected_method,
+                    "recommended_method": method_name,
+                    "assumptions_valid": None,
+                    "failed_assumptions": [],
+                    "warnings": ["Method validation skipped by flag."],
+                    "suggestions": []
+                }
+            }
+        controls_selector_output = controls_selector_tool.func(
+            method_name=method_name,
             variables=query_interpreter_output,
             dataset_analysis=dataset_analysis_result,
             dataset_description=input_parsing_result["dataset_description"],
+            original_query=input_parsing_result["original_query"]
+        )
+        # Update variables with selected controls
+        from cais.models import Variables
+        query_interpreter_output = Variables(**controls_selector_output['variables'])
+        logger.info(f"Selected controls: {query_interpreter_output}")
+        logger.info('Started Dataset Cleaning... ')
+
+        original_path = dataset_analysis_result.dataset_info.file_path 
+        cleaning_output = dataset_cleaner_tool.func(
+            dataset_path=original_path,
+            variables=query_interpreter_output.model_dump(),
+            dataset_description=input_parsing_result["dataset_description"],
+            original_query=input_parsing_result["original_query"],
+            causal_method = method_name
+        )
+        cleaned_path = cleaning_output.get("cleaned_dataset_path", original_path)
+        #print("----------Cleaned Dataset Path-----------")
+        logger.info(cleaned_path)
+
+        logger.info("[Causal AI Scientist Stage 4] - Execution")
+        method_executor_input = MethodExecutorInput(
+            method = method_name,
+            variables=query_interpreter_output,
+            dataset_path=cleaned_path,
+            dataset_analysis=dataset_analysis_result,
+            dataset_description=input_parsing_result["dataset_description"],
+            # validation_info=method_validator_output,
             original_query = input_parsing_result["original_query"]
         )
-        method_validator_output = method_validator_tool.func(method_validator_input)
-        method_executor_input = MethodExecutorInput(
-            **method_validator_output
-        )
+        logger.debug(method_executor_input)
         method_executor_output = method_executor_tool.func(method_executor_input, original_query = input_parsing_result["original_query"])
         explainer_output = explanation_generator_tool.func(            method_info=method_info,
             validation_info=method_validator_output,
@@ -364,10 +447,14 @@ def run_causal_analysis(query: str, dataset_path: str,
             dataset_description=input_parsing_result["dataset_description"],
             original_query = input_parsing_result["original_query"])
         result = explainer_output
-        result['results']['results']["method_used"] = method_validator_output['method']
-        logger.info(result)
+        #result['results']['results']["method_used"] = method_validator_output.get('method')
+        logger.debug(result)
         logger.info("Causal analysis run finished.")
         
+        # Remove the cleaned csv
+        logger.info("Removing cleaned csv.")
+        os.remove(cleaned_path)
+
         # Ensure result is a dict and extract the 'output' part
         if isinstance(result, dict):
             final_output = result

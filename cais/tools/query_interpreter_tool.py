@@ -30,10 +30,9 @@ from cais.components.state_manager import create_workflow_state_update
 @tool()
 # Modify signature to accept individual Pydantic models/types as arguments
 def query_interpreter_tool(
-    query_info: QueryInfo, 
     dataset_analysis: DatasetAnalysis, 
     dataset_description: str, 
-    original_query: Optional[str] = None # Keep optional original_query
+    original_query: Optional[str] = None, # Keep optional original_query
 ) -> QueryInterpreterOutput:
     """
     Interpret a causal query in the context of a specific dataset.
@@ -49,6 +48,14 @@ def query_interpreter_tool(
     """
     logger.info("Running query_interpreter_tool with direct arguments...")
     
+    query_info = QueryInfo(
+        query_text=original_query,
+        potential_treatments=dataset_analysis.potential_treatments,
+        potential_outcomes=dataset_analysis.potential_outcomes,
+        covariate_hints = None, # Could be added to dataset_analysis if available
+        instrument_hints = None  # Could be added to dataset_analysis if available
+    )
+
     # Use arguments directly, dump models to dicts for the component call
     query_info_dict = query_info.model_dump()
     dataset_analysis_dict = dataset_analysis.model_dump()
@@ -93,8 +100,10 @@ def query_interpreter_tool(
         next_step_reason="Now that we have identified the variables, we can select an appropriate causal inference method"
     )
     
-    # Construct the Pydantic output object
-    output = QueryInterpreterOutput(
+    
+    logger.info("query_interpreter_tool finished successfully.")
+    
+    return QueryInterpreterOutput(
         variables=variables_output,
         # Pass the original dataset_analysis Pydantic model 
         dataset_analysis=dataset_analysis, 
@@ -102,6 +111,3 @@ def query_interpreter_tool(
         original_query=original_query, # Pass along original query
         workflow_state=workflow_update.get('workflow_state', {}) # Extract state dict
     )
-    
-    logger.info("query_interpreter_tool finished successfully.")
-    return output
