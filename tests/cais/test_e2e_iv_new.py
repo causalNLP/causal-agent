@@ -14,7 +14,7 @@ from cais.agent import CausalAgent
 class TestE2EIVNewPipeline(unittest.TestCase):
     def test_iv_llm_pipeline_bulk(self):
         """Run several queries from the CSV data and log LLM outputs."""
-        csv_path = os.path.join(ROOT, "data", "checked_real_data - Final.csv")
+        csv_path = os.path.join(ROOT, "data", "real_info.csv")
         if not os.path.exists(csv_path):
             self.skipTest(f"Skipping bulk IV test: metadata file not found at {csv_path}")
         df = pd.read_csv(csv_path)
@@ -25,9 +25,6 @@ class TestE2EIVNewPipeline(unittest.TestCase):
         
         # Take a subset of unique queries
         sample_df = iv_df.head(3)
-
-        results_log = []
-        output_file = os.path.join(os.path.dirname(__file__), "llm_outputs.json")
 
         print(f"--- Running Bulk E2E Test (5 queries) ---")
         
@@ -64,6 +61,7 @@ class TestE2EIVNewPipeline(unittest.TestCase):
                 agent = CausalAgent(
                     dataset_path=dataset_path,
                     dataset_description=dataset_description,
+                    use_iv_pipeline = True,
                 )
                 output = agent.run_analysis(
                     query=query,
@@ -72,28 +70,9 @@ class TestE2EIVNewPipeline(unittest.TestCase):
                 # Basic correctness check
                 self.assertIsNotNone(output, "Agent returned None output.")
                 
-                # Collect result
-                result_entry = {
-                    "query": query,
-                    "filename": filename,
-                    "llm_output": output
-                }
-                results_log.append(result_entry)
                 
             except Exception as e:
                 print(f"Error running analysis for row {idx}: {e}")
-                results_log.append({
-                    "query": query,
-                    "filename": filename,
-                    "error": str(e)
-                })
-
-        # Save all results to JSON
-        with open(output_file, "w") as f:
-            json.dump(results_log, f, indent=2, default=str)
-        
-        print(f"\n--- All results logged to {output_file} ---")
-
 
 if __name__ == "__main__":
     unittest.main()
