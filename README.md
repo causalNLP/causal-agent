@@ -5,7 +5,7 @@ Causal AI Scientist: Facilitating Causal Data Science with Large Language Models
 </h1>
 
 <p align="center">
-  <a href="https://github.com/your-repo/cais"><b>[Code]</b></a> •
+  <a href="https://github.com/causalNLP/causal-agent"><b>[Code]</b></a> •
   <a href=""><b>[Paper (coming soon)]</b></a>
 </p>
 
@@ -23,7 +23,8 @@ Causal AI Scientist: Facilitating Causal Data Science with Large Language Models
 4. [Dataset Information](#4-dataset-information)
 5. [Running CAIS](#5-running-cais)
 6. [Reproducing Paper Results](#6-reproducing-paper-results)
-7. [License](#7-license)
+7. [Citation](#7-citation)
+8. [License](#8-license)
 
 ---
 
@@ -42,8 +43,8 @@ Causal effect estimation is central to evidence-based decision-making across dom
 </div> -->
 
 **Supported Methods:**
-- **Econometric:** Difference-in-Differences (DiD), Instrumental Variables (IV), Ordinary Least Squares (OLS), Regression Discontinuity Design (RDD)
-- **Causal Graph-based:** Backdoor adjustment, Frontdoor adjustment
+- **Econometric:** Difference-in-Differences (DiD), Instrumental Variables (IV), Ordinary Least Squares (OLS), Regression Discontinuity Design (RDD).
+- **Causal Graph-based:** Backdoor adjustment, Frontdoor adjustment.
 
 ---
 
@@ -85,7 +86,7 @@ If the **Instrumental Variable (IV)** method is selected and the `--iv_llm` pipe
 
 **Step 1: Clone the repository and copy the example configuration**
 ```bash
-git clone https://github.com/your-repo/cais.git
+git clone https://github.com/causalNLP/causal-agent.git
 cd causal-agent
 cp .env.example .env
 ```
@@ -130,13 +131,14 @@ All datasets used to evaluate CAIS and the baseline models are available in the 
 ## 5. Running CAIS
 
 ```bash
-python main/run_cais_new.py \
+python run_cais_new.py \
     --metadata_path <path_to_metadata_csv> \
     --data_dir <path_to_data_folder> \
     --output_dir <output_folder> \
     --output_name <output_filename> \
     --llm_name <llm_name> \
-    --llm_provider <llm_provider>
+    --llm_provider <llm_provider> \
+    [--iv_llm]
 ```
 
 **Arguments:**
@@ -147,24 +149,31 @@ python main/run_cais_new.py \
 | `--data_dir` | `str` | Path to the folder containing the data in CSV format |
 | `--output_dir` | `str` | Path to the folder where output JSON results will be saved |
 | `--output_name` | `str` | Name of the output JSON file |
-| `--llm_name` | `str` | Name of the LLM to use (e.g., `gpt-4o`, `claude-3`) |
+| `--llm_name` | `str` | Name of the LLM to use (e.g., `gpt-4o`, `claude-3-5-sonnet`) |
 | `--llm_provider` | `str` | LLM service provider (e.g., `openai`, `anthropic`, `together`) |
+| `--iv_llm` | `bool` | *(Optional)* If present, enables the advanced experimental [IV-LLM pipeline](https://arxiv.org/abs/2602.07943) for instrument discovery. |
 
 **Example:**
 ```bash
-python main/run_cais.py \
+python run_cais_new.py \
     --metadata_path "data/qr_info.csv" \
     --data_dir "data/all_data" \
     --output_dir "output" \
     --output_name "results_qr_4o" \
     --llm_name "gpt-4o-mini" \
-    --llm_provider "openai"
+    --llm_provider "openai" \
+    --iv_llm
 ```
 
 ---
 
+## 6. Reproducing Paper Results
 
-## 6. Citation
+**Will be updated soon**
+
+---
+
+## 7. Citation
 
 If you use CAIS or build on this work, we would appreciate it if you could cite:
 
@@ -195,6 +204,6 @@ The IV-LLM pipeline builds on the methodology introduced in [IV Co-Scientist](ht
 
 ---
 
-## 7. License
+## 8. License
 
 Distributed under the MIT License. See `LICENSE` for more information.

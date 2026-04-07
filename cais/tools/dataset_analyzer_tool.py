@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 def dataset_analyzer_tool(dataset_path: str,
                             dataset_description: Optional[str] = None,
                             original_query: Optional[str] = None,
+                            use_iv_pipeline: bool = False,
                             llm = None) -> DatasetAnalyzerOutput:
     """
     Analyze dataset to identify important characteristics for causal inference.
@@ -49,7 +50,13 @@ def dataset_analyzer_tool(dataset_path: str,
     try:
 
         # Call the component function 
-        analysis_dict = analyze_dataset(dataset_path, llm_client=llm, dataset_description=dataset_description, original_query=original_query)
+        analysis_dict = analyze_dataset(
+            dataset_path, 
+            llm_client=llm, 
+            dataset_description=dataset_description, 
+            original_query=original_query,
+            use_iv_pipeline=use_iv_pipeline
+        )
         
         # Check for errors returned explicitly by the component
         if isinstance(analysis_dict, dict) and "error" in analysis_dict:

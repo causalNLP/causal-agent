@@ -18,6 +18,7 @@ def main(argv: Optional[list[str]] = None) -> None:
     single.add_argument("--llm-provider", dest="llm_provider", default=None, help="LLM provider (openai, anthropic, together, gemini, deepseek)")
     single.add_argument("--skip-method-validator", action="store_true", help="Skip method validation step")
     single.add_argument("--use-llm-rule-engine", action="store_true", help="Use LLM-based method selection")
+    single.add_argument("--iv_llm", action="store_true", help="Use the new IV_LLM pipeline")
 
     # Batch run compatible with existing metadata CSVs
     batch = subparsers.add_parser("batch", help="Run batch analyses from a metadata CSV")
@@ -28,6 +29,7 @@ def main(argv: Optional[list[str]] = None) -> None:
     batch.add_argument("--llm-provider", dest="llm_provider", default=None)
     batch.add_argument("--skip-method-validator", action="store_true", help="Skip method validation step")
     batch.add_argument("--use-llm-rule-engine", action="store_true", help="Use LLM-based method selection")
+    batch.add_argument("--iv_llm", action="store_true", help="Use the new IV_LLM pipeline")
 
     args = parser.parse_args(argv)
 
@@ -47,7 +49,8 @@ def main(argv: Optional[list[str]] = None) -> None:
             query=args.query,
             dataset_path=args.dataset,
             dataset_description=args.description,
-            use_method_validator=not args.skip_method_validator
+            use_method_validator=not args.skip_method_validator,
+            use_iv_pipeline=args.iv_llm
         )
         import json
         print(json.dumps(result, indent=2))
@@ -67,7 +70,8 @@ def main(argv: Optional[list[str]] = None) -> None:
                     query=row.get("natural_language_query"),
                     dataset_path=data_path,
                     dataset_description=row.get("data_description"),
-                    use_method_validator=not args.skip_method_validator
+                    use_method_validator=not args.skip_method_validator,
+                    use_iv_pipeline=args.iv_llm
                 )
                 results[idx] = {
                     "query": row.get("natural_language_query"),

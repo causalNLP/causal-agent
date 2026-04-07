@@ -26,6 +26,7 @@ def parse_args():
     parser.add_argument("--skip-method-validator", action="store_true", help="Skip method validation step.")
     parser.add_argument("--use-decision-tree", action="store_true", help="Use LLM-based method selection.")
     parser.add_argument("--rows", type=str, required=False, help="Path to text file containing specific rows to run.")
+    parser.add_argument("--iv_llm", action="store_true", help="Use the separate IV_LLM pipeline for discovering instrumental variables.")
 
     # Back-compat aliases (older/other scripts)
     parser.add_argument("--csv_path", type=str, required=False, help=argparse.SUPPRESS)
@@ -161,7 +162,10 @@ def main():
 
                 print('Starting run!')
 
-                cais = CausalAgent(
+                cais = CausalAgent(use_iv_pipeline=args.iv_llm)
+                
+                cais.run_analysis(
+                    query=row["natural_language_query"],
                     dataset_path=data_path,
                     dataset_description=desc,
                     model_name=args.llm_name,
