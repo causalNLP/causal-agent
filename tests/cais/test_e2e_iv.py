@@ -1,10 +1,10 @@
 import unittest
 import os
 import re
+import pytest
 from dotenv import load_dotenv
 
 from cais.agent import run_causal_analysis
-
 
 class TestE2EIV(unittest.TestCase):
 
@@ -50,7 +50,7 @@ class TestE2EIV(unittest.TestCase):
         self.assertNotIn("error", result, f"Result contains error: {result.get('error')}")
 
         # Extract explanation string for text-based checks
-        explanation = result.get("explanation", str(result))
+        explanation = result.get("final_explanation_text", str(result))
         self.assertIsInstance(explanation, str)
         explanation_lower = explanation.lower()
 

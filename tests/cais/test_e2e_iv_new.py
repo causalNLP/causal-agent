@@ -15,6 +15,8 @@ class TestE2EIVNewPipeline(unittest.TestCase):
     def test_iv_llm_pipeline_bulk(self):
         """Run several queries from the CSV data and log LLM outputs."""
         csv_path = os.path.join(ROOT, "data", "checked_real_data - Final.csv")
+        if not os.path.exists(csv_path):
+            self.skipTest(f"Skipping bulk IV test: metadata file not found at {csv_path}")
         df = pd.read_csv(csv_path)
 
         # Filter for entries that specifically use IV as the method
