@@ -100,7 +100,7 @@ def timeout_handler(signum, frame):
 
 def main():
     args = parse_args()
-    os.makedirs('./logs/', exist_ok=True)
+    os.makedirs(f'./logs/{args.output_dir}', exist_ok=True)
     logging.basicConfig(
         filename=f"logs/{args.output_file.split('/')[-1][:-5]}_{datetime.now():%Y-%m-%d}.log",
         filemode='a',
