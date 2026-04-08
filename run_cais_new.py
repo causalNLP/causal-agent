@@ -156,8 +156,9 @@ def main():
             print(f"\n[main] Row {idx+1}/{len(meta_df)} → Dataset: {data_path}")
             desc=row["description"] if 'description' in row else row["data_description"]
             try:
-                signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(600) # timeout after 10 minutes
+                if os.name != "nt":
+                    signal.signal(signal.SIGALRM, timeout_handler)
+                    signal.alarm(600) # timeout after 10 minutes
                 logger.info(f"Attempting to run CAIS on row [{idx}/{meta_df.shape[0]}]")
 
                 print('Starting run!')
