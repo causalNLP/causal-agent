@@ -280,7 +280,7 @@ class CausalAgent():
 
         if self.cleaned_dataset_path and remove_cleaned:
             if isinstance(self.load_dataset(cleaned=True), pd.DataFrame):
-                os.remove(self.cleaned_dataset_path)
+                # os.remove(self.cleaned_dataset_path)
                 self.cleaned_dataset_path=None
                 logger.info("Succesfully Removed Cleaned Dataset.")
 
@@ -383,6 +383,14 @@ def run_causal_analysis(query: str, dataset_path: str,
 
         dataset_analysis_result = dataset_analyzer_tool.func(dataset_path=input_parsing_result["dataset_path"], dataset_description=input_parsing_result["dataset_description"], original_query=input_parsing_result["original_query"], use_iv_pipeline=use_iv_pipeline).analysis_results
         
+        query_info = QueryInfo(
+            query_text=input_parsing_result["original_query"],
+            potential_treatments=input_parsing_result["extracted_variables"].get("treatment"),
+            potential_outcomes=input_parsing_result["extracted_variables"].get("outcome"),
+            covariates_hints=input_parsing_result["extracted_variables"].get("covariates_mentioned"),
+            instrument_hints=input_parsing_result["extracted_variables"].get("instruments_mentioned")
+        )
+
         query_interpreter_output = query_interpreter_tool.func(dataset_analysis=dataset_analysis_result, dataset_description=input_parsing_result["dataset_description"], original_query=input_parsing_result["original_query"]).variables
 
         # print('LOG RESULTS')
@@ -502,13 +510,23 @@ def run_causal_analysis(query: str, dataset_path: str,
             dataset_description=input_parsing_result["dataset_description"],
             original_query = input_parsing_result["original_query"])
         result = explainer_output
+        
+        # include query_info in result
+        result["query_info"] = {
+            "query_text": input_parsing_result["original_query"],
+            "potential_treatments": input_parsing_result["extracted_variables"].get("treatment"),
+            "potential_outcomes": input_parsing_result["extracted_variables"].get("outcome"),
+            "covariates_hints": input_parsing_result["extracted_variables"].get("covariates_mentioned"),
+            "instrument_hints": input_parsing_result["extracted_variables"].get("instruments_mentioned")
+        }
+        
         #result['results']['results']["method_used"] = method_validator_output.get('method')
         logger.debug(result)
         logger.info("Causal analysis run finished.")
         
         # Remove the cleaned csv
-        logger.info("Removing cleaned csv.")
-        os.remove(cleaned_path)
+        # logger.info("Removing cleaned csv.")
+        # os.remove(cleaned_path)
 
         # Ensure result is a dict and extract the 'output' part
         if isinstance(result, dict):

@@ -162,22 +162,26 @@ def main():
 
                 print('Starting run!')
 
-                cais = CausalAgent(use_iv_pipeline=args.iv_llm)
-                
-                cais.run_analysis(
-                    query=row["natural_language_query"],
+                cais = CausalAgent(
                     dataset_path=data_path,
                     dataset_description=desc,
-                    model_name=args.llm_name,
-                    provider=args.llm_provider
                 )
                 
-                results = cais.run_analysis(
+                res = cais.run_analysis(
                     query=row["natural_language_query"],
-                    llm_method_selection=False
                 )
-
-                file.write(json.dumps({idx: results}) + "\n")
+                
+                # write result to file
+                formatted_result = {
+                    "query": row["natural_language_query"],
+                    "method": row["method"],
+                    "answer": row["answer"],
+                    "dataset_description": desc,
+                    "dataset_path": data_path,
+                    "keywords": row.get("keywords", "Causality, Average treatment effect"),
+                    "final_result": res
+                }
+                file.write(json.dumps({idx: formatted_result}) + "\n")
             except Exception as e:
                 logging.error(f"[row {idx}] Error: {e}")
                 file.write(json.dumps({idx: str(e)}) + "\n")
