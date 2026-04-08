@@ -166,10 +166,14 @@ def main():
                 cais = CausalAgent(
                     dataset_path=data_path,
                     dataset_description=desc,
+                    model_name=args.llm_name,
+                    provider=args.llm_provider,
+                    use_iv_pipeline=args.iv_llm
                 )
                 
                 res = cais.run_analysis(
                     query=row["natural_language_query"],
+                    llm_method_selection=False
                 )
                 
                 # write result to file
