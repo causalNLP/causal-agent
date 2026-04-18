@@ -51,4 +51,5 @@ matplotlib==3.10.1
 langchain==0.3.26
 rddensity
 rdd
-
+litellm
+langchain-litellm
