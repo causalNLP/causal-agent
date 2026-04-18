@@ -4,7 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
-    types: [ready_for_review, reopened]
+    types: [opened, ready_for_review, reopened, synchronize]
+  repository_dispatch:
+    types: [create-pull-request]
   workflow_dispatch:
   
 jobs:  
