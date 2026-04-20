@@ -1,17 +1,15 @@
 <h1 align="center">
-<img src="blob/main/asset/cais.png" width="400" alt="CAIS" />
+<img src="https://raw.githubusercontent.com/causalNLP/causal-agent/main/asset/cais.png" width="400" alt="CAIS" />
 <br>
 Causal AI Scientist: Facilitating Causal Data Science with Large Language Models
 </h1>
 
 <p align="center">
   <a href="https://github.com/causalNLP/causal-agent"><b>[Code]</b></a> •
-  <a href=""><b>[Paper (coming soon)]</b></a>
+  <a href="https://openreview.net/forum?id=EDWTHMVOCj"><b>[Paper]</b></a>
 </p>
 
 **Causal AI Scientist (CAIS)** is an LLM-powered tool for generating data-driven answers to natural language causal queries. Given a natural language query (e.g., *"Does participating in a job training program lead to higher income?"*), an accompanying dataset, and its description, CAIS frames a suitable causal estimation problem, selects an appropriate inference method, executes it, runs diagnostic checks, and interprets the results in plain language.
-
-> **Note:** This repository is a work in progress and will be updated with additional instructions and files.
 
 ---
 
@@ -20,11 +18,10 @@ Causal AI Scientist: Facilitating Causal Data Science with Large Language Models
 1. [Introduction](#1-introduction)
 2. [Pipeline](#2-pipeline)
 3. [Getting Started](#3-getting-started)
-4. [Dataset Information](#4-dataset-information)
-5. [Running CAIS](#5-running-cais)
-6. [Reproducing Paper Results](#6-reproducing-paper-results)
-7. [Citation](#7-citation)
-8. [License](#8-license)
+4. [Running CAIS](#4-running-cais)
+5. [Reproducing Paper Results](#5-reproducing-paper-results)
+6. [Citation](#6-citation)
+7. [License](#7-license)
 
 ---
 
@@ -37,10 +34,6 @@ Causal effect estimation is central to evidence-based decision-making across dom
 - Select an appropriate causal inference method via a decision tree and structured prompting.
 - Execute the method using predefined code templates and validate the results.
 - Interpret the numerical output in the context of the original query.
-
-<!-- <div align="center">
-  <img src="blob/main/asset/CAIS-arch.png" width="990" alt="CAIS Architecture" />
-</div> -->
 
 **Supported Methods:**
 - **Econometric:** Difference-in-Differences (DiD), Instrumental Variables (IV), Ordinary Least Squares (OLS), Regression Discontinuity Design (RDD).
@@ -114,24 +107,10 @@ pip install -e .
 
 ---
 
-## 4. Dataset Information
-
-All datasets used to evaluate CAIS and the baseline models are available in the `data/` directory:
-
-| Path | Description |
-|---|---|
-| `data/all_data/` | CSV files from the QRData and real-world study collections |
-| `data/synthetic_data/` | CSV files for synthetic datasets |
-| `data/qr_info.csv` | Metadata for QRData: filename, description, query, reference effect, intended method, remarks |
-| `data/real_info.csv` | Metadata for real-world datasets |
-| `data/synthetic_info.csv` | Metadata for synthetic datasets |
-
----
-
-## 5. Running CAIS
+## 4. Running CAIS
 
 ```bash
-python run_cais_new.py \
+python experiments/scripts/run_cais.py \
     --metadata_path <path_to_metadata_csv> \
     --data_dir <path_to_data_folder> \
     --output_dir <output_folder> \
@@ -155,10 +134,10 @@ python run_cais_new.py \
 
 **Example:**
 ```bash
-python run_cais_new.py \
-    --metadata_path "data/qr_info.csv" \
-    --data_dir "data/all_data" \
-    --output_dir "output" \
+python experiments/scripts/run_cais.py \
+    --metadata_path "experiments/data/causcibench/data/qr_info.csv" \
+    --data_dir "experiments/data/causcibench/data/qrdata" \
+    --output_dir "experiments/outputs" \
     --output_name "results_qr_4o" \
     --llm_name "gpt-4o-mini" \
     --llm_provider "openai" \
@@ -167,13 +146,35 @@ python run_cais_new.py \
 
 ---
 
-## 6. Reproducing Paper Results
+## 5. Reproducing Paper Results
 
-**Will be updated soon**
+### Step 1 — Download the dataset
 
+The CauSciBench benchmark dataset is hosted on [HuggingFace](https://huggingface.co/datasets/causal-nlp/causcibench). To download it:
+
+```bash
+python experiments/download_data.py
+```
+
+This will populate `experiments/data/causcibench/` with the following structure:
+
+| Path | Description |
+|---|---|
+| `data/real_data/` | Real-world study datasets |
+| `data/synthetic_data/` | Synthetic datasets |
+| `data/qrdata/` | Textbook examples |
+| `data/real_info.csv` | Metadata for real-world datasets |
+| `data/synthetic_info.csv` | Metadata for synthetic datasets |
+| `data/qr_info.csv` | Metadata for textbook examples |
+
+> ⚠️ The dataset is 583MB. Ensure you have sufficient disk space before downloading.
+
+### Step 2 — Run the evaluation
+
+Coming soon!
 ---
 
-## 7. Citation
+## 6. Citation
 
 If you use CAIS or build on this work, we would appreciate it if you could cite:
 
@@ -204,6 +205,6 @@ The IV-LLM pipeline builds on the methodology introduced in [IV Co-Scientist](ht
 
 ---
 
-## 8. License
+## 7. License
 
 Distributed under the MIT License. See `LICENSE` for more information.
