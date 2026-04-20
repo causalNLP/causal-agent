@@ -28,13 +28,14 @@ from cais.methods.utils import (
     calculate_standardized_differences,
     check_overlap,
 )
-from cais.methods.instrumental_variable.diagnostics import (
-    calculate_first_stage_f_statistic,
-)
+
+from cais.methods.instrumental_variable.diagnostics import calculate_first_stage_f_statistic
+
 from cais.methods.difference_in_differences.diagnostics import (
     validate_parallel_trends,
     run_placebo_test,
 )
+
 from cais.methods.generalized_propensity_score.diagnostics import (
     assess_gps_balance,
 )
@@ -171,7 +172,7 @@ def check_sutva(
 # Ignorability / Conditional ignorability (RCT and observational)
 # _____________________________________________________________________________
 
-def check_rct_balance(
+def check_cond_ignorability(
     df: pd.DataFrame,
     treatment: str,
     covariates: List[str],
@@ -224,4 +225,127 @@ def check_positivity(
             f"{'OK.' if passed else 'Consider trimming or restricting to common support.'}"
         ),
         details={**overlap, "n_extreme_ps": n_extreme, "pct_extreme_ps": pct_extreme},
+    )
+
+
+# _____________________________________________________________________________
+# IV-specific checks
+# _____________________________________________________________________________
+
+def check_iv_relevance(
+    df: pd.DataFrame,
+    treatment: str,
+    instruments: List[str],
+    covariates: List[str],
+    f_threshold: float = 10.0,
+) -> Dict[str, Any]:
+    """First-stage F-test for instrument strength."""
+    f, p = calculate_first_stage_f_statistic(df, treatment, instruments, covariates)
+    if f is None:
+        return _result(
+            passed=None,
+            reasoning="First-stage F-statistic could not be computed.",
+        )
+    passed = f >= f_threshold
+    return _result(
+        passed=passed,
+        reasoning=(
+            f"First-stage F = {f:.2f} (threshold {f_threshold}). "
+            f"{'Strong instrument.' if passed else 'Weak instrument warning.'}"
+        ),
+        details={"f_statistic": f, "p_value": p, "threshold": f_threshold},
+    )
+
+def check_iv_exclusion(dataset_description, variables_summary, llm=None):
+    return _llm_argue_assumption(
+        "Exclusion restriction",
+        "The instrument Z affects the outcome Y only through the treatment T, with no direct effect.",
+        dataset_description, variables_summary, llm,
+    )
+
+def check_iv_exogeneity(dataset_description, variables_summary, llm=None):
+    return _llm_argue_assumption(
+        "Instrument exogeneity (independence)",
+        "Z is as good as randomly assigned with respect to unobserved confounders of T and Y.",
+        dataset_description, variables_summary, llm,
+    )
+
+def check_iv_monotonicity(dataset_description, variables_summary, llm=None):
+    return _llm_argue_assumption(
+        "Monotonicity (LATE)",
+        "There are no defiers: the instrument never moves any unit in the opposite direction "
+        "of its average effect on treatment uptake.",
+        dataset_description, variables_summary, llm,
+    )
+
+
+# _____________________________________________________________________________
+# DiD-specific checks
+# _____________________________________________________________________________
+
+def check_parallel_trends(
+    df: pd.DataFrame, time_var: str, outcome: str,
+    group_indicator_col: str, treatment_period_start,
+    **kwargs,
+) -> Dict[str, Any]:
+    """Parallel trends: treatment and control groups had similar outcome trends pre-treatment."""
+    res = validate_parallel_trends(
+        df, time_var, outcome, group_indicator_col, treatment_period_start, **kwargs
+    )
+    return _result(
+        passed=res.get("valid"),
+        reasoning=res.get("details", ""),
+        details={"p_value": res.get("p_value"), "error": res.get("error")},
+    )
+
+
+def check_no_anticipation(
+    df, time_var, group_var, outcome, treated_unit_indicator,
+    covariates, treatment_period_start, placebo_period_start,
+) -> Dict[str, Any]:
+    """No anticipation: treatment has no effect before implementation."""
+    res = run_placebo_test(
+        df, time_var, group_var, outcome, treated_unit_indicator,
+        covariates, treatment_period_start, placebo_period_start,
+    )
+    return _result(
+        passed=res.get("passed"),
+        reasoning=res.get("details", ""),
+        details={k: v for k, v in res.items() if k != "details"},
+    )
+
+
+def check_baseline_outcome_balance(
+    df: pd.DataFrame, treatment: str, outcome: str,
+    time_var: str, treatment_period_start,
+    smd_threshold: float = 0.1,
+) -> Dict[str, Any]:
+    """Intervention unrelated to outcome at baseline: comparable pre-treatment outcome levels."""
+    pre = df[df[time_var] < treatment_period_start]
+    if pre.empty:
+        return _result(
+            passed=None,
+            reasoning="No pre-treatment data available.",
+        )
+    smd = calculate_standardized_differences(pre, treatment, [outcome]).get(outcome, np.nan)
+    if pd.isna(smd):
+        return _result(
+            passed=None,
+            reasoning="Could not compute SMD on baseline outcome (missing data or no variance).",
+        )
+    passed = abs(smd) <= smd_threshold
+    return _result(
+        passed=passed,
+        reasoning=f"Baseline outcome SMD = {smd:.3f} (threshold {smd_threshold}).",
+        details={"smd_pre_outcome": smd, "threshold": smd_threshold},
+    )
+
+
+def check_stable_group_composition(dataset_description, variables_summary, llm=None):
+    """Stable group composition: no differential attrition or selective entry/exit due to treatment."""
+    return _llm_argue_assumption(
+        "Stable group composition",
+        "Unit composition of treatment and control groups does not change as a result "
+        "of treatment (no differential attrition or selective entry/exit).",
+        dataset_description, variables_summary, llm,
     )
