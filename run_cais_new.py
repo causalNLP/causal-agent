@@ -100,7 +100,7 @@ def timeout_handler(signum, frame):
 
 def main():
     args = parse_args()
-    os.makedirs('./logs/', exist_ok=True)
+    os.makedirs(f'./logs/{args.output_dir}', exist_ok=True)
     logging.basicConfig(
         filename=f"logs/{args.output_file.split('/')[-1][:-5]}_{datetime.now():%Y-%m-%d}.log",
         filemode='a',
@@ -156,28 +156,37 @@ def main():
             print(f"\n[main] Row {idx+1}/{len(meta_df)} → Dataset: {data_path}")
             desc=row["description"] if 'description' in row else row["data_description"]
             try:
-                signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(600) # timeout after 10 minutes
+                if os.name != "nt":
+                    signal.signal(signal.SIGALRM, timeout_handler)
+                    signal.alarm(600) # timeout after 10 minutes
                 logger.info(f"Attempting to run CAIS on row [{idx}/{meta_df.shape[0]}]")
 
                 print('Starting run!')
 
-                cais = CausalAgent(use_iv_pipeline=args.iv_llm)
-                
-                cais.run_analysis(
-                    query=row["natural_language_query"],
+                cais = CausalAgent(
                     dataset_path=data_path,
                     dataset_description=desc,
                     model_name=args.llm_name,
-                    provider=args.llm_provider
+                    provider=args.llm_provider,
+                    use_iv_pipeline=args.iv_llm
                 )
                 
-                results = cais.run_analysis(
+                res = cais.run_analysis(
                     query=row["natural_language_query"],
                     llm_method_selection=False
                 )
-
-                file.write(json.dumps({idx: results}) + "\n")
+                
+                # write result to file
+                formatted_result = {
+                    "query": row["natural_language_query"],
+                    "method": row["method"],
+                    "answer": row["answer"],
+                    "dataset_description": desc,
+                    "dataset_path": data_path,
+                    "keywords": row.get("keywords", "Causality, Average treatment effect"),
+                    "final_result": res
+                }
+                file.write(json.dumps({idx: formatted_result}) + "\n")
             except Exception as e:
                 logging.error(f"[row {idx}] Error: {e}")
                 file.write(json.dumps({idx: str(e)}) + "\n")
