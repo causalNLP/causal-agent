@@ -220,3 +220,7 @@ tests/output/
 cais_demo.ipynb
 *demo*.ipynb 
 !docs/notebooks/iv_llm_demo.ipynb
+
+
+# Dataset for experiments (CauSciBench) 
+experiments/data/causcibench/
