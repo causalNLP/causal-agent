@@ -13,7 +13,7 @@ class TestE2ERDD(unittest.TestCase):
         load_dotenv()
 
         cls.query = "What is the effect of alcohol consumption on death by all causes at 21 years?"
-        cls.dataset_path = "data/all_data/drinking.csv"
+        cls.dataset_path = "tests/test_data/drinking.csv"
         cls.dataset_description = (
             "To estimate the impacts of alcohol on death, we could use the fact that legal drinking "
             "age imposes a discontinuity on nature. In the US, those just under 21 years don't drink "
