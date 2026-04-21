@@ -32,7 +32,7 @@ class TestE2EDID(unittest.TestCase):
 
         # Construct path relative to this test file's directory
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-        cls.dataset_path = os.path.join(base_dir, "data", "all_data", "smoking2.csv")
+        cls.dataset_path = os.path.join(base_dir, "tests", "test_data", "smoking2.csv")
         print(f"DEBUG: E2E test using dataset path: {cls.dataset_path}")
 
         # Check if data file exists
