@@ -172,6 +172,9 @@ cython_debug/
 *.h5
 *.hdf5
 
+# But DO NOT ignore CSVs inside test_data as they are used for test cases
+!tests/test_data/*.csv
+
 # Model files
 *.model
 *.joblib
