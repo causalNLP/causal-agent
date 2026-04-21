@@ -30,7 +30,7 @@ class TestE2EIHDP(unittest.TestCase):
         # os.path.abspath ensures it's an absolute path
         # Go up 2 levels (tests/cais/ -> tests/ -> causalscientist/) then into data/
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-        cls.dataset_path = os.path.join(base_dir, "data", "qrdata", "ihdp_1.csv")
+        cls.dataset_path = os.path.join(base_dir, "tests", "test_data", "ihdp_1.csv")
         # cls.dataset_path = "data/qrdata/ihdp_1.csv" # Old relative path
         print(f"DEBUG: E2E test using dataset path: {cls.dataset_path}") # Add print statement
 
