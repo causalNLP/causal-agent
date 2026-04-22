@@ -1,5 +1,5 @@
 <h1 align="center">
-<img src="https://raw.githubusercontent.com/causalNLP/causal-agent/main/asset/cais.png" width="400" alt="CAIS" />
+<img src="blob/main/asset/cais.png" width="400" alt="CAIS" />
 <br>
 Causal AI Scientist: Facilitating Causal Data Science with Large Language Models
 </h1>
