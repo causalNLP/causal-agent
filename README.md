@@ -6,7 +6,7 @@ Causal AI Scientist: Facilitating Causal Data Science with Large Language Models
 
 <p align="center">
   <a href="https://github.com/causalNLP/causal-agent"><b>[Code]</b></a> •
-  <a href="https://openreview.net/forum?id=EDWTHMVOCj"><b>[Paper]</b></a>
+  <a href="https://drive.google.com/file/d/1KvxAVIE3Ooe5V392Gw-1ZBAlQe39VVQI/view?usp=drive_link"><b>[Paper]</b></a>
 </p>
 
 **Causal AI Scientist (CAIS)** is an LLM-powered tool for generating data-driven answers to natural language causal queries. Given a natural language query (e.g., *"Does participating in a job training program lead to higher income?"*), an accompanying dataset, and its description, CAIS frames a suitable causal estimation problem, selects an appropriate inference method, executes it, runs diagnostic checks, and interprets the results in plain language.
@@ -84,69 +84,34 @@ cd causal-agent
 cp .env.example .env
 ```
 
-**Step 2: Load necessary compute modules**
-```bash
-module load rust
-module load gcc
-module load openblas
+Open `.env` and set the API keys for the provider(s) you intend to use:
+
+```
+OPENAI_API_KEY=your_openai_key_here
+ANTHROPIC_API_KEY=your_anthropic_key_here
+TOGETHER_API_KEY=your_together_key_here
 ```
 
-**Step 3: Create and activate a Python 3.10 environment**
+Only the key corresponding to your chosen `--llm_provider` is required.
+
+> ⚠️ Keep your `.env` file secure and never commit it to version control.
+
+**Step 2: Create and activate a Python 3.10 environment**
 ```bash
 conda create -n cais python=3.10
 conda activate cais
 pip install -r requirements.txt
 ```
 
-**Step 4: Install the CAIS library**
+**Step 3: Install the CAIS library**
 ```bash
 pip install -e .
 ```
 
-> ⚠️ Keep your `.env` file secure and never commit it to version control.
-
 ---
 
-## 4. Running CAIS
 
-```bash
-python experiments/scripts/run_cais.py \
-    --metadata_path <path_to_metadata_csv> \
-    --data_dir <path_to_data_folder> \
-    --output_dir <output_folder> \
-    --output_name <output_filename> \
-    --llm_name <llm_name> \
-    --llm_provider <llm_provider> \
-    [--iv_llm]
-```
-
-**Arguments:**
-
-| Argument | Type | Description |
-|---|---|---|
-| `--metadata_path` | `str` | Path to the CSV file containing queries, dataset descriptions, and filenames |
-| `--data_dir` | `str` | Path to the folder containing the data in CSV format |
-| `--output_dir` | `str` | Path to the folder where output JSON results will be saved |
-| `--output_name` | `str` | Name of the output JSON file |
-| `--llm_name` | `str` | Name of the LLM to use (e.g., `gpt-4o`, `claude-3-5-sonnet`) |
-| `--llm_provider` | `str` | LLM service provider (e.g., `openai`, `anthropic`, `together`) |
-| `--iv_llm` | `bool` | *(Optional)* If present, enables the advanced experimental [IV-LLM pipeline](https://arxiv.org/abs/2602.07943) for instrument discovery. |
-
-**Example:**
-```bash
-python experiments/scripts/run_cais.py \
-    --metadata_path "experiments/data/causcibench/data/qr_info.csv" \
-    --data_dir "experiments/data/causcibench/data/qrdata" \
-    --output_dir "experiments/outputs" \
-    --output_name "results_qr_4o" \
-    --llm_name "gpt-4o-mini" \
-    --llm_provider "openai" \
-    --iv_llm
-```
-
----
-
-## 5. Reproducing Paper Results
+## 4. Reproducing Paper Results
 
 ### Step 1 — Download the dataset
 
@@ -171,7 +136,40 @@ This will populate `experiments/data/causcibench/` with the following structure:
 
 ### Step 2 — Run the evaluation
 
-Coming soon!
+```bash
+python experiments/scripts/run_cais.py \
+    --metadata_path <path_to_metadata_csv> \
+    --data_dir <path_to_data_folder> \
+    --output_dir <output_folder> \
+    --output_name <output_filename> \
+    --llm_name <llm_name> \
+    --llm_provider <llm_provider> \
+    [--iv_llm]
+```
+**Arguments:**
+
+| Argument | Type | Description |
+|---|---|---|
+| `--metadata_path` | `str` | Path to the CSV file containing queries, dataset descriptions, and filenames |
+| `--data_dir` | `str` | Path to the folder containing the data in CSV format |
+| `--output_dir` | `str` | Path to the folder where output JSON results will be saved |
+| `--output_name` | `str` | Name of the output JSON file |
+| `--llm_name` | `str` | Name of the LLM to use (e.g., `gpt-4o`, `claude-3-5-sonnet`) |
+| `--llm_provider` | `str` | LLM service provider (e.g., `openai`, `anthropic`, `together`) |
+| `--iv_llm` | `bool` | *(Optional)* If present, enables the advanced experimental [IV-LLM pipeline](https://arxiv.org/abs/2602.07943) for instrument discovery. |
+
+**Example:**
+```bash
+python experiments/scripts/run_cais.py \
+    --metadata_path "experiments/data/causcibench/data/qr_info.csv" \
+    --data_dir "experiments/data/causcibench/data/qrdata" \
+    --output_dir "experiments/outputs" \
+    --output_name "results_qr_4o" \
+    --llm_name "gpt-4o-mini" \
+    --llm_provider "openai" \
+    --iv_llm
+```
+
 ---
 
 ## 6. Citation
