@@ -1,38 +1,42 @@
-name: Unit Tests for CAIS Core Functions  
-  
+name: Unit Tests for CAIS Core Functions
+
 on:
   push:
     branches: [main]
-  pull_request:
+  pull_request_target:
     types: [opened, ready_for_review, reopened, synchronize]
   repository_dispatch:
     types: [create-pull-request]
   workflow_dispatch:
-  
-jobs:  
+
+jobs:
   test:
     name: pytest
-    runs-on: ubuntu-latest  
-    strategy:  
-      matrix:  
-        python-version: ["3.10"]  
-  
-    steps:  
-      - uses: actions/checkout@v3  
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.fork && 'causal-agent' || '' }}
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}  # checks out the fork's code
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install dependencies  
-        run: |  
-          python -m pip install --upgrade pip  
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
           pip install coverage pytest
           pip install -r requirements.txt
-      - name: Test with pytest  
-        run: |  
-          coverage run -m pytest  -v -s  
+
+      - name: Test with pytest
+        run: coverage run -m pytest -v -s
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      - name: Generate Coverage Report  
-        run: |  
-          coverage report -m
+
+      - name: Generate Coverage Report
+        run: coverage report -m
