@@ -200,12 +200,13 @@ def _run_script_text(script: str, dataset_path: str, cleaned_path: str) -> Tuple
 
 # ---------- main pipeline blocks ----------
 
-def _plan_transformation_spec(llm, dataset_path: str, causal_method: str, causal_query: str, variables: Dict[str, Any]) -> Dict[str, Any]:
+def _plan_transformation_spec(llm, dataset_path: str, causal_method: str, causal_query: str, variables: Dict[str, Any], dataset_description: Optional[str]) -> Dict[str, Any]:
     prof = _profile_dataset(dataset_path)
 
     human = {
         "dataset_path": dataset_path,
         "dataset_profile": prof["profile"],
+        "dataset_description": dataset_description or "No dataset description provided",
         "causal_method": causal_method,
         "causal_query": causal_query or "",
         "variables": variables
@@ -262,7 +263,7 @@ def run_cleaning_stage(dataset_path: str,
 
     # 1) PLAN
     method = causal_method or variables.get("method") or ""
-    spec = _plan_transformation_spec(llm, dataset_path, method, original_query or "", variables)
+    spec = _plan_transformation_spec(llm, dataset_path, method, original_query or "", variables, dataset_description)
     #print(spec)
 
     # 2) CODEGEN

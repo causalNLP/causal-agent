@@ -23,6 +23,7 @@ class LLMRDDVars(BaseModel):
     """Pydantic model for identifying RDD variables."""
     running_variable: Optional[str] = Field(None, description="The identified running variable column name.")
     cutoff_value: Optional[Union[float, int]] = Field(None, description="The identified cutoff value.")
+    treat_above_cutoff: Optional[bool] = Field(None, description="True if the treatment is assigned above the cutoff, False if below the cutoff.")
 
 class LLMRCTCheck(BaseModel):
     """Pydantic model for checking if data is RCT."""
@@ -124,6 +125,7 @@ class Variables(BaseModel):
     treatment_state: Optional[str] = None
     running_variable: Optional[str] = None
     cutoff_value: Optional[Union[float, int]] = None
+    treat_above_cutoff: Optional[bool] = None
     is_rct: Optional[bool] = Field(False, description="Flag indicating if the dataset is from an RCT.")
     treatment_reference_level: Optional[Union[float, str]] = Field(None, description="The specified reference/control level for a multi-valued treatment variable.")
     interaction_term_suggested: Optional[bool] = Field(False, description="Whether the query or context suggests an interaction term with the treatment might be relevant.")

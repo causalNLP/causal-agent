@@ -44,13 +44,15 @@ class RDDRegression(CausalMethod):
             hasattr(variables, 'treatment_variable') and
             hasattr(variables, 'outcome_variable') and
             hasattr(variables, 'running_variable') and
-            hasattr(variables, 'cutoff_value')
+            hasattr(variables, 'cutoff_value') and
+            hasattr(variables, 'treat_above_cutoff')
         )
 
         treatment = variables.treatment_variable
         outcome = variables.outcome_variable
         running_var = variables.running_variable
         cutoff = variables.cutoff_value
+        treat_above_cutoff = variables.treat_above_cutoff
         covariates = variables.confounders
         covariates = covariates if covariates else []
 
@@ -68,7 +70,8 @@ class RDDRegression(CausalMethod):
                 outcome=outcome,
                 running_variable=running_var,
                 cutoff_value=cutoff,
-                covariates=covariates
+                covariates=covariates,
+                treat_above_cutoff=treat_above_cutoff,
             )
         except Exception as e:
             raise ValueError(f"Couldn't calculate effect using RDD: {e}")
@@ -114,11 +117,13 @@ class RDDRegression(CausalMethod):
         if rdd_result:
             running_variable = rdd_result.running_variable
             cutoff_value = rdd_result.cutoff_value
+            treat_above_cutoff = rdd_result.treat_above_cutoff
         if running_variable not in columns or cutoff_value is None:
             running_variable = None
             cutoff_value = None
-        logger.info(f"LLM identified RDD: Running={running_variable}, Cutoff={cutoff_value}")
-        return cutoff_value
+            treat_above_cutoff = None
+        logger.info(f"LLM identified RDD: Running={running_variable}, Cutoff={cutoff_value}, Treat Above Cutoff={treat_above_cutoff}")
+        return cutoff_value, treat_above_cutoff
 
 
 
@@ -138,7 +143,7 @@ except Exception as e: # Catch other potential errors during import
     _rdd_em_import_error_message = f"An unexpected error occurred during import from evan-magnusson/rdd: {e}"
     logger.warning(_rdd_em_import_error_message)
 
-def estimate_effect_fallback(df: pd.DataFrame, treatment: str, outcome: str, running_variable: str, cutoff_value: float, covariates: Optional[List[str]], **kwargs) -> Dict[str, Any]:
+def estimate_effect_fallback(df: pd.DataFrame, treatment: str, outcome: str, running_variable: str, cutoff_value: float, covariates: Optional[List[str]], treat_above_cutoff: Optional[bool] = None, **kwargs) -> Dict[str, Any]:
     """Estimate RDD effect using simple linear regression comparison fallback."""
     logger.warning("Main RDD estimation failed. Using fallback simple linear regression comparison.")
     if covariates:
@@ -202,8 +207,14 @@ def estimate_effect_fallback(df: pd.DataFrame, treatment: str, outcome: str, run
     
     # The coefficient for 'above_cutoff' represents the jump at the cutoff
     effect = results.params['above_cutoff']
+    if not treat_above_cutoff:
+        effect = effect * -1
     p_value = results.pvalues['above_cutoff']
-    conf_int = results.conf_int().loc['above_cutoff'].tolist()
+    L, U = results.conf_int().loc['above_cutoff'].tolist()
+    if not treat_above_cutoff:
+        L, U = -U, -L
+    conf_int = [L, U]
+
     std_err = results.bse['above_cutoff']
     
     return {
@@ -218,7 +229,7 @@ def estimate_effect_fallback(df: pd.DataFrame, treatment: str, outcome: str, run
 
 def effect_estimate_rdd(df: pd.DataFrame, outcome: str, running_variable: str, cutoff_value: float,
                         treatment: Optional[str] = None, covariates: Optional[List[str]] = None,
-                        bandwidth: Optional[float] = None, **kwargs) -> Dict[str, Any]:
+                        bandwidth: Optional[float] = None, treat_above_cutoff: Optional[bool] = None, **kwargs) -> Dict[str, Any]:
     """
     Estimates RDD effect using the 'evan-magnusson/rdd' package.
     Uses IK optimal bandwidth selection from the same package by default.
@@ -290,12 +301,16 @@ def effect_estimate_rdd(df: pd.DataFrame, outcome: str, running_variable: str, c
         
         # Extract results - using 'TREATED' based on the provided summary output
         effect = sm_results.params.get('TREATED')
+        if not treat_above_cutoff:
+            effect = effect * -1
         std_err = sm_results.bse.get('TREATED')
         p_value = sm_results.pvalues.get('TREATED')
-        
+ 
         conf_int_series = sm_results.conf_int()
         conf_int = conf_int_series.loc['TREATED'].tolist() if 'TREATED' in conf_int_series.index else [None, None]
-
+        if not treat_above_cutoff:
+            if 'TREATED' in conf_int_series.index:
+                conf_int = [conf_int[1] * -1, conf_int[0] * -1]
         n_obs = model.nobs # or model.n_ if nobs is not available (check package details)
         
         # The formula is implicit in the local linear regression performed by the package
@@ -323,7 +338,7 @@ def effect_estimate_rdd(df: pd.DataFrame, outcome: str, running_variable: str, c
 def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str, running_variable: str, 
                     cutoff_value: float, covariates: Optional[List[str]] = None, 
                     bandwidth: Optional[float] = None, query: Optional[str] = None,
-                    llm: Optional[BaseChatModel] = None, **kwargs) -> Dict[str, Any]:
+                    llm: Optional[BaseChatModel] = None, treat_above_cutoff: Optional[bool] = None, **kwargs) -> Dict[str, Any]:
     """
     Estimates the causal effect using Regression Discontinuity Design.
 
@@ -341,6 +356,7 @@ def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str, running_vari
         bandwidth: Optional bandwidth around the cutoff. If None, a default is used.
         query: Optional user query for context.
         llm: Optional Language Model instance.
+        treat_above_cutoff: True if the treatment is assigned above the cutoff, False if below the cutoff.
         **kwargs: Additional keyword arguments for underlying methods.
 
     Returns:
@@ -348,15 +364,19 @@ def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str, running_vari
     """
     required_args = { 
         "running_variable": running_variable,
-        "cutoff_value": cutoff_value
+        "cutoff_value": cutoff_value,
     }
     if any(val is None for val in required_args.values()):
-        raise ValueError(f"Missing required RDD arguments: running_variable and cutoff_value must be provided.")
+        raise ValueError(f"Missing required RDD arguments: running_variable, cutoff_value must be provided.")
+
+    if treat_above_cutoff is None:
+        logger.warning("`treat_above_cutoff` is not provided. Assuming treatment is assigned above the cutoff.")
+        treat_above_cutoff = True
 
     results = {}
     rdd_em_estimation_error = None # Error from effect_estimate_rdd (evan-magnusson)
     fallback_estimation_error = None # Error from estimate_effect_fallback
-    
+
     # --- Try effect_estimate_rdd (evan-magnusson/rdd) First --- 
     try:
         logger.info("Attempting RDD estimation using 'effect_estimate_rdd' (evan-magnusson/rdd package).")
@@ -368,7 +388,8 @@ def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str, running_vari
             cutoff_value, 
             treatment=treatment, # For API consistency, though evan-magnusson/rdd doesn't use it explicitly
             covariates=covariates, 
-            bandwidth=bandwidth, 
+            bandwidth=bandwidth,
+            treat_above_cutoff=treat_above_cutoff,
             **kwargs
         )
         results['method_used'] = 'evan-magnusson/rdd' # Ensure method_used is set
@@ -384,7 +405,7 @@ def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str, running_vari
     if not results: # If effect_estimate_rdd wasn't used or failed
         logger.info("'effect_estimate_rdd' did not produce results. Attempting fallback using 'estimate_effect_fallback'.")
         try:
-            fallback_results = estimate_effect_fallback(df, treatment, outcome, running_variable, cutoff_value, covariates, bandwidth=bandwidth, **kwargs)
+            fallback_results = estimate_effect_fallback(df, treatment, outcome, running_variable, cutoff_value, covariates, bandwidth=bandwidth, treat_above_cutoff=treat_above_cutoff, **kwargs)
             results.update(fallback_results)
             results['method_used'] = 'Fallback RDD (Linear Interaction with Robust Errors)'
             fallback_estimation_error = None # Clear fallback error if it succeeded
