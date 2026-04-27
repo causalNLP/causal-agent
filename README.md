@@ -53,7 +53,7 @@ CAIS consists of four successive stages, powered by a decision-tree-driven reaso
 - Traverses a rule-based decision tree that evaluates dataset properties (e.g., randomization, presence of temporal structure, availability of instruments) to select a valid causal inference method.
 - Breaking selection into explicit, verifiable steps ensures interpretability and avoids the opacity of direct LLM-based method selection.
 
-### Stage 2b — IV-LLM Pipeline *(activated when IV is selected)*
+### Stage 2a — IV-LLM Pipeline *(activated when IV is selected)*
 
 If the **Instrumental Variable (IV)** method is selected and the `--iv_llm` pipeline is enabled (based on [IV Co-Scientist](https://arxiv.org/abs/2602.07943)):
 1. **Hypothesis Generation**: The LLM hypothesizes potential instruments based on dataset context and variable names.
