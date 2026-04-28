@@ -1,12 +1,13 @@
 <h1 align="center">
-<img src="https://raw.githubusercontent.com/causalNLP/causal-agent/main/asset/cais.png" width="400" alt="CAIS" />
+<img src="https://raw.githubusercontent.com/causalNLP/causal-agent/main/assets/cais.png" width="400" alt="CAIS" />
 <br>
 Causal AI Scientist: Facilitating Causal Data Science with Large Language Models
 </h1>
 
 <p align="center">
   <a href="https://github.com/causalNLP/causal-agent"><b>[Code]</b></a> •
-  <a href="https://openreview.net/forum?id=EDWTHMVOCj"><b>[Paper]</b></a>
+  <a href="https://openreview.net/forum?id=EDWTHMVOCj"><b>[Paper]</b></a> •
+  <a href="https://causal-agent.readthedocs.io/en/latest/"><b>[Docs]</b></a>
 </p>
 
 **Causal AI Scientist (CAIS)** is an LLM-powered tool for generating data-driven answers to natural language causal queries. Given a natural language query (e.g., *"Does participating in a job training program lead to higher income?"*), an accompanying dataset, and its description, CAIS frames a suitable causal estimation problem, selects an appropriate inference method, executes it, runs diagnostic checks, and interprets the results in plain language.
@@ -35,10 +36,18 @@ Causal effect estimation is central to evidence-based decision-making across dom
 - Execute the method using predefined code templates and validate the results.
 - Interpret the numerical output in the context of the original query.
 
-**Supported Methods:**
-- **Econometric:** Difference-in-Differences (DiD), Instrumental Variables (IV), Ordinary Least Squares (OLS), Regression Discontinuity Design (RDD).
-- **Causal Graph-based:** Backdoor adjustment, Frontdoor adjustment.
+**Supported Causal Methods:**
+- Backdoor Adjustment
+- Instrumental Variables
+- Regression Discontinuity Design
+- Difference-in-Differences
+- Frontdoor Adjustment
 
+**Estimation / Baseline Methods:**
+- Linear Regression
+- Propensity Score Matching
+- Propensity Score Weighting
+- Difference in Means
 ---
 
 ## 2. Pipeline
