@@ -74,7 +74,11 @@ class _LLMAssumptionVerdict(BaseModel):
         description="Concise (2-4 sentences) justification grounded in the dataset "
                     "description, variable semantics, or domain knowledge.",
     )
-
+    missing_info: Optional[str] = Field(
+            None,
+            description="If passed is null, what additional information would be needed "
+                        "to make a determination. Otherwise null.",
+        )
 
 def _llm_argue_assumption(
     assumption_name: str,
@@ -113,24 +117,32 @@ Dataset description:
 Variables involved:
 {variables_summary}
 
+If you recognize this study from the literature, use your prior knowledge
+about its design, mechanisms, and known methodological concerns to inform
+your assessment — not just the description provided above.
+
 {extra_context or ""}
 
 Respond ONLY as JSON matching this schema:
 {{
   "passed": true | false | null,
   "reasoning": "<2-4 sentence justification>"
+  "missing_info": "<if passed is null, specify what additional information would be needed to make a determination. Otherwise set to null.>"
 }}
-
+                                                                                                                                                                                                       
 Use null for "passed" if the dataset description is insufficient to argue either way.
 """.strip()
 
     try:
         raw = call_llm_with_json_output(llm, prompt)
         verdict = _LLMAssumptionVerdict(**(raw or {}))
+        details = {"assumption": assumption_name}
+        if verdict.missing_info:
+            details["missing_info"] = verdict.missing_info
         return _result(
             passed=verdict.passed,
             reasoning=verdict.reasoning,
-            details={"assumption": assumption_name},
+            details=details,
         )
     except Exception as exc:
         logger.warning("LLM assumption check failed for '%s': %s", assumption_name, exc)
@@ -144,7 +156,8 @@ Use null for "passed" if the dataset description is insufficient to argue either
 # SUTVA  (needed for every method)
 # _____________________________________________________________________________
 
-def check_sutva(
+
+def check_strict_sutva(
     dataset_description: Optional[str],
     variables_summary: Dict[str, Any],
     llm=None,
@@ -164,6 +177,35 @@ def check_sutva(
             "Pay attention to: network/spillover effects (e.g., units in shared "
             "schools, households, markets), partial compliance, treatment intensity "
             "variation."
+        ),
+    )
+
+def check_permissive_sutva(
+    dataset_description: Optional[str],
+    variables_summary: Dict[str, Any],
+    llm=None,
+) -> Dict[str, Any]:
+    """SUTVA: no interference between units, no hidden treatment versions."""
+    return _llm_argue_assumption(
+        assumption_name="SUTVA (Stable Unit Treatment Value Assumption)",
+        assumption_description=(
+            "(1) No interference: one unit's treatment does not affect another unit's "
+            "potential outcomes. (2) No hidden versions of the treatment: the treatment "
+            "is administered consistently across treated units."
+        ),
+        dataset_description=dataset_description,
+        variables_summary=variables_summary,
+        llm=llm,
+        extra_context=(
+            "Important: SUTVA is an idealized assumption that is technically violated "
+            "in most real-world settings. Do NOT fail this assumption simply because "
+            "minor spillovers or small treatment variations are theoretically possible. "
+            "Only return passed=false if there is a strong, concrete reason grounded in "
+            "the dataset description — such as explicit network structure, shared "
+            "environments where interference is the primary mechanism, or clearly "
+            "documented treatment heterogeneity. If the dataset comes from a published "
+            "causal study, assume the researchers judged SUTVA to be reasonable unless "
+            "the description contradicts this."
         ),
     )
 
@@ -348,4 +390,61 @@ def check_stable_group_composition(dataset_description, variables_summary, llm=N
         "Unit composition of treatment and control groups does not change as a result "
         "of treatment (no differential attrition or selective entry/exit).",
         dataset_description, variables_summary, llm,
+    )
+
+
+# _____________________________________________________________________________
+# Frontdoor-specific checks (LLM-reasoned)
+# _____________________________________________________________________________
+
+def check_frontdoor_full_mediation(dataset_description, variables_summary, llm=None):
+    """Full mediation: M fully captures the effect of T on Y; no direct T→Y path."""
+    return _llm_argue_assumption(
+        "Full mediation",
+        "The mediator M fully captures the effect of treatment T on outcome Y; "
+        "there is no direct T→Y path outside of the T→M→Y pathway.",
+        dataset_description, variables_summary, llm,
+    )
+
+def check_frontdoor_no_TM_confounding(dataset_description, variables_summary, llm=None):
+    """No unobserved confounding between treatment and mediator."""
+    return _llm_argue_assumption(
+        "No T-M confounding",
+        "The relationship between the treatment T and the mediator M is unconfounded. "
+        "There are no unobserved variables that affect both T and M.",
+        dataset_description, variables_summary, llm,
+    )
+
+def check_frontdoor_T_blocks_MY(dataset_description, variables_summary, llm=None):
+    """Treatment blocks all confounding paths between mediator and outcome."""
+    return _llm_argue_assumption(
+        "T blocks M→Y confounding",
+        "Conditioning on the treatment T removes all back-door paths between "
+        "the mediator M and the outcome Y.",
+        dataset_description, variables_summary, llm,
+    )
+
+def check_frontdoor_positivity(
+    df: pd.DataFrame,
+    treatment: str,
+    mediator: str,
+    min_count: int = 5,
+) -> Dict[str, Any]:
+    """Frontdoor positivity: P(M=m|X=x) > 0 for all relevant (x, m) combinations."""
+    combos = df.groupby([treatment, mediator]).size().reset_index(name='count')
+    total_combos = df[treatment].nunique() * df[mediator].nunique()
+    observed_combos = len(combos)
+    empty = total_combos - observed_combos
+    sparse = int((combos['count'] < min_count).sum())
+
+    passed = empty == 0 and sparse == 0
+    return _result(
+        passed=passed,
+        reasoning=(
+            f"{observed_combos}/{total_combos} (treatment, mediator) combinations observed. "
+            f"{empty} empty, {sparse} sparse (< {min_count} obs). "
+            f"{'Positivity satisfied.' if passed else 'Some combinations are empty or near-empty — frontdoor formula may be undefined.'}"
+        ),
+        details={"total_combos": total_combos, "observed_combos": observed_combos,
+                 "empty": empty, "sparse": sparse, "min_count": min_count},
     )
