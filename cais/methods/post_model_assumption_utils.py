@@ -12,8 +12,6 @@ These are composed in each estimator's `validate_assumptions` method.
 The agent-level `validate_method` simply dispatches to the selected estimator.
 """
 
-from __future__ import annotations
-
 from typing import Any, Dict, List, Optional
 import logging
 
