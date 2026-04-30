@@ -414,6 +414,7 @@ def explain_application(method: str, treatment: str, outcome: str,
             f"I will focus on observations close to the cutoff value "
             f"({variables.get('cutoff_value')}) of the running variable "
             f"({variables.get('running_variable')}), where treatment assignment changes. "
+            f"Is the treatment assigned above the cutoff? Answer: {variables.get('treat_above_cutoff')} (False means below the cutoff, True means above the cutoff, None means not determined). "
             f"By comparing outcomes just above and below this threshold, I can estimate "
             f"the local causal effect of {treatment} on {outcome}."
         ),

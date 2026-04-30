@@ -13,15 +13,20 @@ import pandas as pd
 from cais.config import get_llm_client
 
 
-def rdd_design_compliance(df: pd.DataFrame, running_variable: str, treatment: str, cutoff_value: float) -> dict:
+def rdd_design_compliance(df: pd.DataFrame, running_variable: str, treatment: str, cutoff_value: float, treat_above_cutoff: Optional[bool] = None) -> dict:
     """Check whether treatment assignment closely follows the cutoff rule T ≈ 1{X >= c}."""
     try:
-        above = df[running_variable] >= cutoff_value
+        if treat_above_cutoff is None:
+            treat_above_cutoff = True # Default to above cutoff
+        if treat_above_cutoff:
+            mask = df[running_variable] >= cutoff_value
+        else:
+            mask = df[running_variable] <= cutoff_value
         if treatment not in df.columns:
             return {"ok": False, "reason": f"Treatment column '{treatment}' not found."}
         t = df[treatment]
         # Compliance: fraction of rows where T matches the cutoff rule
-        compliance = (t == above.astype(t.dtype)).mean()
+        compliance = (t == mask.astype(t.dtype)).mean()
         # Allow for fuzzy RDD — flag as ok if compliance >= 0.75
         return {"ok": float(compliance) >= 0.75, "compliance_rate": float(compliance)}
     except Exception as e:
@@ -405,6 +410,7 @@ def validate_regression_discontinuity(validation_result: Dict[str, Any],
     cutoff_value = variables.get("cutoff_value")
     treatment = variables.get("treatment_variable")
     outcome = variables.get("outcome_variable")
+    treat_above_cutoff = variables.get("treat_above_cutoff")
     df = pd.read_csv(dataset_analysis['dataset_info']['file_path'])
 
     # Required fields
@@ -431,7 +437,7 @@ def validate_regression_discontinuity(validation_result: Dict[str, Any],
         return
 
     # 1) Enforced-by-design check: is treatment determined by cutoff?
-    design = rdd_design_compliance(df, running_variable, treatment, cutoff_value)
+    design = rdd_design_compliance(df, running_variable, treatment, cutoff_value, treat_above_cutoff)
     validation_result.setdefault("evidence", {})["rdd_design"] = design
     if not design.get("ok", False):
         validation_result["concerns"].append(
@@ -462,7 +468,7 @@ def validate_regression_discontinuity(validation_result: Dict[str, Any],
     # 3) Assumption status (per text)
     validation_result.setdefault("evidence", {})["rdd_notes"] = {
         "assumption_status": "Untestable; assess visually around cutoff for an abrupt jump.",
-        "design_enforcement": "Treatment is (or should be) determined by a cutoff variable.",
+        "design_enforcement": "Treatment is (or should be) determined by a cutoff variable. Whether the treatment is assigned above or below the cutoff is determined by the user query or dataset description.",
         "visual_recommendation": "Plot outcome vs running within a symmetric window around the cutoff; inspect for a jump."
     }
 

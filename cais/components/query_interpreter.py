@@ -288,6 +288,7 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
     instrument_variable = None
     running_variable = None
     cutoff_value = None
+    treat_above_cutoff = None
     is_rct = None
     smd_score = None
 

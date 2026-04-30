@@ -43,6 +43,7 @@ def extract_properties_from_inputs(inputs: MethodValidatorInput) -> Dict[str, An
         "has_temporal_structure": dataset_analysis_dict.get("temporal_structure", {}).get("has_temporal_structure", False),
         "frontdoor_criterion": variables_dict.get("frontdoor_criterion", False),
         "cutoff_value": variables_dict.get("cutoff_value"),
+        "treat_above_cutoff": variables_dict.get("treat_above_cutoff"),
         "covariate_overlap_score": variables_dict.get("covariate_overlap_result", 0),
         "is_rct": variables_dict.get("is_rct", False)
     }

@@ -366,6 +366,7 @@ def rule_based_select_method(dataset_analysis, variables, is_rct, llm, dataset_d
                   "has_temporal_structure": dataset_analysis.get("temporal_structure", False).get("has_temporal_structure", False),
                   "frontdoor_criterion": variables.get("frontdoor_criterion", False),
                   "cutoff_value": variables.get("cutoff_value"),
+                  "treat_above_cutoff": variables.get("treat_above_cutoff"),
                   "covariate_overlap_score": variables.get("covariate_overlap_result", 0)}
     
     properties["is_rct"] = is_rct
@@ -404,6 +405,7 @@ class DecisionTreeEngine:
                      "instrument_variable": query_details.get("instrument_variable"),
                      "running_variable": query_details.get("running_variable"),
                      "cutoff_value": query_details.get("cutoff_value"),
+                     "treat_above_cutoff": query_details.get("treat_above_cutoff"),
                      "is_rct": query_details.get("is_rct", False),
                      "has_temporal_structure": dataset_analysis.get("temporal_structure", False).get("has_temporal_structure", False),
                      "frontdoor_criterion": query_details.get("frontdoor_criterion", False),

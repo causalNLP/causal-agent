@@ -35,6 +35,34 @@ def sample_rdd_data():
     return df
 
 
+@pytest.fixture
+def sample_rdd_data_treatment_below_cutoff():
+    """Generates synthetic data suitable for RDD testing with treatment assigned below cutoff."""
+    np.random.seed(123)
+    n_samples = 200
+    cutoff = 50.0
+    treatment_effect = 10.0
+
+    # Running variable centered around cutoff
+    running_var = np.random.uniform(cutoff - 20, cutoff + 20, n_samples)
+    # Treatment assigned below cutoff
+    treatment = (running_var < cutoff).astype(int)
+    # Covariate correlated with running variable
+    covariate1 = 0.5 * running_var + np.random.normal(0, 5, n_samples)
+    # Outcome depends on running var (parallel slopes), treatment, and covariate
+    error = np.random.normal(0, 5, n_samples)
+    outcome = (10 + 0.8 * running_var +
+               treatment_effect * treatment +
+               2.0 * covariate1 + error)
+
+    df = pd.DataFrame({
+        'outcome': outcome,
+        'treatment_indicator': treatment,
+        'running_var': running_var,
+        'covariate1': covariate1
+    })
+    return df
+
 # --- Test Cases ---
 
 def test_estimate_effect_missing_args(sample_rdd_data):
@@ -181,3 +209,43 @@ def test_estimate_effect_no_data_in_bandwidth(sample_rdd_data):
                 cutoff_value=50.0,
                 bandwidth=0.01,  # Extremely small bandwidth
             )
+
+
+@patch('cais.methods.regression_discontinuity.estimator.run_rdd_diagnostics')
+@patch('cais.methods.regression_discontinuity.estimator.interpret_rdd_results')
+@patch('cais.methods.regression_discontinuity.estimator.effect_estimate_rdd')
+def test_estimate_effect_primary_success_treatment_below_cutoff(mock_em_rdd, mock_interpret, mock_diagnostics, sample_rdd_data_treatment_below_cutoff):
+    """Test successful estimation using the mocked evan-magnusson/rdd path with treatment assigned below cutoff."""
+    mock_em_rdd.return_value = {
+        'effect_estimate': 10.5,
+        'standard_error': 1.25,
+        'p_value': 0.01,
+        'confidence_interval': [8.0, 13.0],
+        'method_details': 'RDD (evan-magnusson/rdd package, Bandwidth: 5.0000)',
+        'bandwidth_used': 5.0,
+        'formula': 'local linear',
+        'model_summary': 'summary'
+    }
+    mock_diagnostics.return_value = {"status": "Success"}
+    mock_interpret.return_value = "LLM Interpretation"
+
+    results = estimate_effect(
+        sample_rdd_data_treatment_below_cutoff,
+        'treatment_indicator',
+        'outcome',
+        running_variable='running_var',
+        cutoff_value=50.0,
+        bandwidth=5.0,
+        treat_above_cutoff=False,
+    )
+
+    mock_em_rdd.assert_called_once()
+    assert results['method_used'] == 'evan-magnusson/rdd'
+    assert results['effect_estimate'] == 10.5
+    assert results['p_value'] == 0.01
+    assert results['confidence_interval'] == [8.0, 13.0]
+    assert results['standard_error'] == 1.25
+    assert 'diagnostics' in results
+    assert 'interpretation' in results
+    mock_diagnostics.assert_called_once()
+    mock_interpret.assert_called_once()

@@ -72,7 +72,7 @@ def test_interpret_query_identifies_treatment_reference_level():
         elif pydantic_model_passed == LLMIVars:
             return MagicMock(instrument_variable=None)
         elif pydantic_model_passed == LLMRDDVars:
-            return MagicMock(running_variable=None, cutoff_value=None)
+            return MagicMock(running_variable=None, cutoff_value=None, treat_above_cutoff=None)
         elif pydantic_model_passed == LLMRCTCheck:
             return MagicMock(is_rct=False, reasoning="No indication of RCT.")
         elif pydantic_model_passed == LLMInteractionSuggestion:

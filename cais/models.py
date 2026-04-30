@@ -23,7 +23,7 @@ class LLMRDDVars(BaseModel):
     """Pydantic model for identifying RDD variables."""
     running_variable: Optional[str] = Field(None, description="The identified running variable column name.")
     cutoff_value: Optional[Union[float, int]] = Field(None, description="The identified cutoff value.")
-    treat_above_cutoff: Optional[bool] = Field(None, description="True if the treatment is assigned above the cutoff, False if below the cutoff.")
+    treat_above_cutoff: Optional[bool] = Field(None, description="True if the treatment is assigned above the cutoff, False if below the cutoff, None if unsure.")
 
 class LLMRCTCheck(BaseModel):
     """Pydantic model for checking if data is RCT."""
@@ -101,6 +101,7 @@ class QueryInfo(BaseModel):
     instrument_hints: Optional[List[str]] = None
     running_variable_hints: Optional[List[str]] = None
     cutoff_value_hint: Optional[Union[float, int]] = None
+    treat_above_cutoff_hint: Optional[bool] = None
 
 class QueryInterpreterInput(BaseModel):
     """Input structure for the query interpreter tool."""

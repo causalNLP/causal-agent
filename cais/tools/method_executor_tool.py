@@ -101,7 +101,7 @@ def method_executor_tool(inputs: MethodExecutorInput, original_query: Optional[s
         # Avoid passing the entire variables_dict as estimate_func expects specific args
         kwargs_for_method = {}
         for key in ["instrument_variable", "time_variable", "group_variable", 
-                    "running_variable", "cutoff_value", "did_term", "did_canonical", "treatment_time", "treatment_state"]:
+                    "running_variable", "cutoff_value", "treat_above_cutoff", "did_term", "did_canonical", "treatment_time", "treatment_state"]:
             if key in variables_dict and variables_dict[key] is not None:
                  kwargs_for_method[key] = variables_dict[key]
         

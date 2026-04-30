@@ -111,6 +111,7 @@ class TestDecisionTreeLLMEngine(unittest.TestCase):
         rdd_variables["instrument_variable"] = None # Make IV less likely
         rdd_variables["running_variable"] = "age"
         rdd_variables["cutoff_value"] = 65
+        rdd_variables["treat_above_cutoff"] = True
         
         self._create_mock_llm_response({
             "selected_method": REGRESSION_DISCONTINUITY,
