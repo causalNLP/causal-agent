@@ -46,10 +46,10 @@ Jinja2==3.1.6
 jiter==0.9.0
 joblib==1.4.2
 jsonpatch==1.33
-dowhy
+dowhy<=0.11.1
 matplotlib==3.10.1
 langchain==0.3.26
 rddensity
 rdd
-litellm
+litellm==1.80.0 # In future, please switch directly to >=v1.83.0 to avoid Supply Chain Incident in LiteLLM package (refer to https://docs.litellm.ai/blog/security-update-march-2026)
 langchain-litellm

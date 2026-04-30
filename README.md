@@ -87,9 +87,12 @@ cp .env.example .env
 Open `.env` and set the API keys for the provider(s) you intend to use:
 
 ```
-OPENAI_API_KEY=your_openai_key_here
-ANTHROPIC_API_KEY=your_anthropic_key_here
-TOGETHER_API_KEY=your_together_key_here
+OPENAI_API_KEY=sk-your-openai-api-key-here
+ANTHROPIC_API_KEY=your-anthropic-api-key-here
+TOGETHER_API_KEY=your-together-api-key-here
+GEMINI_API_KEY=your-gemini-api-key-here
+DEEPSEEK_API_KEY=your-deepseek-api-key-here
+OPENROUTER_API_KEY=your-openrouter-api-key-here
 ```
 
 Only the key corresponding to your chosen `--llm_provider` is required.
@@ -118,7 +121,7 @@ pip install -e .
 The CauSciBench benchmark dataset is hosted on [HuggingFace](https://huggingface.co/datasets/causal-nlp/causcibench). To download it:
 
 ```bash
-python experiments/download_data.py
+python experiments/data/download_data.py
 ```
 
 This will populate `experiments/data/causcibench/` with the following structure:
@@ -155,7 +158,7 @@ python experiments/scripts/run_cais.py \
 | `--output_dir` | `str` | Path to the folder where output JSON results will be saved |
 | `--output_name` | `str` | Name of the output JSON file |
 | `--llm_name` | `str` | Name of the LLM to use (e.g., `gpt-4o`, `claude-3-5-sonnet`) |
-| `--llm_provider` | `str` | LLM service provider (e.g., `openai`, `anthropic`, `together`) |
+| `--llm_provider` | `str` | LLM service provider (e.g., `openai`, `anthropic`, `together`, `openrouter`) |
 | `--iv_llm` | `bool` | *(Optional)* If present, enables the advanced experimental [IV-LLM pipeline](https://arxiv.org/abs/2602.07943) for instrument discovery. |
 
 **Example:**
