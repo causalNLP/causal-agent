@@ -157,31 +157,7 @@ Use null for "passed" if the dataset description is insufficient to argue either
 # SUTVA  (needed for every method)
 # _____________________________________________________________________________
 
-
-def check_strict_sutva(
-    dataset_description: Optional[str],
-    variables_summary: Dict[str, Any],
-    llm=None,
-) -> Dict[str, Any]:
-    """SUTVA: no interference between units, no hidden treatment versions."""
-    return _llm_argue_assumption(
-        assumption_name="SUTVA (Stable Unit Treatment Value Assumption)",
-        assumption_description=(
-            "(1) No interference: one unit's treatment does not affect another unit's "
-            "potential outcomes. (2) No hidden versions of the treatment: the treatment "
-            "is administered consistently across treated units."
-        ),
-        dataset_description=dataset_description,
-        variables_summary=variables_summary,
-        llm=llm,
-        extra_context=(
-            "Pay attention to: network/spillover effects (e.g., units in shared "
-            "schools, households, markets), partial compliance, treatment intensity "
-            "variation."
-        ),
-    )
-
-def check_permissive_sutva(
+def check_sutva(
     dataset_description: Optional[str],
     variables_summary: Dict[str, Any],
     llm=None,
