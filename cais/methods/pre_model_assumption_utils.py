@@ -1,5 +1,10 @@
 """
-Reusable assumption checks for causal inference methods.
+Pre-modeling assumption checks for causal inference methods.
+
+These checks are run before estimation to verify whether the data and study
+design satisfy the assumptions required by the chosen causal method.
+Statistical checks use the raw data directly. Non-testable assumptions
+are assessed via LLM reasoning based on the dataset description.
 
 Each check returns a standardized dict:
     {
@@ -7,9 +12,6 @@ Each check returns a standardized dict:
         "reasoning": str,                # human-readable explanation
         "details": dict,                 # raw stats (F, p, SMDs, ...)
     }
-
-These are composed in each estimator's `validate_assumptions` method.
-The agent-level `validate_method` simply dispatches to the selected estimator.
 """
 
 from typing import Any, Dict, List, Optional
@@ -17,11 +19,11 @@ import logging
 
 import numpy as np
 import pandas as pd
+from scipy import stats as scipy_stats
 from pydantic import BaseModel, Field
 
 
 # import some assumptions already available for each method
-
 from cais.methods.utils import (
     calculate_standardized_differences,
     check_overlap,
@@ -32,10 +34,6 @@ from cais.methods.instrumental_variable.diagnostics import calculate_first_stage
 from cais.methods.difference_in_differences.diagnostics import (
     validate_parallel_trends,
     run_placebo_test,
-)
-
-from cais.methods.generalized_propensity_score.diagnostics import (
-    assess_gps_balance,
 )
 from cais.utils.llm_helpers import call_llm_with_json_output
 
@@ -137,9 +135,14 @@ Use null for "passed" if the dataset description is insufficient to argue either
         details = {"assumption": assumption_name}
         if verdict.missing_info:
             details["missing_info"] = verdict.missing_info
+
+        disclaimer = (
+            " Note: this assessment relies on LLM reasoning and is sensitive to the "
+            "quality and completeness of the dataset description provided."
+        )
         return _result(
             passed=verdict.passed,
-            reasoning=verdict.reasoning,
+            reasoning=verdict.reasoning + disclaimer,
             details=details,
         )
     except Exception as exc:
@@ -445,4 +448,121 @@ def check_frontdoor_positivity(
         ),
         details={"total_combos": total_combos, "observed_combos": observed_combos,
                  "empty": empty, "sparse": sparse, "min_count": min_count},
+    )
+
+
+# _____________________________________________________________________________
+# RDD-specific checks
+# _____________________________________________________________________________
+
+def check_rdd_no_manipulation(
+        df: pd.DataFrame,
+        running_variable: str,
+        cutoff: float,
+        n_bins: int = 50,
+        bandwidth: float = None,
+) -> Dict[str, Any]:
+    """McCrary-style density test: check for bunching at the cutoff."""
+    rv = df[running_variable].dropna()
+
+    if bandwidth is None:
+        bandwidth = (rv.max() - rv.min()) * 0.25
+
+    near = rv[(rv >= cutoff - bandwidth) & (rv <= cutoff + bandwidth)]
+    below = near[near < cutoff]
+    above = near[near >= cutoff]
+
+    if len(below) < 10 or len(above) < 10:
+        return _result(
+            passed=None,
+            reasoning="Too few observations near cutoff for density test.",
+        )
+
+    # Compare density just below vs just above using bin counts
+    n_below = len(below)
+    n_above = len(above)
+
+    # Binomial test: under no manipulation, ~50% should be on each side
+    total = n_below + n_above
+    # Using scipy.stats.binomtest (modern) or binom_test (legacy)
+    try:
+        p_value = scipy_stats.binomtest(n_below, total, 0.5).pvalue
+    except AttributeError:
+        p_value = scipy_stats.binom_test(n_below, total, 0.5)
+
+    passed = p_value > 0.05
+
+    # Logic adjustment: Mention that the binomial test is a local density approximation
+    status_msg = "No evidence of manipulation." if passed else "Significant density discontinuity — possible manipulation."
+    reasoning = (
+        f"Density test around cutoff ({cutoff}): {n_below} below, {n_above} above "
+        f"(p={p_value:.4f}). Note: This binomial test is a local approximation of "
+        f"density continuity and may be sensitive to the underlying distribution's slope. "
+        f"{status_msg}"
+    )
+
+    return _result(
+        passed=passed,
+        reasoning=reasoning,
+        details={
+            "n_below": n_below, "n_above": n_above,
+            "p_value": p_value, "bandwidth": bandwidth,
+            "test_type": "binomial_density_approximation"
+        },
+    )
+
+
+def check_rdd_covariate_continuity(
+    df: pd.DataFrame,
+    running_variable: str,
+    cutoff: float,
+    covariates: List[str],
+    bandwidth: float = None,
+) -> Dict[str, Any]:
+    """Check continuity of covariates at the cutoff via t-tests."""
+    if not covariates:
+        return _result(passed=None, reasoning="No covariates provided.")
+
+    if bandwidth is None:
+        rv_range = df[running_variable].max() - df[running_variable].min()
+        bandwidth = 0.1 * rv_range
+
+    df_bw = df[(df[running_variable] >= cutoff - bandwidth) & (df[running_variable] <= cutoff + bandwidth)]
+    below = df_bw[df_bw[running_variable] < cutoff]
+    above = df_bw[df_bw[running_variable] >= cutoff]
+
+    if len(below) < 5 or len(above) < 5:
+        return _result(passed=None, reasoning="Too few observations near cutoff.")
+
+    results = {}
+    discontinuous = []
+    for cov in covariates:
+        if cov not in df_bw.columns:
+            continue
+        t_stat, p_val = scipy_stats.ttest_ind(
+            below[cov].dropna(), above[cov].dropna(), equal_var=False
+        )
+        results[cov] = {"t_stat": float(t_stat), "p_value": float(p_val)}
+        if p_val < 0.05:
+            discontinuous.append(cov)
+
+    passed = len(discontinuous) == 0
+    return _result(
+        passed=passed,
+        reasoning=(
+            f"Covariate continuity at cutoff ({cutoff}) on {len(results)} covariates. "
+            f"{'All continuous.' if passed else f'Discontinuous: {discontinuous}.'}"
+        ),
+        details={"covariate_tests": results, "discontinuous": discontinuous, "bandwidth": bandwidth},
+    )
+
+
+def check_rdd_continuity_potential_outcomes(dataset_description, variables_summary, llm=None):
+    """Continuity of potential outcomes at the cutoff (local exchangeability)."""
+    return _llm_argue_assumption(
+        "Continuity of potential outcomes at the cutoff",
+        "E[Y(1)|X=c] and E[Y(0)|X=c] are continuous at the cutoff c. "
+        "In the absence of treatment, individuals just above and just below "
+        "the threshold would have had, on average, the same outcome.",
+        dataset_description, variables_summary, llm,
     )
