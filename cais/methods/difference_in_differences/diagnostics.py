@@ -307,10 +307,10 @@ def run_placebo_test(df: pd.DataFrame, time_var: str, group_var: str, outcome: s
         df_placebo[interaction_placebo_col] = df_placebo[treated_unit_indicator] * df_placebo[post_placebo_col]
         
         # Construct formula for placebo regression
-        formula = f"`{outcome}` ~ `{treated_unit_indicator}` + `{post_placebo_col}` + `{interaction_placebo_col}`"
+        formula = f"Q('{outcome}') ~ Q('{treated_unit_indicator}') + {post_placebo_col} + {interaction_placebo_col}"
         if covariates:
-             formula += f" + {' + '.join([f'`{c}`' for c in covariates])}"
-        formula += f" + C(`{group_var}`) + C(`{time_var}`)" # Include FEs
+            formula += f" + {' + '.join([f'Q(\"{c}\")' for c in covariates])}"
+        formula += f" + C(Q('{group_var}')) + C(Q('{time_var}'))" # Include FEs
         
         logger.debug(f"Placebo test formula: {formula}")
 
