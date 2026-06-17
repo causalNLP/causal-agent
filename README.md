@@ -1,5 +1,5 @@
 <h1 align="center">
-<img src="blob/main/asset/cais_agent_transparent.png" width="400" height = "200" alt="CAIS" />
+<img src="blob/main/asset/cais_agent.png" width="400" alt="CAIS" />
 <br>
 Causal AI Scientist: Facilitating Causal Data Science with Large Language Models
 </h1>
