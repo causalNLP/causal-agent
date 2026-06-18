@@ -6,7 +6,7 @@ Causal AI Scientist: Facilitating Causal Data Science with Large Language Models
 
 <p align="center">
   <a href="https://github.com/causalNLP/causal-agent"><b>[Code]</b></a> •
-  <a href="https://drive.google.com/file/d/1KvxAVIE3Ooe5V392Gw-1ZBAlQe39VVQI/view?usp=drive_link"><b>[Paper]</b></a>
+  <a href="https://drive.google.com/file/d/1KvxAVIE3Ooe5V392Gw-1ZBAlQe39VVQI/view?usp=drive_link"><b>[Paper]</b></a> •
   <a href="https://causal-agent.readthedocs.io/en/latest/"><b>[Documentation]</b></a>
 </p>
 
