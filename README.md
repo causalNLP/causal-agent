@@ -7,6 +7,7 @@ Causal AI Scientist: Facilitating Causal Data Science with Large Language Models
 <p align="center">
   <a href="https://github.com/causalNLP/causal-agent"><b>[Code]</b></a> •
   <a href="https://drive.google.com/file/d/1KvxAVIE3Ooe5V392Gw-1ZBAlQe39VVQI/view?usp=drive_link"><b>[Paper]</b></a>
+  <a href="https://causal-agent.readthedocs.io/en/latest/"><b>[Documentation]</b></a>
 </p>
 
 **Causal AI Scientist (CAIS)** is an LLM-powered tool for generating data-driven answers to natural language causal queries. Given a natural language query (e.g., *"Does participating in a job training program lead to higher income?"*), an accompanying dataset, and its description, CAIS frames a suitable causal estimation problem, selects an appropriate inference method, executes it, runs diagnostic checks, and interprets the results in plain language.
