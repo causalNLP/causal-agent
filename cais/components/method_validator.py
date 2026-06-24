@@ -6,10 +6,111 @@ dataset characteristics and available variables.
 """
 
 import logging
+import numpy as np
 from typing import Dict, List, Any, Optional
 from cais.components.assumption_checks import *
 import pandas as pd
 from cais.config import get_llm_client
+
+
+def rdd_design_compliance(df: pd.DataFrame, running_variable: str, treatment: str, cutoff_value: float) -> dict:
+    """Check whether treatment assignment closely follows the cutoff rule T ≈ 1{X >= c}."""
+    try:
+        above = df[running_variable] >= cutoff_value
+        if treatment not in df.columns:
+            return {"ok": False, "reason": f"Treatment column '{treatment}' not found."}
+        t = df[treatment]
+        # Compliance: fraction of rows where T matches the cutoff rule
+        compliance = (t == above.astype(t.dtype)).mean()
+        # Allow for fuzzy RDD — flag as ok if compliance >= 0.75
+        return {"ok": float(compliance) >= 0.75, "compliance_rate": float(compliance)}
+    except Exception as e:
+        return {"ok": False, "reason": str(e)}
+
+
+def rdd_window_summary(df: pd.DataFrame, running_variable: str, outcome: str, cutoff_value: float, h=None) -> dict:
+    """Summarise the outcome on either side of the cutoff within a bandwidth window."""
+    x = df[running_variable]
+    if h is None:
+        # Default bandwidth: 0.5 * IQR of the running variable
+        iqr = float(x.quantile(0.75) - x.quantile(0.25))
+        h = max(iqr * 0.5, (x.max() - x.min()) * 0.1)
+    left = df[(x >= cutoff_value - h) & (x < cutoff_value)]
+    right = df[(x >= cutoff_value) & (x < cutoff_value + h)]
+    n_left = len(left)
+    n_right = len(right)
+    mean_left = float(left[outcome].mean()) if n_left > 0 else None
+    mean_right = float(right[outcome].mean()) if n_right > 0 else None
+    jump = (mean_right - mean_left) if (mean_left is not None and mean_right is not None) else None
+    return {
+        "window_h": float(h),
+        "n_left": n_left,
+        "n_right": n_right,
+        "mean_left": mean_left,
+        "mean_right": mean_right,
+        "jump_right_minus_left": jump,
+    }
+
+
+def rdd_bins_for_plot(df: pd.DataFrame, running_variable: str, outcome: str, cutoff_value: float, h: float, bins_per_side: int = 10) -> list:
+    """Return binned means of outcome vs running variable on each side of the cutoff."""
+    x = df[running_variable]
+    result = []
+    for side, mask in [("left", (x >= cutoff_value - h) & (x < cutoff_value)),
+                       ("right", (x >= cutoff_value) & (x < cutoff_value + h))]:
+        subset = df[mask]
+        if len(subset) == 0:
+            continue
+        bins = np.linspace(subset[running_variable].min(), subset[running_variable].max(), bins_per_side + 1)
+        for i in range(len(bins) - 1):
+            bin_mask = (subset[running_variable] >= bins[i]) & (subset[running_variable] < bins[i + 1])
+            bin_data = subset[bin_mask]
+            if len(bin_data) > 0:
+                result.append({
+                    "side": side,
+                    "bin_center": float((bins[i] + bins[i + 1]) / 2),
+                    "mean_outcome": float(bin_data[outcome].mean()),
+                    "n": len(bin_data),
+                })
+    return result
+
+
+def mccrary_test(df: pd.DataFrame, running_variable: str, cutoff_value: float) -> float:
+    """Simple McCrary density discontinuity test using a histogram-based approach.
+
+    Returns an approximate p-value. Returns np.nan on failure.
+    """
+    try:
+        from scipy import stats
+        x = df[running_variable].dropna()
+        n = len(x)
+        if n < 10:
+            return np.nan
+        # Use sqrt(n) bins on each side
+        n_bins = max(5, int(np.sqrt(n) / 2))
+        left = x[x < cutoff_value]
+        right = x[x >= cutoff_value]
+        if len(left) < 5 or len(right) < 5:
+            return np.nan
+        # Bin counts on each side, normalise by bin width and sample size
+        h_left = (left.max() - left.min()) / n_bins if left.max() > left.min() else 1.0
+        h_right = (right.max() - right.min()) / n_bins if right.max() > right.min() else 1.0
+        counts_left, _ = np.histogram(left, bins=n_bins)
+        counts_right, _ = np.histogram(right, bins=n_bins)
+        density_left = counts_left / (len(left) * h_left)
+        density_right = counts_right / (len(right) * h_right)
+        # Compare density of last left bin vs first right bin
+        d_left = float(density_left[-1])
+        d_right = float(density_right[0])
+        # Approximate SE via pooled standard error of bin densities
+        se = np.sqrt(np.var(density_left) / n_bins + np.var(density_right) / n_bins)
+        if se == 0:
+            return np.nan
+        t_stat = abs(d_right - d_left) / se
+        p_value = 2 * (1 - stats.norm.cdf(t_stat))
+        return float(p_value)
+    except Exception:
+        return np.nan
 
 
 logger = logging.getLogger(__name__)

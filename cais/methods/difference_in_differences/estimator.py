@@ -1,5 +1,7 @@
 """
-Complete Simplified Difference-in-Differences Estimator
+Difference-in-Differences Estimator
+
+
 """
 
 import logging
@@ -10,8 +12,63 @@ import statsmodels.formula.api as smf
 from .diagnostics import validate_parallel_trends
 from .llm_assist import interpret_did_results
 from cais.config import get_llm_client
+from cais.methods.causal_method import CausalMethod
+from cais.methods.difference_in_differences.utils import create_post_indicator
+from cais.methods.difference_in_differences.diagnostics import validate_parallel_trends, assess_trends_visually, run_placebo_test
+from cais.methods.difference_in_differences.llm_assist import identify_time_variable, identify_treatment_group, interpret_did_results, determine_treatment_period
 
 logger = logging.getLogger(__name__)
+
+
+class DiDRegression(CausalMethod):
+
+    name="Differences-in-Differences"
+    description="Differences-in-Differences (did) is used on observation data from a natural experiment to study the effect of a treatment on a treatment vs. control group in a natural experiment. The effect is calculated by comparing the average change over time in the outcome variable for the treatment group and average change over time for the control group."
+    assumptions=[
+        "Parallel Trends: In the absence of treatment, the outcome trends in treatment and control groups would have evolved similarly.",
+        "No Anticipatory Effects This states that the treatment effect applies only after implementation, meaning units do not change their behavior in anticipation of future treatment."
+    ]
+
+    def __init__(self):
+        super().__init__()
+
+    def validate_assumptions(self, df, variables):
+        pass
+
+    def estimate_effect(self, df, variables, query=None):
+
+        assert (
+            hasattr(variables, 'group_variable') and
+            hasattr(variables, 'did_term') and
+            hasattr(variables, 'outcome_variable')
+        )
+        
+        time_var = variables.get('time_variable')
+        group_var = variables.group_variable
+        outcome = variables.outcome_variable
+        treatment = variables.treatment_variable
+        did_term = variables.did_term
+        did_term = did_term if did_term else treatment
+
+        covariates = variables.confounders
+        covariates = covariates if covariates else []
+
+        missing = self.check_missing(
+            df,
+            required=[time_var, group_var, outcome, treatment]
+        )
+        if missing:
+            raise ValueError(f"Missing at least one of required columns: {missing}")
+        
+        return estimate_effect(
+            df=df,
+            treatment=treatment,
+            outcome=outcome,
+            covariates=covariates,
+            time_variable=time_var,
+            group_variable=group_var,
+            did_term=did_term
+        )
 
 def format_did_results(statsmodels_results: Any, interaction_term_key: str, 
                        validation_results: Dict[str, Any], 

@@ -7,13 +7,10 @@ import pandas as pd
 from langchain_core.messages import SystemMessage, HumanMessage
 from cais.config import get_llm_client  # returns a LangChain chat model
 
-PLANNER_SYSTEM = """You are “CausalPrep-Planner”, a senior data & methods engineer.
+PLANNER_SYSTEM = """You are “CausalPrep-Planner”, a senior data engineer and analyst.
 
 Goal: From (dataset_profile, causal_method, causal_query, variables), produce a SINGLE JSON
 Transformation Spec that makes the dataframe METHOD-READY while avoiding target leakage.
-This stage ONLY pre-processes treatment/outcome as explicitly specified by the causal_query
-or required to define treatment/outcome for the chosen method.
-Do not pattern-match to any given examples. Generalize beyond them.
 
 Principles:
 - STRICT: Transform ONLY treatment/outcome columns (or new columns derived solely to define them).
@@ -73,13 +70,14 @@ CODEGEN_SYSTEM  = """You are “CausalPrep-Codegen”.
 Input: (dataset_path, Transformation Spec JSON).
 Output: A SINGLE Python script as text that:
 - imports only: json, os, pandas as pd, numpy as np
-- loads the dataset from dataset_path (infer CSV/Parquet by extension)
+- NEVER RE-DEFINE `__DATASET_PATH__` or `__CLEANED_PATH__`. They are already provided.
+- loads the dataset from the path provided in global variable `__DATASET_PATH__`
 - applies ONLY what the Spec asks for (row_filters, column_ops, method_constructs, etc.)
 - keeps all original columns unless Spec explicitly drops them
 - creates any new columns explicitly; suffix where needed; no silent overwrite
 - produces a dataframe named clean_df
 - writes:
-  - cleaned_df.csv (same directory as dataset_path)
+  - clean_df.csv to the path provided in global variable `__CLEANED_PATH__`
   - preprocessing_manifest.json (the Spec actually executed)
   - derived_columns.json (list of new columns with one-line descriptions)
 - prints a concise, human-readable summary report to stdout
@@ -184,7 +182,15 @@ def _run_script_text(script: str, dataset_path: str, cleaned_path: str) -> Tuple
         with contextlib.redirect_stdout(stdout_io), contextlib.redirect_stderr(stderr_io):
             # Provide dataset_path as a global the script can read (it should anyway use the passed JSON)
             gbls["__DATASET_PATH__"] = dataset_path
-            script=script.replace('cleaned_df.csv', cleaned_path)
+            gbls["__CLEANED_PATH__"] = cleaned_path
+            
+            # We restore the replacements but use json.dumps for safe quoting on Windows
+            # This handles models that hardcode the path despite instructions
+            for placeholder in ["cleaned_df.csv", "clean_df.csv", "manifest.json", "derived_columns.json"]:
+                if placeholder in script:
+                    script = script.replace(f'"{placeholder}"', json.dumps(cleaned_path if "csv" in placeholder else placeholder))
+                    script = script.replace(f"'{placeholder}'", json.dumps(cleaned_path if "csv" in placeholder else placeholder))
+            
             exec(script, gbls, lcls)
     except Exception as e:
         tb = traceback.format_exc()
@@ -249,7 +255,10 @@ def run_cleaning_stage(dataset_path: str,
     """
     llm = get_llm_client()
 
-    cleaned_path = os.path.join(os.path.dirname(os.path.abspath(dataset_path)) or ".", f"{dataset_path.split('/')[-1][:-4]}_cleaned_{os.getpid()}.csv")
+    dataset_path = dataset_path.replace("\\", "/")
+    base_name = os.path.basename(dataset_path)
+    file_stem = os.path.splitext(base_name)[0]
+    cleaned_path = os.path.join(os.path.dirname(os.path.abspath(dataset_path)) or ".", f"{file_stem}_cleaned_{os.getpid()}.csv").replace("\\", "/")
 
     # 1) PLAN
     method = causal_method or variables.get("method") or ""
@@ -282,6 +291,10 @@ def run_cleaning_stage(dataset_path: str,
     if ("Traceback" in stderr_all) or ("Error" in stderr_all):
         report.append("\n⚠️ LLM pipeline produced errors. Check stderr; artifacts may be missing or partial.")
 
+    if not os.path.exists(cleaned_path):
+        report.append(f"\n⚠️ Cleaned file not found at expected path; falling back to original dataset.")
+        cleaned_path = dataset_path
+    
     return {
         "cleaned_dataset_path": cleaned_path,
         "cleaning_report_md": "\n".join(report),

@@ -172,6 +172,9 @@ cython_debug/
 *.h5
 *.hdf5
 
+# But DO NOT ignore CSVs inside test_data as they are used for test cases
+!tests/test_data/*.csv
+
 # Model files
 *.model
 *.joblib
@@ -219,3 +222,8 @@ tests/output/
 # Demo notebooks with API keys
 cais_demo.ipynb
 *demo*.ipynb 
+!docs/notebooks/iv_llm_demo.ipynb
+
+
+# Dataset for experiments (CauSciBench) 
+experiments/data/causcibench/

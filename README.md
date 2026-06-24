@@ -1,209 +1,212 @@
 <h1 align="center">
-<img src="blob/main/asset/cais.png" width="400" alt="CAIS" />
+<img src="blob/main/asset/cais_agent.png" width="400" alt="CAIS" />
 <br>
-Causal AI Scientist: Facilitating Causal Data Science with
-Large Language Models
+Causal AI Scientist: Facilitating Causal Data Science with Large Language Models
 </h1>
-<!-- <p align="center">
-  <a href="https://causalcopilot.com/"><b>[Demo]</b></a> •
-  <a href="https://github.com/Lancelot39/Causal-Copilot"><b>[Code]</b></a> •
-  <a href="">"Coming Soon"<b>[Arxiv(coming soon)]</b></a>
-</p> -->
-
-**Causal AI Scientist (CAIS)** is an LLM-powered tool for generating data-driven answers to natural language causal queries. It takes a natural language query (for example, "Does participating in a job training program lead to higher income?"), an accompanying dataset, and the corresponding description as inputs. CAIS then frames a suitable causal estimation problem by selecting appropriate treatment and outcome variables. It finds the suitable method for causal effect estimation, implements it, runs diagnostic tests, and finally interprets the numerical results in the context of the original query.
-
-This repo includes instructions on both using the tool to perform causal analysis on a dataset of interest and reproducing results from our paper.
-
-**Note** : This repository is a work in progress and will be updated with additional instructions and files.
-
-<!-- ## 1. Introduction
-
-Causal effect estimation is central to evidence-based decision-making across domains like social sciences, healthcare, and economics. However, it requires specialized expertise to select the right inference method, identify valid variables, and validate results.  
-
-**CAIS (Causal AI Scientist)** automates this process using Large Language Models (LLMs) to:
-- Parse a natural language causal query.
-- Analyze the dataset characteristics.
-- Select the appropriate causal inference method via a decision tree and prompting strategies.
-- Execute the method using pre-defined code templates.
-- Validate and interpret the results.
-
-<div style="text-align: center;">
-    <img src="blob/main/asset/CAIS-arch.png" width="990" alt="CAIS" />
-</div>
-</h1>
-
-**Key Features:**
-- End-to-end causal estimation with minimal user input.
-- Supports a wide range of methods:  
-  - **Econometric:** Difference-in-Differences (DiD), Instrumental Variables (IV), Ordinary Least Squares (OLS), Regression Discontinuity Design (RDD).
-  - **Causal Graph-based:** Backdoor adjustment, Frontdoor adjustment.
-- Combines structured reasoning (decision tree) with LLM-powered interpretation.
-- Works on clean textbook datasets, messy real-world datasets, and synthetic scenarios.
-
-
-CAIS consists of three main stages, powered by a **decision-tree-driven reasoning pipeline**:
-
-### **Stage 1: Variable and Method Selection**
-1. **Dataset & Query Analysis**
-   - The LLM inspects the dataset description, variable names, and statistical summaries.
-   - Identifies treatment, outcome, and covariates.
-2. **Property Detection**
-   - Uses targeted prompts to detect dataset properties:
-     - Randomized vs observational
-     - Presence of temporal/running variables
-     - Availability of valid instruments
-3. **Decision Tree Traversal**
-   - Traverses a predefined causal inference decision tree (Fig. B in paper).
-   - Maps detected properties to the most appropriate estimation method.
-
----
-
-### **Stage 2: Causal Inference Execution**
-1. **Template-based Code Generation**
-   - Predefined Python templates for each method (e.g., DiD, IV, OLS).
-   - Variables from Stage 1 are substituted into templates.
-2. **Diagnostics & Validation**
-   - Runs statistical tests and checks assumptions where applicable.
-   - Handles basic data preprocessing (e.g., type conversion for DoWhy).
-
----
-
-### **Stage 3: Result Interpretation**
-- LLM interprets numerical results and diagnostics in the context of the user’s causal query.
-- Outputs:
-  - Estimated causal effect (ATE, ATT, or LATE).
-  - Standard errors, confidence intervals.
-  - Plain-language explanation.
-
----
-## 3. Evaluation
-
-We evaluate **CAIS** across three diverse dataset collections:  
-1. **QRData (Textbook Examples)** – curated, clean datasets with known causal effects.  
-2. **Real-World Studies** – empirical datasets from research papers (economics, health, political science).  
-3. **Synthetic Data** – generated with controlled causal structures to ensure balanced method coverage.
-
-### **Metrics**
-We assess CAIS on:
-- **Method Selection Accuracy (MSA)** – % of cases where CAIS selects the correct inference method as per the reference.
-- **Mean Relative Error (MRE)** – Average relative error between CAIS’s estimated causal effect and the reference value.
-
 
 <p align="center">
-  <table>
-    <tr>
-      <td align="center">
-        <img src="blob/main/asset/CAIS-MRE.png" width="450" alt="CAIS MRE"/>
-      </td>
-      <td align="center">
-        <img src="blob/main/asset/CAIS-msa.png" width="450" alt="CAIS MSA"/>
-      </td>
-    </tr>
-  </table>
+  <a href="https://github.com/causalNLP/causal-agent"><b>[Code]</b></a> •
+  <a href="https://drive.google.com/file/d/1KvxAVIE3Ooe5V392Gw-1ZBAlQe39VVQI/view?usp=drive_link"><b>[Paper]</b></a> •
+  <a href="https://causal-agent.readthedocs.io/en/latest/"><b>[Documentation]</b></a>
 </p>
---> 
 
-## Getting Started
+**Causal AI Scientist (CAIS)** is an LLM-powered tool for generating data-driven answers to natural language causal queries. Given a natural language query (e.g., *"Does participating in a job training program lead to higher income?"*), an accompanying dataset, and its description, CAIS frames a suitable causal estimation problem, selects an appropriate inference method, executes it, runs diagnostic checks, and interprets the results in plain language.
 
-#### 🔧 Environment Installation
+---
 
+## Table of Contents
+
+1. [Introduction](#1-introduction)
+2. [Pipeline](#2-pipeline)
+3. [Getting Started](#3-getting-started)
+4. [Running CAIS](#4-running-cais)
+5. [Reproducing Paper Results](#5-reproducing-paper-results)
+6. [Citation](#6-citation)
+7. [License](#7-license)
+
+---
+
+## 1. Introduction
+
+Causal effect estimation is central to evidence-based decision-making across domains such as the social sciences, healthcare, and economics, but it requires substantial methodological expertise to apply correctly.
+
+**CAIS** automates this process end-to-end using Large Language Models (LLMs) to:
+- Parse a natural language causal query and analyze dataset characteristics.
+- Select an appropriate causal inference method via a decision tree and structured prompting.
+- Execute the method using predefined code templates and validate the results.
+- Interpret the numerical output in the context of the original query.
+
+**Supported Methods:**
+- **Econometric:** Difference-in-Differences (DiD), Instrumental Variables (IV), Ordinary Least Squares (OLS), Regression Discontinuity Design (RDD).
+- **Causal Graph-based:** Backdoor adjustment, Frontdoor adjustment.
+
+---
+
+## 2. Pipeline
+
+CAIS consists of four successive stages, powered by a decision-tree-driven reasoning pipeline:
+
+### Stage 1 — Data Preprocessing & Query Decomposition
+- Profiles the dataset (column types, missing values, statistical distributions) and uses an LLM to identify treatment, outcome, and covariate variables.
+- Scans for method-specific variables such as instruments and running variables based on the dataset description and causal query.
+
+### Stage 2 — Method Selection
+- Traverses a rule-based decision tree that evaluates dataset properties (e.g., randomization, presence of temporal structure, availability of instruments) to select a valid causal inference method.
+- Breaking selection into explicit, verifiable steps ensures interpretability and avoids the opacity of direct LLM-based method selection.
+
+### Stage 2a — IV-LLM Pipeline *(activated when IV is selected)*
+
+If the **Instrumental Variable (IV)** method is selected and the `--iv_llm` pipeline is enabled (based on [IV Co-Scientist](https://arxiv.org/abs/2602.07943)):
+1. **Hypothesis Generation**: The LLM hypothesizes potential instruments based on dataset context and variable names.
+2. **Confounder Mining**: Identifies potential confounders that might violate the independence or exclusion restrictions.
+3. **Critic Validation**: Uses specialized LLM "critics" (Exclusion, Independence) to reason about the validity of each candidate instrument.
+4. **Final Selection**: Selects the most robust instrument for the estimation stage.
+
+### Stage 3 — Validation
+- Runs standard statistical assumption checks for the selected method (e.g., the F-statistic for IV, covariate balance for OLS).
+- If any check fails, initiates a **feedback loop back to Stage 2**, incorporating information from the failure to skip the invalid method and identify the next plausible candidate.
+
+### Stage 4 — Method Execution & Interpretation
+- Executes the chosen method using predefined Python code templates with placeholders substituted from Stage 1, maximizing reliability over LLM-generated code.
+- Prompts an LLM to interpret the estimated causal effect, standard error, and confidence interval in the context of the original query, alongside validation caveats and a clear statement of assumptions and limitations.
+
+---
+
+## 3. Getting Started
 
 **Prerequisites:**
-- **Python 3.10** (create a new conda environment first)
-- Required Python libraries (specified in `requirements.txt`)
+- Python 3.10
+- Conda (recommended)
 
-
-**Step 1: Copy the example configuration**
+**Step 1: Clone the repository and copy the example configuration**
 ```bash
+git clone https://github.com/causalNLP/causal-agent.git
+cd causal-agent
 cp .env.example .env
 ```
 
-**Step 2: Load necessary modules**
-```bash
-# Load necessary compute modules to ensure dependencies are installed correctly
-module load rust
-module load gcc 
-module load openblas 
+Open `.env` and set the API keys for the provider(s) you intend to use:
+
+```
+OPENAI_API_KEY=sk-your-openai-api-key-here
+ANTHROPIC_API_KEY=your-anthropic-api-key-here
+TOGETHER_API_KEY=your-together-api-key-here
+GEMINI_API_KEY=your-gemini-api-key-here
+DEEPSEEK_API_KEY=your-deepseek-api-key-here
+OPENROUTER_API_KEY=your-openrouter-api-key-here
 ```
 
-**Step 3: Create Python 3.10 environment**
+Only the key corresponding to your chosen `--llm_provider` is required.
+
+> ⚠️ Keep your `.env` file secure and never commit it to version control.
+
+**Step 2: Create and activate a Python 3.10 environment**
 ```bash
-# Create a new conda environment with Python 3.10
 conda create -n cais python=3.10
 conda activate cais
 pip install -r requirements.txt
 ```
 
-**Step 4: Setup CAIS library**
+**Step 3: Install the CAIS library**
 ```bash
 pip install -e .
 ```
 
-## Dataset Information 
+---
 
-All datasets used to evaluate CAIs and the baseline models are available in the data/ directory. Specifically:
 
-* `all_data`: Folder containing all CSV files from the QRData and real-world study collections.
-* `synthetic_data`: Folder containing all CSV files corresponding to synthetic datasets.
-* `qr_info.csv`: Metadata for QRData files. For each file, this includes the filename, description, causal query, reference causal effect, intended inference method, and additional remarks.
-* `real_info.csv`: Metadata for the real-world datasets.
-* `synthetic_info.csv`: Metadata for the synthetic datasets.
+## 4. Reproducing Paper Results
 
-## Run 
-To execute CAIS, run
-```python
-python main/run_cais.py \
-    --metadata_path {path_to_metadata} \
-    --data_dir {path_to_data_folder} \
-    --output_dir {output_folder} \
-    --output_name {output_filename} \
-    --llm_name {llm_name}
-    --llm_provider {llm_provider}
+### Step 1 — Download the dataset
+
+The CauSciBench benchmark dataset is hosted on [HuggingFace](https://huggingface.co/datasets/causal-nlp/causcibench). To download it:
+
+```bash
+python experiments/data/download_data.py
 ```
-Args:
 
-* metadata_path (str): Path to the CSV file containing the queries, dataset descriptions, and data file names
-* data_dir (str): Path to the folder containing the data in CSV format
-* output_dir (str): Path to the folder where the output JSON results will be saved
-* output_name (str): Name of the JSON file where the outputs will be saved
-* llm_name (str): Name of the LLM to be used (e.g., 'gpt-4', 'claude-3', etc.)
-* llm_provider (str): Name of the LLM service provider (e.g., 'openai', 'anthropic', 'together', etc.)
-  
-A specific example, 
-```python
-python run_cais.py \
-    --metadata_path "data/qr_info.csv" \
-    --data_dir "data/all_data" \
-    --output_dir "output" \
+This will populate `experiments/data/causcibench/` with the following structure:
+
+| Path | Description |
+|---|---|
+| `data/real_data/` | Real-world study datasets |
+| `data/synthetic_data/` | Synthetic datasets |
+| `data/qrdata/` | Textbook examples |
+| `data/real_info.csv` | Metadata for real-world datasets |
+| `data/synthetic_info.csv` | Metadata for synthetic datasets |
+| `data/qr_info.csv` | Metadata for textbook examples |
+
+> ⚠️ The dataset is 583MB. Ensure you have sufficient disk space before downloading.
+
+### Step 2 — Run the evaluation
+
+```bash
+python experiments/scripts/run_cais.py \
+    --metadata_path <path_to_metadata_csv> \
+    --data_dir <path_to_data_folder> \
+    --output_dir <output_folder> \
+    --output_name <output_filename> \
+    --llm_name <llm_name> \
+    --llm_provider <llm_provider> \
+    [--iv_llm]
+```
+**Arguments:**
+
+| Argument | Type | Description |
+|---|---|---|
+| `--metadata_path` | `str` | Path to the CSV file containing queries, dataset descriptions, and filenames |
+| `--data_dir` | `str` | Path to the folder containing the data in CSV format |
+| `--output_dir` | `str` | Path to the folder where output JSON results will be saved |
+| `--output_name` | `str` | Name of the output JSON file |
+| `--llm_name` | `str` | Name of the LLM to use (e.g., `gpt-4o`, `claude-3-5-sonnet`) |
+| `--llm_provider` | `str` | LLM service provider (e.g., `openai`, `anthropic`, `together`, `openrouter`) |
+| `--iv_llm` | `bool` | *(Optional)* If present, enables the advanced experimental [IV-LLM pipeline](https://arxiv.org/abs/2602.07943) for instrument discovery. |
+
+**Example:**
+```bash
+python experiments/scripts/run_cais.py \
+    --metadata_path "experiments/data/causcibench/data/qr_info.csv" \
+    --data_dir "experiments/data/causcibench/data/qrdata" \
+    --output_dir "experiments/outputs" \
     --output_name "results_qr_4o" \
     --llm_name "gpt-4o-mini" \
-    --llm_provider "openai"
+    --llm_provider "openai" \
+    --iv_llm
 ```
-
-
-## Reproducing paper results
-**Will be updated soon**
-
-**⚠️ Important Notes:**
-- Keep your `.env` file secure and never commit it to version control
-
-## License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
-
-
-<!--## Contributors
-
-
-
-**Core Contributors**: Vishal Verma, Sawal Acharya, Devansh Bhardwaj
-
-**Other Contributors**:  Zhijing Jin, Ana Hagihat, Samuel Simko
 
 ---
 
-## Contact
+## 6. Citation
 
-For additional information, questions, or feedback, please contact ours **[Vishal Verma](vishalv@andrew.cmu.edu)**, **[Sawal Acharya](sawal386@stanford.edu)**, **[Devansh Bhardwaj](bhardwajdevansh398@gmail.com)**. We welcome contributions! Come and join us now!
--->
+If you use CAIS or build on this work, we would appreciate it if you could cite:
+
+```bibtex
+@inproceedings{
+verma2025causal,
+title={Causal {AI} Scientist: Facilitating Causal Data Science with Large Language Models},
+author={Vishal Verma and Sawal Acharya and Devansh Bhardwaj and Samuel Simko and Yongjin Yang and Anahita Haghighat and Dominik Janzing and Mrinmaya Sachan and Bernhard Sch{\"o}lkopf and Zhijing Jin},
+booktitle={NeurIPS 2025 Workshop on CauScien: Uncovering Causality in Science},
+year={2025},
+url={https://openreview.net/forum?id=EDWTHMVOCj}
+}
+```
+
+The IV-LLM pipeline builds on the methodology introduced in [IV Co-Scientist](https://arxiv.org/abs/2602.07943). If you use that component, please also cite:
+
+```bibtex
+@misc{sheth2026ivcoscientistmultiagentllm,
+      title={IV Co-Scientist: Multi-Agent LLM Framework for Causal Instrumental Variable Discovery}, 
+      author={Ivaxi Sheth and Zhijing Jin and Bryan Wilder and Dominik Janzing and Mario Fritz},
+      year={2026},
+      eprint={2602.07943},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2602.07943}
+}
+```
+
+---
+
+## 7. License
+
+Distributed under the MIT License. See `LICENSE` for more information.

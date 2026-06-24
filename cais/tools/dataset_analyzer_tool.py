@@ -25,7 +25,9 @@ logger = logging.getLogger(__name__)
 @tool
 def dataset_analyzer_tool(dataset_path: str,
                             dataset_description: Optional[str] = None,
-                            original_query: Optional[str] = None) -> DatasetAnalyzerOutput:
+                            original_query: Optional[str] = None,
+                            use_iv_pipeline: bool = False,
+                            llm = None) -> DatasetAnalyzerOutput:
     """
     Analyze dataset to identify important characteristics for causal inference.
     
@@ -43,12 +45,19 @@ def dataset_analyzer_tool(dataset_path: str,
     """
     logger.info(f"Running dataset_analyzer_tool on path: {dataset_path}")
     # Call the component function with the LLM if available
-    llm = get_llm_client()
+    llm = llm if llm else get_llm_client()
 
     try:
-        # Call the component function 
-        analysis_dict = analyze_dataset(dataset_path, llm_client=llm, dataset_description=dataset_description, original_query=original_query)
 
+        # Call the component function 
+        analysis_dict = analyze_dataset(
+            dataset_path, 
+            llm_client=llm, 
+            dataset_description=dataset_description, 
+            original_query=original_query,
+            use_iv_pipeline=use_iv_pipeline
+        )
+        
         # Check for errors returned explicitly by the component
         if isinstance(analysis_dict, dict) and "error" in analysis_dict:
             logger.error(f"Dataset analysis component failed: {analysis_dict['error']}")
@@ -97,15 +106,12 @@ def dataset_analyzer_tool(dataset_path: str,
         next_step_reason="Now we need to map query concepts to actual dataset variables"
     )
 
+    logger.info("dataset_analyzer_tool finished successfully.")
+
     # Construct the final Pydantic output object
-    output = DatasetAnalyzerOutput(
+    return DatasetAnalyzerOutput(
         analysis_results=analysis_results_model,
         dataset_description=dataset_description,
         dataset_path=dataset_path,
         workflow_state=workflow_update.get('workflow_state', {})
     )
-
-    # print(output)
-
-    logger.info("dataset_analyzer_tool finished successfully.")
-    return output

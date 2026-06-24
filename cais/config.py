@@ -11,8 +11,8 @@ from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
 from langchain_deepseek import ChatDeepSeek
-
 from langchain_together import ChatTogether
+from langchain_litellm import ChatLiteLLM
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ def get_llm_client(provider: Optional[str] = None, model_name: Optional[str] = N
     Defaults to OpenAI GPT-4o-mini if no provider/model specified.
     """
     # Prioritize arguments, then environment variables, then defaults
-    provider = provider or os.getenv("LLM_PROVIDER", "openai")
+    provider = provider if provider else os.getenv("LLM_PROVIDER", "openai")
     provider = provider.lower()
     
     # Default model depends on provider
@@ -38,7 +38,7 @@ def get_llm_client(provider: Optional[str] = None, model_name: Optional[str] = N
         "deepseek" : "deepseek-chat"
     }
     
-    model_name = model_name or os.getenv("LLM_MODEL", default_models.get(provider, default_models["openai"]))
+    model_name = model_name if model_name else os.getenv("LLM_MODEL", default_models.get(provider, default_models["openai"]))
     
     api_key = None
     if model_name not in ['o3-mini', 'o3', 'o4-mini']:
@@ -82,6 +82,9 @@ def get_llm_client(provider: Optional[str] = None, model_name: Optional[str] = N
             if not api_key:
                 raise ValueError("OPENROUTER_API_KEY not found in environment.")
             return ChatOpenAI(model=model_name, base_url="https://openrouter.ai/api/v1", api_key=api_key, **kwargs)
+        
+        elif provider == 'litellm':
+            return ChatLiteLLM(model=model_name, **kwargs)
             
         # Example for Ollama (ensure langchain_community is installed)
         # elif provider == "ollama":

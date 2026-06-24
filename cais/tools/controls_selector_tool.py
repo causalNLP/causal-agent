@@ -7,7 +7,7 @@ control variables based on the chosen causal inference method and dataset charac
 
 import logging
 from typing import Dict, Any, Optional
-from langchain_core.tools import tool
+from langchain.tools import tool
 
 # Import component function and central LLM factory
 from cais.components.controls_selector import select_controls

@@ -19,6 +19,29 @@ import logging
 # Configure logging
 logger = logging.getLogger(__name__)
 
+def classify_treatment(treatment: pd.Series, cat_threshold: int = 10, density_threshold: float = 0.05):
+
+    unique_vals = treatment.unique()
+    n_unique = len(unique_vals)
+    n = len(treatment)
+
+    # is the treatment binary?
+    if n_unique == 2:
+        return "binary"
+
+    # is our data categorical explicitly?
+    if not pd.api.types.is_numeric_dtype(treatment): 
+        return "categorical"
+
+    # check for integers 
+    is_int_like = np.all(unique_vals == unique_vals.astype(int))
+
+    # low cardinality, infer categorical
+    if is_int_like and (n_unique <= cat_threshold or n_unique <= density_threshold * n):
+        return "categorical"
+
+    # default is numeric
+    return "numeric"
 
 def check_binary_treatment(treatment_series: pd.Series) -> bool:
     """

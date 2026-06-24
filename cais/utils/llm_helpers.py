@@ -7,10 +7,10 @@ import re
 import pandas as pd
 import logging
 import json
-from langchain.chat_models.base import BaseChatModel
-from langchain_core.messages import AIMessage 
+from langchain_core.language_models import BaseChatModel
 
 logger = logging.getLogger(__name__)
+
 
 def call_llm_with_json_output(llm: Optional[BaseChatModel], prompt: str) -> Optional[Dict[str, Any]]:
     """
