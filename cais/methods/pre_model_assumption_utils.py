@@ -6,12 +6,10 @@ design satisfy the assumptions required by the chosen causal method.
 Statistical checks use the raw data directly. Non-testable assumptions
 are assessed via LLM reasoning based on the dataset description.
 
-Each check returns a standardized dict:
-    {
-        "passed": bool | None,           # None => inconclusive
-        "reasoning": str,                # human-readable explanation
-        "details": dict,                 # raw stats (F, p, SMDs, ...)
-    }
+Each check returns an AssumptionResult with:
+    passed   : bool | None  (None => inconclusive)
+    reasoning: str
+    details  : dict         (raw stats — F, p, SMDs, ...)
 """
 
 from typing import Any, Dict, List, Optional
@@ -22,37 +20,17 @@ import pandas as pd
 from scipy import stats as scipy_stats
 from pydantic import BaseModel, Field
 
-
-# import some assumptions already available for each method
+from cais.models import AssumptionResult, AssumptionVariables
 from cais.methods.utils import (
     calculate_standardized_differences,
     check_overlap,
 )
-
 from cais.methods.instrumental_variable.diagnostics import calculate_first_stage_f_statistic
-
-from cais.methods.difference_in_differences.diagnostics import (
-    validate_parallel_trends,
-    run_placebo_test,
-)
+from cais.methods.difference_in_differences.diagnostics import validate_parallel_trends
 from cais.utils.llm_helpers import call_llm_with_json_output
 
 logger = logging.getLogger(__name__)
 
-# _____________________________________________________________________________
-# Output helper
-# _____________________________________________________________________________
-
-def _result(
-    passed: Optional[bool],
-    reasoning: str,
-    details: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
-    return {
-        "passed": passed,
-        "reasoning": reasoning,
-        "details": details or {},
-    }
 
 # _____________________________________________________________________________
 # LLM-based assumption argumentation (non-statistically-testable assumptions)
@@ -61,9 +39,8 @@ def _result(
 class _LLMAssumptionVerdict(BaseModel):
     passed: Optional[bool] = Field(
         None,
-        description="True if the assumption is plausibly satisfied given the dataset and "
-                    "domain context, False if there is a clear reason to doubt it, "
-                    "None if there is insufficient information to argue either way.",
+        description="True if the assumption is plausibly satisfied, False if there is "
+                    "a clear reason to doubt it, None if there is insufficient information.",
     )
     reasoning: str = Field(
         ...,
@@ -71,25 +48,22 @@ class _LLMAssumptionVerdict(BaseModel):
                     "description, variable semantics, or domain knowledge.",
     )
     missing_info: Optional[str] = Field(
-            None,
-            description="If passed is null, what additional information would be needed "
-                        "to make a determination. Otherwise null.",
-        )
+        None,
+        description="If passed is null, what additional information would be needed. "
+                    "Otherwise null.",
+    )
+
 
 def _llm_argue_assumption(
     assumption_name: str,
     assumption_description: str,
-    dataset_description: Optional[str],
-    variables_summary: Dict[str, Any],
+    vars: AssumptionVariables,
     llm,
     extra_context: Optional[str] = None,
-) -> Dict[str, Any]:
-    """Ask the LLM to argue for/against a non-statistically-testable assumption.
-
-    Falls back to passed=None with a clear notice if no LLM is available.
-    """
+) -> AssumptionResult:
+    """Ask the LLM to argue for/against a non-statistically-testable assumption."""
     if llm is None:
-        return _result(
+        return AssumptionResult(
             passed=None,
             reasoning=(
                 f"'{assumption_name}' is not statistically testable and no LLM was "
@@ -108,10 +82,10 @@ Assumption: {assumption_name}
 Definition: {assumption_description}
 
 Dataset description:
-{dataset_description or "(not provided)"}
+{vars.dataset_description or "(not provided)"}
 
 Variables involved:
-{variables_summary}
+{vars.variables_summary}
 
 If you recognize this study from the literature, use your prior knowledge
 about its design, mechanisms, and known methodological concerns to inform
@@ -122,17 +96,17 @@ your assessment — not just the description provided above.
 Respond ONLY as JSON matching this schema:
 {{
   "passed": true | false | null,
-  "reasoning": "<2-4 sentence justification>"
-  "missing_info": "<if passed is null, specify what additional information would be needed to make a determination. Otherwise set to null.>"
+  "reasoning": "<2-4 sentence justification>",
+  "missing_info": "<if passed is null, specify what additional information would be needed. Otherwise set to null.>"
 }}
-                                                                                                                                                                                                       
+
 Use null for "passed" if the dataset description is insufficient to argue either way.
 """.strip()
 
     try:
         raw = call_llm_with_json_output(llm, prompt)
         verdict = _LLMAssumptionVerdict(**(raw or {}))
-        details = {"assumption": assumption_name}
+        details: Dict[str, Any] = {"assumption": assumption_name}
         if verdict.missing_info:
             details["missing_info"] = verdict.missing_info
 
@@ -140,14 +114,14 @@ Use null for "passed" if the dataset description is insufficient to argue either
             " Note: this assessment relies on LLM reasoning and is sensitive to the "
             "quality and completeness of the dataset description provided."
         )
-        return _result(
+        return AssumptionResult(
             passed=verdict.passed,
             reasoning=verdict.reasoning + disclaimer,
             details=details,
         )
     except Exception as exc:
         logger.warning("LLM assumption check failed for '%s': %s", assumption_name, exc)
-        return _result(
+        return AssumptionResult(
             passed=None,
             reasoning=f"LLM check failed: {exc}. Assumption must be justified manually.",
         )
@@ -157,11 +131,7 @@ Use null for "passed" if the dataset description is insufficient to argue either
 # SUTVA  (needed for every method)
 # _____________________________________________________________________________
 
-def check_sutva(
-    dataset_description: Optional[str],
-    variables_summary: Dict[str, Any],
-    llm=None,
-) -> Dict[str, Any]:
+def check_sutva(vars: AssumptionVariables, llm=None) -> AssumptionResult:
     """SUTVA: no interference between units, no hidden treatment versions."""
     return _llm_argue_assumption(
         assumption_name="SUTVA (Stable Unit Treatment Value Assumption)",
@@ -170,8 +140,7 @@ def check_sutva(
             "potential outcomes. (2) No hidden versions of the treatment: the treatment "
             "is administered consistently across treated units."
         ),
-        dataset_description=dataset_description,
-        variables_summary=variables_summary,
+        vars=vars,
         llm=llm,
         extra_context=(
             "Important: SUTVA is an idealized assumption that is technically violated "
@@ -192,24 +161,22 @@ def check_sutva(
 # _____________________________________________________________________________
 
 def check_cond_ignorability(
-    df: pd.DataFrame,
-    treatment: str,
-    covariates: List[str],
+    vars: AssumptionVariables,
     smd_threshold: float = 0.1,
-) -> Dict[str, Any]:
-    """Partial test of ignorability for RCTs: covariate balance on observables."""
-    if not covariates:
-        return _result(
+) -> AssumptionResult:
+    """Partial test of ignorability: covariate balance on observables."""
+    if not vars.covariates or vars.df is None:
+        return AssumptionResult(
             passed=None,
-            reasoning="No covariates provided; balance check skipped.",
+            reasoning="No covariates or dataframe provided; balance check skipped.",
         )
-    smds = calculate_standardized_differences(df, treatment, covariates)
+    smds = calculate_standardized_differences(vars.df, vars.treatment, vars.covariates)
     imbalanced = {c: v for c, v in smds.items() if pd.notna(v) and abs(v) > smd_threshold}
     passed = len(imbalanced) == 0
-    return _result(
+    return AssumptionResult(
         passed=passed,
         reasoning=(
-            f"Randomization check on {len(covariates)} covariates "
+            f"Randomization check on {len(vars.covariates)} covariates "
             f"(|SMD| < {smd_threshold}). "
             f"{'All balanced.' if passed else f'Imbalanced: {list(imbalanced.keys())}.'}"
         ),
@@ -222,20 +189,19 @@ def check_cond_ignorability(
 # _____________________________________________________________________________
 
 def check_positivity(
-    df: pd.DataFrame,
-    treatment: str,
+    vars: AssumptionVariables,
     propensity_scores: np.ndarray,
     overlap_threshold: float = 0.5,
-    extreme_ps_bounds: tuple = (0.1, 0.9), # values from Crump et al. 2009
+    extreme_ps_bounds: tuple = (0.1, 0.9),
     max_extreme_pct: float = 0.05,
-) -> Dict[str, Any]:
+) -> AssumptionResult:
     """0 < P(T=1|X) < 1 across the support of X."""
-    overlap = check_overlap(df, treatment, propensity_scores, threshold=overlap_threshold)
+    overlap = check_overlap(vars.df, vars.treatment, propensity_scores, threshold=overlap_threshold)
     lo, hi = extreme_ps_bounds
     n_extreme = int(((propensity_scores < lo) | (propensity_scores > hi)).sum())
     pct_extreme = n_extreme / len(propensity_scores) if len(propensity_scores) else 0.0
     passed = overlap["sufficient_overlap"] and pct_extreme < max_extreme_pct
-    return _result(
+    return AssumptionResult(
         passed=passed,
         reasoning=(
             f"Overlap proportion: {overlap['overlap_proportion']:.3f} "
@@ -252,21 +218,20 @@ def check_positivity(
 # _____________________________________________________________________________
 
 def check_iv_relevance(
-    df: pd.DataFrame,
-    treatment: str,
-    instruments: List[str],
-    covariates: List[str],
+    vars: AssumptionVariables,
     f_threshold: float = 10.0,
-) -> Dict[str, Any]:
+) -> AssumptionResult:
     """First-stage F-test for instrument strength."""
-    f, p = calculate_first_stage_f_statistic(df, treatment, instruments, covariates)
+    f, p = calculate_first_stage_f_statistic(
+        vars.df, vars.treatment, vars.instruments, vars.covariates
+    )
     if f is None:
-        return _result(
+        return AssumptionResult(
             passed=None,
             reasoning="First-stage F-statistic could not be computed.",
         )
     passed = f >= f_threshold
-    return _result(
+    return AssumptionResult(
         passed=passed,
         reasoning=(
             f"First-stage F = {f:.2f} (threshold {f_threshold}). "
@@ -275,26 +240,32 @@ def check_iv_relevance(
         details={"f_statistic": f, "p_value": p, "threshold": f_threshold},
     )
 
-def check_iv_exclusion(dataset_description, variables_summary, llm=None):
+
+def check_iv_exclusion(vars: AssumptionVariables, llm=None) -> AssumptionResult:
+    """Exclusion restriction: Z affects Y only through T."""
     return _llm_argue_assumption(
         "Exclusion restriction",
         "The instrument Z affects the outcome Y only through the treatment T, with no direct effect.",
-        dataset_description, variables_summary, llm,
+        vars, llm,
     )
 
-def check_iv_exogeneity(dataset_description, variables_summary, llm=None):
+
+def check_iv_exogeneity(vars: AssumptionVariables, llm=None) -> AssumptionResult:
+    """Instrument exogeneity: Z is independent of unobserved confounders."""
     return _llm_argue_assumption(
         "Instrument exogeneity (independence)",
         "Z is as good as randomly assigned with respect to unobserved confounders of T and Y.",
-        dataset_description, variables_summary, llm,
+        vars, llm,
     )
 
-def check_iv_monotonicity(dataset_description, variables_summary, llm=None):
+
+def check_iv_monotonicity(vars: AssumptionVariables, llm=None) -> AssumptionResult:
+    """Monotonicity: no defiers."""
     return _llm_argue_assumption(
         "Monotonicity (LATE)",
         "There are no defiers: the instrument never moves any unit in the opposite direction "
         "of its average effect on treatment uptake.",
-        dataset_description, variables_summary, llm,
+        vars, llm,
     )
 
 
@@ -303,127 +274,174 @@ def check_iv_monotonicity(dataset_description, variables_summary, llm=None):
 # _____________________________________________________________________________
 
 def check_parallel_trends(
-    df: pd.DataFrame, time_var: str, outcome: str,
-    group_indicator_col: str, treatment_period_start,
+    vars: AssumptionVariables,
     **kwargs,
-) -> Dict[str, Any]:
-    """Parallel trends: treatment and control groups had similar outcome trends pre-treatment."""
+) -> AssumptionResult:
+    """Parallel trends: treatment and control had similar outcome trends pre-treatment."""
     res = validate_parallel_trends(
-        df, time_var, outcome, group_indicator_col, treatment_period_start, **kwargs
+        vars.df, vars.time_var, vars.outcome, vars.treatment,
+        vars.treatment_period_start, **kwargs
     )
-    return _result(
+    return AssumptionResult(
         passed=res.get("valid"),
         reasoning=res.get("details", ""),
         details={"p_value": res.get("p_value"), "error": res.get("error")},
     )
 
 
-def check_no_anticipation(
-    df, time_var, group_var, outcome, treated_unit_indicator,
-    covariates, treatment_period_start, placebo_period_start,
-) -> Dict[str, Any]:
-    """No anticipation: treatment has no effect before implementation."""
-    res = run_placebo_test(
-        df, time_var, group_var, outcome, treated_unit_indicator,
-        covariates, treatment_period_start, placebo_period_start,
-    )
-    return _result(
-        passed=res.get("passed"),
-        reasoning=res.get("details", ""),
-        details={k: v for k, v in res.items() if k != "details"},
-    )
+def check_no_anticipation(vars: AssumptionVariables) -> AssumptionResult:
+    """No anticipation: treatment has no effect before implementation.
+
+    Runs a placebo DiD restricted to pre-treatment periods, avoiding contamination
+    from the actual treatment effect. Uses Q() quoting for compatibility with
+    column names that contain underscores or special characters.
+    """
+    import statsmodels.formula.api as smf
+
+    df = vars.df
+    time_var = vars.time_var
+    group_var = vars.group_var
+    outcome = vars.outcome
+    treatment = vars.treatment
+    covariates = list(vars.covariates or [])
+    t0 = vars.treatment_period_start
+    t_placebo = vars.placebo_period_start
+
+    if t_placebo is None or t0 is None:
+        return AssumptionResult(
+            passed=None,
+            reasoning="placebo_period_start or treatment_period_start not provided.",
+            details={},
+        )
+    if t_placebo >= t0:
+        return AssumptionResult(
+            passed=False,
+            reasoning="placebo_period_start must be strictly before treatment_period_start.",
+            details={},
+        )
+
+    # Restrict to pre-treatment periods to avoid contamination from actual treatment
+    df_pre = df[df[time_var] < t0].copy()
+    df_pre["__post_pl__"] = (df_pre[time_var] >= t_placebo).astype(int)
+    df_pre["__did_pl__"] = df_pre[treatment] * df_pre["__post_pl__"]
+
+    try:
+        formula = f"Q('{outcome}') ~ Q('{treatment}') + __post_pl__ + __did_pl__"
+        if covariates:
+            cov_terms = " + ".join("Q('" + c + "')" for c in covariates)
+            formula += " + " + cov_terms
+        formula += f" + C(Q('{group_var}')) + C(Q('{time_var}'))"
+
+        model = smf.ols(formula=formula, data=df_pre)
+        res = model.fit(cov_type="cluster", cov_kwds={"groups": df_pre[group_var]})
+
+        effect = float(res.params["__did_pl__"])
+        p_val = float(res.pvalues["__did_pl__"])
+        passed = p_val > 0.10
+        return AssumptionResult(
+            passed=passed,
+            reasoning=(
+                f"Placebo treatment effect (pre-treatment only): {effect:.4f} "
+                f"(p={p_val:.4f}). Test {'passed' if passed else 'failed'}."
+            ),
+            details={"effect_estimate": effect, "p_value": p_val},
+        )
+    except Exception as exc:
+        return AssumptionResult(
+            passed=None,
+            reasoning=f"Placebo test could not be completed: {exc}",
+            details={"error": str(exc)},
+        )
 
 
 def check_baseline_outcome_balance(
-    df: pd.DataFrame, treatment: str, outcome: str,
-    time_var: str, treatment_period_start,
+    vars: AssumptionVariables,
     smd_threshold: float = 0.1,
-) -> Dict[str, Any]:
-    """Intervention unrelated to outcome at baseline: comparable pre-treatment outcome levels."""
-    pre = df[df[time_var] < treatment_period_start]
+) -> AssumptionResult:
+    """Comparable pre-treatment outcome levels between groups."""
+    pre = vars.df[vars.df[vars.time_var] < vars.treatment_period_start]
     if pre.empty:
-        return _result(
-            passed=None,
-            reasoning="No pre-treatment data available.",
-        )
-    smd = calculate_standardized_differences(pre, treatment, [outcome]).get(outcome, np.nan)
+        return AssumptionResult(passed=None, reasoning="No pre-treatment data available.")
+    smd = calculate_standardized_differences(pre, vars.treatment, [vars.outcome]).get(vars.outcome, np.nan)
     if pd.isna(smd):
-        return _result(
+        return AssumptionResult(
             passed=None,
             reasoning="Could not compute SMD on baseline outcome (missing data or no variance).",
         )
     passed = abs(smd) <= smd_threshold
-    return _result(
+    return AssumptionResult(
         passed=passed,
         reasoning=f"Baseline outcome SMD = {smd:.3f} (threshold {smd_threshold}).",
         details={"smd_pre_outcome": smd, "threshold": smd_threshold},
     )
 
 
-def check_stable_group_composition(dataset_description, variables_summary, llm=None):
-    """Stable group composition: no differential attrition or selective entry/exit due to treatment."""
+def check_stable_group_composition(vars: AssumptionVariables, llm=None) -> AssumptionResult:
+    """Stable group composition: no differential attrition due to treatment."""
     return _llm_argue_assumption(
         "Stable group composition",
         "Unit composition of treatment and control groups does not change as a result "
         "of treatment (no differential attrition or selective entry/exit).",
-        dataset_description, variables_summary, llm,
+        vars, llm,
     )
 
 
 # _____________________________________________________________________________
-# Frontdoor-specific checks (LLM-reasoned)
+# Frontdoor-specific checks
 # _____________________________________________________________________________
 
-def check_frontdoor_full_mediation(dataset_description, variables_summary, llm=None):
-    """Full mediation: M fully captures the effect of T on Y; no direct T→Y path."""
+def check_frontdoor_full_mediation(vars: AssumptionVariables, llm=None) -> AssumptionResult:
+    """Full mediation: M fully captures the effect of T on Y."""
     return _llm_argue_assumption(
         "Full mediation",
         "The mediator M fully captures the effect of treatment T on outcome Y; "
         "there is no direct T→Y path outside of the T→M→Y pathway.",
-        dataset_description, variables_summary, llm,
+        vars, llm,
     )
 
-def check_frontdoor_no_TM_confounding(dataset_description, variables_summary, llm=None):
+
+def check_frontdoor_no_TM_confounding(vars: AssumptionVariables, llm=None) -> AssumptionResult:
     """No unobserved confounding between treatment and mediator."""
     return _llm_argue_assumption(
         "No T-M confounding",
         "The relationship between the treatment T and the mediator M is unconfounded. "
         "There are no unobserved variables that affect both T and M.",
-        dataset_description, variables_summary, llm,
+        vars, llm,
     )
 
-def check_frontdoor_T_blocks_MY(dataset_description, variables_summary, llm=None):
+
+def check_frontdoor_T_blocks_MY(vars: AssumptionVariables, llm=None) -> AssumptionResult:
     """Treatment blocks all confounding paths between mediator and outcome."""
     return _llm_argue_assumption(
-        "T blocks M→Y confounding",
+        "T blocks M->Y confounding",
         "Conditioning on the treatment T removes all back-door paths between "
         "the mediator M and the outcome Y.",
-        dataset_description, variables_summary, llm,
+        vars, llm,
     )
 
+
 def check_frontdoor_positivity(
-    df: pd.DataFrame,
-    treatment: str,
-    mediator: str,
+    vars: AssumptionVariables,
     min_count: int = 5,
-) -> Dict[str, Any]:
+) -> AssumptionResult:
     """Frontdoor positivity: P(M=m|X=x) > 0 for all relevant (x, m) combinations."""
-    combos = df.groupby([treatment, mediator]).size().reset_index(name='count')
-    total_combos = df[treatment].nunique() * df[mediator].nunique()
+    combos = vars.df.groupby([vars.treatment, vars.mediator]).size().reset_index(name='count')
+    total_combos = vars.df[vars.treatment].nunique() * vars.df[vars.mediator].nunique()
     observed_combos = len(combos)
     empty = total_combos - observed_combos
     sparse = int((combos['count'] < min_count).sum())
-
     passed = empty == 0 and sparse == 0
-    return _result(
+    return AssumptionResult(
         passed=passed,
         reasoning=(
             f"{observed_combos}/{total_combos} (treatment, mediator) combinations observed. "
             f"{empty} empty, {sparse} sparse (< {min_count} obs). "
             f"{'Positivity satisfied.' if passed else 'Some combinations are empty or near-empty — frontdoor formula may be undefined.'}"
         ),
-        details={"total_combos": total_combos, "observed_combos": observed_combos,
-                 "empty": empty, "sparse": sparse, "min_count": min_count},
+        details={
+            "total_combos": total_combos, "observed_combos": observed_combos,
+            "empty": empty, "sparse": sparse, "min_count": min_count,
+        },
     )
 
 
@@ -432,113 +450,145 @@ def check_frontdoor_positivity(
 # _____________________________________________________________________________
 
 def check_rdd_no_manipulation(
-        df: pd.DataFrame,
-        running_variable: str,
-        cutoff: float,
-        n_bins: int = 50,
-        bandwidth: float = None,
-) -> Dict[str, Any]:
+    vars: AssumptionVariables,
+    n_bins: int = 50,
+    bandwidth: float = None,
+) -> AssumptionResult:
     """McCrary-style density test: check for bunching at the cutoff."""
-    rv = df[running_variable].dropna()
+    rv = vars.df[vars.running_variable].dropna()
 
     if bandwidth is None:
         bandwidth = (rv.max() - rv.min()) * 0.25
 
-    near = rv[(rv >= cutoff - bandwidth) & (rv <= cutoff + bandwidth)]
-    below = near[near < cutoff]
-    above = near[near >= cutoff]
+    near = rv[(rv >= vars.cutoff - bandwidth) & (rv <= vars.cutoff + bandwidth)]
+    below = near[near < vars.cutoff]
+    above = near[near >= vars.cutoff]
 
     if len(below) < 10 or len(above) < 10:
-        return _result(
+        return AssumptionResult(
             passed=None,
             reasoning="Too few observations near cutoff for density test.",
         )
 
-    # Compare density just below vs just above using bin counts
-    n_below = len(below)
-    n_above = len(above)
-
-    # Binomial test: under no manipulation, ~50% should be on each side
-    total = n_below + n_above
-    # Using scipy.stats.binomtest (modern) or binom_test (legacy)
+    total = len(below) + len(above)
     try:
-        p_value = scipy_stats.binomtest(n_below, total, 0.5).pvalue
+        p_value = scipy_stats.binomtest(len(below), total, 0.5).pvalue
     except AttributeError:
-        p_value = scipy_stats.binom_test(n_below, total, 0.5)
+        p_value = scipy_stats.binom_test(len(below), total, 0.5)
 
     passed = p_value > 0.05
-
-    # Logic adjustment: Mention that the binomial test is a local density approximation
     status_msg = "No evidence of manipulation." if passed else "Significant density discontinuity — possible manipulation."
-    reasoning = (
-        f"Density test around cutoff ({cutoff}): {n_below} below, {n_above} above "
-        f"(p={p_value:.4f}). Note: This binomial test is a local approximation of "
-        f"density continuity and may be sensitive to the underlying distribution's slope. "
-        f"{status_msg}"
-    )
-
-    return _result(
+    return AssumptionResult(
         passed=passed,
-        reasoning=reasoning,
+        reasoning=(
+            f"Density test around cutoff ({vars.cutoff}): {len(below)} below, {len(above)} above "
+            f"(p={p_value:.4f}). Note: This binomial test is a local approximation of "
+            f"density continuity and may be sensitive to the underlying distribution's slope. "
+            f"{status_msg}"
+        ),
         details={
-            "n_below": n_below, "n_above": n_above,
+            "n_below": len(below), "n_above": len(above),
             "p_value": p_value, "bandwidth": bandwidth,
-            "test_type": "binomial_density_approximation"
+            "test_type": "binomial_density_approximation",
         },
     )
 
 
 def check_rdd_covariate_continuity(
-    df: pd.DataFrame,
-    running_variable: str,
-    cutoff: float,
-    covariates: List[str],
+    vars: AssumptionVariables,
     bandwidth: float = None,
-) -> Dict[str, Any]:
+) -> AssumptionResult:
     """Check continuity of covariates at the cutoff via t-tests."""
-    if not covariates:
-        return _result(passed=None, reasoning="No covariates provided.")
+    if not vars.covariates:
+        return AssumptionResult(passed=None, reasoning="No covariates provided.")
 
     if bandwidth is None:
-        rv_range = df[running_variable].max() - df[running_variable].min()
+        rv_range = vars.df[vars.running_variable].max() - vars.df[vars.running_variable].min()
         bandwidth = 0.1 * rv_range
 
-    df_bw = df[(df[running_variable] >= cutoff - bandwidth) & (df[running_variable] <= cutoff + bandwidth)]
-    below = df_bw[df_bw[running_variable] < cutoff]
-    above = df_bw[df_bw[running_variable] >= cutoff]
+    df_bw = vars.df[
+        (vars.df[vars.running_variable] >= vars.cutoff - bandwidth) &
+        (vars.df[vars.running_variable] <= vars.cutoff + bandwidth)
+    ]
+    below = df_bw[df_bw[vars.running_variable] < vars.cutoff]
+    above = df_bw[df_bw[vars.running_variable] >= vars.cutoff]
 
     if len(below) < 5 or len(above) < 5:
-        return _result(passed=None, reasoning="Too few observations near cutoff.")
+        return AssumptionResult(passed=None, reasoning="Too few observations near cutoff.")
 
     results = {}
     discontinuous = []
-    for cov in covariates:
+    for cov in vars.covariates:
         if cov not in df_bw.columns:
             continue
-        t_stat, p_val = scipy_stats.ttest_ind(
-            below[cov].dropna(), above[cov].dropna(), equal_var=False
-        )
+        t_stat, p_val = scipy_stats.ttest_ind(below[cov].dropna(), above[cov].dropna(), equal_var=False)
         results[cov] = {"t_stat": float(t_stat), "p_value": float(p_val)}
         if p_val < 0.05:
             discontinuous.append(cov)
 
     passed = len(discontinuous) == 0
-    return _result(
+    return AssumptionResult(
         passed=passed,
         reasoning=(
-            f"Covariate continuity at cutoff ({cutoff}) on {len(results)} covariates. "
+            f"Covariate continuity at cutoff ({vars.cutoff}) on {len(results)} covariates. "
             f"{'All continuous.' if passed else f'Discontinuous: {discontinuous}.'}"
         ),
         details={"covariate_tests": results, "discontinuous": discontinuous, "bandwidth": bandwidth},
     )
 
 
-def check_rdd_continuity_potential_outcomes(dataset_description, variables_summary, llm=None):
+def check_rdd_continuity_potential_outcomes(vars: AssumptionVariables, llm=None) -> AssumptionResult:
     """Continuity of potential outcomes at the cutoff (local exchangeability)."""
     return _llm_argue_assumption(
         "Continuity of potential outcomes at the cutoff",
         "E[Y(1)|X=c] and E[Y(0)|X=c] are continuous at the cutoff c. "
         "In the absence of treatment, individuals just above and just below "
         "the threshold would have had, on average, the same outcome.",
-        dataset_description, variables_summary, llm,
+        vars, llm,
     )
+
+
+# _____________________________________________________________________________
+# Registry: maps each method to its pre-model assumption checks
+# _____________________________________________________________________________
+
+ASSUMPTION_REGISTRY: Dict[str, List] = {
+    "linear_regression": [
+        check_sutva,
+        check_cond_ignorability,
+    ],
+    "propensity_score_matching": [
+        check_sutva,
+        check_cond_ignorability,
+        check_positivity,
+    ],
+    "instrumental_variable": [
+        check_sutva,
+        check_iv_relevance,
+        check_iv_exclusion,
+        check_iv_exogeneity,
+        check_iv_monotonicity,
+    ],
+    "difference_in_differences": [
+        check_sutva,
+        check_parallel_trends,
+        check_no_anticipation,
+        check_baseline_outcome_balance,
+        check_stable_group_composition,
+    ],
+    "frontdoor_adjustment": [
+        check_frontdoor_full_mediation,
+        check_frontdoor_no_TM_confounding,
+        check_frontdoor_T_blocks_MY,
+        check_frontdoor_positivity,
+    ],
+    "regression_discontinuity_design": [
+        check_rdd_no_manipulation,
+        check_rdd_covariate_continuity,
+        check_rdd_continuity_potential_outcomes,
+    ],
+    "backdoor_adjustment": [
+        check_sutva,
+        check_cond_ignorability,
+    ],
+}

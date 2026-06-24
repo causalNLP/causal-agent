@@ -5,12 +5,10 @@ These checks require outputs from the estimation step (e.g., IPW weights,
 matched samples, IV residuals, GPS model residuals) and are run after
 the causal effect has been estimated.
 
-Each check returns a standardized dict:
-    {
-        "passed": bool | None,           # None => inconclusive
-        "reasoning": str,                # human-readable explanation
-        "details": dict,                 # raw stats (SMDs, p-values, ...)
-    }
+Each check returns an AssumptionResult with:
+    passed   : bool | None  (None => inconclusive)
+    reasoning: str
+    details  : dict         (raw stats — SMDs, p-values, ...)
 """
 
 from typing import Any, Dict, List, Optional
@@ -19,54 +17,39 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-# import some assumptions already available for each method
-from cais.methods.instrumental_variable.diagnostics import (
-    run_overidentification_test,
-)
+from cais.models import AssumptionResult, AssumptionVariables
+from cais.methods.instrumental_variable.diagnostics import run_overidentification_test
 from cais.methods.utils import calculate_standardized_differences
 from cais.methods.generalized_propensity_score.diagnostics import assess_gps_balance
 
-# _____________________________________________________________________________
-# Output helper
-# _____________________________________________________________________________
-
-def _result(
-    passed: Optional[bool],
-    reasoning: str,
-    details: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
-    return {
-        "passed": passed,
-        "reasoning": reasoning,
-        "details": details or {},
-    }
 
 # _____________________________________________________________________________
 # Balance checks (IPW, matching)
 # _____________________________________________________________________________
 
 def check_balance_after_weighting(
-    df: pd.DataFrame, treatment: str, covariates: List[str],
-    weights: np.ndarray, smd_threshold: float = 0.1,
-) -> Dict[str, Any]:
-    """Weighted SMDs after IPW."""
-    treated = df[treatment] == 1
+    vars: AssumptionVariables,
+    weights: np.ndarray,
+    smd_threshold: float = 0.1,
+) -> AssumptionResult:
+    """Weighted SMDs after IPW: checks covariate balance in the weighted sample."""
+    treated = vars.df[vars.treatment] == 1
     smds = {}
-    for c in covariates:
-        x = df[c].astype(float).values
+    for c in vars.covariates:
+        x = vars.df[c].astype(float).values
         w = weights
         m1 = np.average(x[treated], weights=w[treated])
         m0 = np.average(x[~treated], weights=w[~treated])
         v1 = np.average((x[treated] - m1) ** 2, weights=w[treated])
         v0 = np.average((x[~treated] - m0) ** 2, weights=w[~treated])
         denom = np.sqrt((v1 + v0) / 2)
-        smds[c] = (m1 - m0) / denom if denom > 0 else np.nan
+        smds[c] = float((m1 - m0) / denom) if denom > 0 else float("nan")
     imbalanced = {c: v for c, v in smds.items() if pd.notna(v) and abs(v) > smd_threshold}
     passed = len(imbalanced) == 0
-    return _result(
+    return AssumptionResult(
         passed=passed,
         reasoning=(
-            f"Weighted balance on {len(covariates)} covariates. "
+            f"Weighted balance on {len(vars.covariates)} covariates (|SMD| < {smd_threshold}). "
             f"{'All balanced after IPW.' if passed else f'Still imbalanced: {list(imbalanced.keys())}.'}"
         ),
         details={"weighted_smds": smds, "threshold": smd_threshold, "imbalanced": imbalanced},
@@ -74,17 +57,18 @@ def check_balance_after_weighting(
 
 
 def check_balance_after_matching(
-    df_matched: pd.DataFrame, treatment: str, covariates: List[str],
+    vars: AssumptionVariables,
+    df_matched: pd.DataFrame,
     smd_threshold: float = 0.1,
-) -> Dict[str, Any]:
+) -> AssumptionResult:
     """SMDs computed on the matched sample."""
-    smds = calculate_standardized_differences(df_matched, treatment, covariates)
+    smds = calculate_standardized_differences(df_matched, vars.treatment, vars.covariates)
     imbalanced = {c: v for c, v in smds.items() if pd.notna(v) and abs(v) > smd_threshold}
     passed = len(imbalanced) == 0
-    return _result(
+    return AssumptionResult(
         passed=passed,
         reasoning=(
-            f"Matched sample balance on {len(covariates)} covariates. "
+            f"Matched sample balance on {len(vars.covariates)} covariates (|SMD| < {smd_threshold}). "
             f"{'All balanced after matching.' if passed else f'Still imbalanced: {list(imbalanced.keys())}.'}"
         ),
         details={"smds": smds, "threshold": smd_threshold, "imbalanced": imbalanced},
@@ -92,29 +76,34 @@ def check_balance_after_matching(
 
 
 # _____________________________________________________________________________
-# IVs
+# IV: over-identification test (requires multiple instruments)
 # _____________________________________________________________________________
 
 def check_iv_overidentification(
-    sm_results, df, treatment, outcome, instruments, covariates,
-) -> Dict[str, Any]:
-    """Sargan-Hansen test: are the instruments valid (uncorrelated with errors)?"""
+    vars: AssumptionVariables,
+    sm_results,
+) -> AssumptionResult:
+    """Sargan-Hansen test: are the instruments valid (uncorrelated with residuals)?
+
+    Only applicable when len(instruments) > 1.
+    """
     stat, p, status = run_overidentification_test(
-        sm_results, df, treatment, outcome, instruments, covariates,
+        sm_results, vars.df, vars.treatment, vars.outcome,
+        vars.instruments, vars.covariates,
     )
     if stat is None:
-        return _result(
+        return AssumptionResult(
             passed=None,
             reasoning=status or "Over-identification test could not be computed.",
         )
-    passed = p > 0.05  # non-rejet = instruments valides
-    return _result(
+    passed = p > 0.05
+    return AssumptionResult(
         passed=passed,
         reasoning=(
             f"Sargan-Hansen test: statistic={stat:.2f}, p={p:.4f}. "
-            f"{'Instruments appear valid.' if passed else 'Instruments may be invalid — correlated with errors.'}"
+            f"{'Instruments appear valid (not correlated with errors).' if passed else 'Instruments may be invalid — correlated with residuals.'}"
         ),
-        details={"statistic": stat, "p_value": p, "status": status},
+        details={"statistic": float(stat), "p_value": float(p), "status": status},
     )
 
 
@@ -123,40 +112,65 @@ def check_iv_overidentification(
 # _____________________________________________________________________________
 
 def check_gps_balance(
-    df_with_gps: pd.DataFrame, treatment_var: str, covariate_vars: List[str],
-    gps_col_name: str, **kwargs,
-) -> Dict[str, Any]:
+    vars: AssumptionVariables,
+    df_with_gps: pd.DataFrame,
+    gps_col_name: str,
+    **kwargs,
+) -> AssumptionResult:
     """Covariate balance after GPS adjustment."""
-    res = assess_gps_balance(df_with_gps, treatment_var, covariate_vars, gps_col_name, **kwargs)
+    res = assess_gps_balance(
+        df_with_gps, vars.treatment, vars.covariates, gps_col_name, **kwargs
+    )
     cov_balance = res.get("covariate_balance", {})
     unbalanced = [c for c, v in cov_balance.items() if not v.get("balanced", True)]
     passed = len(unbalanced) == 0
-    return _result(
+    return AssumptionResult(
         passed=passed,
         reasoning=(
-            res.get("summary", "GPS balance assessed.") +
-            (f" Unbalanced: {unbalanced}." if unbalanced else "")
+            res.get("summary", "GPS balance assessed.")
+            + (f" Unbalanced covariates: {unbalanced}." if unbalanced else "")
         ),
         details=res,
     )
 
 
-def check_gps_specification(residuals: np.ndarray) -> Dict[str, Any]:
-    """Residual normality of the GPS model (e.g., Shapiro-Wilk)."""
+def check_gps_specification(residuals: np.ndarray) -> AssumptionResult:
+    """Residual normality of the GPS model (Shapiro-Wilk).
+
+    The GPS is typically estimated via OLS/GLM; normally distributed residuals
+    support a well-specified model.
+    """
     if len(residuals) < 3:
-        return _result(
+        return AssumptionResult(
             passed=None,
             reasoning="Too few residuals for normality test.",
         )
-    # Shapiro caps at ~5000; subsample if needed
     sample = residuals if len(residuals) <= 5000 else np.random.choice(residuals, 5000, replace=False)
     stat, p = stats.shapiro(sample)
     passed = p > 0.05
-    return _result(
+    return AssumptionResult(
         passed=passed,
         reasoning=(
-            f"Shapiro-Wilk on GPS residuals: W={stat:.3f}, p={p:.4f}. "
-            f"{'Residuals consistent with normality.' if passed else 'Departure from normality — reconsider GPS model.'}"
+            f"Shapiro-Wilk on GPS model residuals: W={stat:.3f}, p={p:.4f}. "
+            f"{'Residuals consistent with normality.' if passed else 'Significant departure from normality — consider re-specifying the GPS model.'}"
         ),
-        details={"statistic": float(stat), "p_value": float(p)},
+        details={"shapiro_w": float(stat), "p_value": float(p)},
     )
+
+
+# _____________________________________________________________________________
+# Registry: maps each method to its post-model assumption checks
+# _____________________________________________________________________________
+
+POST_ASSUMPTION_REGISTRY: Dict[str, List] = {
+    "propensity_score_matching": [
+        check_balance_after_matching,
+    ],
+    "instrumental_variable": [
+        check_iv_overidentification,
+    ],
+    "generalized_propensity_score": [
+        check_gps_balance,
+        check_gps_specification,
+    ],
+}
