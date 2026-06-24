@@ -1,5 +1,6 @@
 from typing import List, Optional, Union, Dict, Any, Tuple
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, ConfigDict
+import pandas as pd
 import json
 
 
@@ -217,7 +218,34 @@ class ExplainerInput(BaseModel):
     # Add original query if needed for explanation context
     original_query: Optional[str] = None 
 
-# Add other shared models/schemas below as needed. 
+# Add other shared models/schemas below as needed.
+
+class AssumptionResult(BaseModel):
+    """Standardized output for every assumption check."""
+    passed: Optional[bool] = None
+    reasoning: str = ""
+    details: Dict[str, Any] = Field(default_factory=dict)
+
+
+class AssumptionVariables(BaseModel):
+    """All variables and context needed to run assumption checks."""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    df: Optional[pd.DataFrame] = None
+    treatment: Optional[str] = None
+    outcome: Optional[str] = None
+    covariates: List[str] = Field(default_factory=list)
+    instruments: List[str] = Field(default_factory=list)
+    running_variable: Optional[str] = None
+    cutoff: Optional[float] = None
+    time_var: Optional[str] = None
+    group_var: Optional[str] = None
+    mediator: Optional[str] = None
+    treatment_period_start: Optional[Any] = None
+    placebo_period_start: Optional[Any] = None
+    dataset_description: Optional[str] = None
+    variables_summary: Dict[str, Any] = Field(default_factory=dict)
+
 
 class FormattedOutput(BaseModel):
     """
