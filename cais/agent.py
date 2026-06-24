@@ -345,6 +345,10 @@ def run_causal_analysis(query: str, dataset_path: str,
             original_query = input_parsing_result["original_query"],
             excluded_methods=None)
 
+        # Check for errors from method selection before accessing 'method_info'
+        if "error" in method_selector_output and "method_info" not in method_selector_output:
+            raise ValueError(f"Method selection failed: {method_selector_output['error']}")
+
         # NEW: Select control variables based on chosen method
         method_info = MethodInfo(
             **method_selector_output['method_info']
@@ -425,8 +429,8 @@ def run_causal_analysis(query: str, dataset_path: str,
         logger.info("Causal analysis run finished.")
         
         # Remove the cleaned csv
-        logger.info("Removing cleaned csv.")
-        os.remove(cleaned_path)
+        # logger.info("Removing cleaned csv.")
+        # os.remove(cleaned_path)
         
         # Ensure result is a dict and extract the 'output' part
         if isinstance(result, dict):
