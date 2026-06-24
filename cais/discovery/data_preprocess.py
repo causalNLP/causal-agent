@@ -262,7 +262,7 @@ def classify_columns(
             if is_numeric and n_unique / n_rows > id_uniqueness_threshold:
                 if _is_integer_valued(s) and _looks_sequential(s):
                     is_id = True
-            if is_numeric and _is_integer_valued(s):
+            if is_numeric and _is_integer_valued(s) and _looks_sequential(s): # the if statements underneath, such as searching for "fip" is based on the specific dataset i gave claude (fip is taken from abortion dataset)
                 low_name = col.lower()
                 if any(tag in low_name for tag in ["fip", "fips", "state_id", "county", "country_code", "entity", "unit"]):
                     is_id = True
@@ -278,12 +278,10 @@ def classify_columns(
             low = col.lower().strip()
             if _TEMPORAL_PATTERNS.match(low):
                 is_temporal = True
-            if is_numeric and ("year" in low or "yr" in low):
+            if is_numeric and ("year" in low or "yr" in low or "date" in low):
                 vals = s.dropna()
                 if len(vals) > 0 and vals.min() >= 1900 and vals.max() <= 2100:
                     is_temporal = True
-            if is_numeric and "date" in low:
-                is_temporal = True
 
             if is_temporal:
                 col_type = "temporal"
@@ -392,7 +390,7 @@ def classify_columns(
                 note = "Numeric, high cardinality"
             else:
                 col_type = "nominal"
-                note = "Fallback: unclassified string column"
+                note = "Unclassified string column"
 
         # Store metadata
         result.metadata[col] = {
@@ -480,16 +478,22 @@ def prepare_data(
         ct = meta["col_type"]
 
         if ct == "binary_string":
-            # Map the two unique string values to 0 / 1 alphabetically
             vals = sorted(out[col].unique())
+            if len(vals) < 2:
+                # Collapsed to a single value after dropna — constant column, drop it
+                out = out.drop(columns=[col])
+                continue
             out[col] = out[col].map({vals[0]: 0, vals[1]: 1}).astype(np.float64)
 
         elif ct in ("nominal", "low_cardinality_string"):
             cols_to_onehot.append(col)
 
         elif ct == "binary_numeric":
-            # Ensure values are exactly {0, 1}
             vals = sorted(out[col].dropna().unique())
+            if len(vals) < 2:
+                # Collapsed to a single value after dropna — constant column, drop it
+                out = out.drop(columns=[col])
+                continue
             if vals != [0, 1]:
                 out[col] = out[col].map({vals[0]: 0, vals[1]: 1}).astype(np.float64)
             else:
