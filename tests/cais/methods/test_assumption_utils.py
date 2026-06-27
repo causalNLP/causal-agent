@@ -11,24 +11,33 @@ from cais.methods.pre_model_assumption_utils import (
     check_positivity,
     check_iv_relevance,
     check_iv_exclusion,
+    check_iv_exogeneity,
+    check_iv_monotonicity,
     check_parallel_trends,
     check_no_anticipation,
     check_baseline_outcome_balance,
+    check_stable_group_composition,
+    check_frontdoor_full_mediation,
+    check_frontdoor_no_TM_confounding,
+    check_frontdoor_T_blocks_MY,
     check_frontdoor_positivity,
     check_rdd_no_manipulation,
     check_rdd_covariate_continuity,
+    check_rdd_continuity_potential_outcomes,
     ASSUMPTION_REGISTRY,
 )
 from cais.methods.post_model_assumption_utils import (
     check_balance_after_weighting,
     check_balance_after_matching,
     check_gps_specification,
+    check_iv_overidentification,
+    check_gps_balance,
     POST_ASSUMPTION_REGISTRY,
 )
 
 
 # ---------------------------------------------------------------------------
-# Shared synthetic data factory
+# Shared synthetic data factories
 # ---------------------------------------------------------------------------
 
 def _make_df(n=300, seed=0) -> pd.DataFrame:
@@ -39,6 +48,30 @@ def _make_df(n=300, seed=0) -> pd.DataFrame:
     treat = (rng.uniform(size=n) < ps).astype(int)
     y = 2 * treat + 0.05 * age + rng.normal(0, 1, n)
     return pd.DataFrame({"treat": treat, "outcome": y, "age": age, "income": income})
+
+
+def _make_did_df(n_units=50, n_periods=6, treatment_period=4, seed=0) -> pd.DataFrame:
+    rng = np.random.default_rng(seed)
+    rows = []
+    for u in range(n_units):
+        group = int(u >= n_units // 2)
+        for t in range(n_periods):
+            y = group * 0.5 + t * 1.0 + rng.normal(0, 0.5)
+            rows.append({"unit": u, "time": t, "group": group, "y": y})
+    return pd.DataFrame(rows)
+
+
+def _make_iv_vars(n=500, seed=7) -> AssumptionVariables:
+    rng = np.random.default_rng(seed)
+    z = rng.normal(0, 1, n)
+    t = 0.8 * z + rng.normal(0, 0.5, n)
+    y = 2 * t + rng.normal(0, 1, n)
+    df = pd.DataFrame({"t": t, "y": y, "z": z})
+    return AssumptionVariables(
+        df=df, treatment="t", outcome="y", instruments=["z"],
+        dataset_description="Rain as instrument for irrigation.",
+        variables_summary={"instrument": "z", "treatment": "t", "outcome": "y"},
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -72,7 +105,7 @@ class TestAssumptionModels(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# Pre-model checks
+# Pre-model checks — SUTVA
 # ---------------------------------------------------------------------------
 
 class TestCheckSutva(unittest.TestCase):
@@ -88,13 +121,17 @@ class TestCheckSutva(unittest.TestCase):
         self.assertIn("not statistically testable", r.reasoning)
 
 
+# ---------------------------------------------------------------------------
+# Pre-model checks — Propensity score
+# ---------------------------------------------------------------------------
+
 class TestCheckCondIgnorability(unittest.TestCase):
 
     def test_balanced_returns_passed_true(self):
         rng = np.random.default_rng(1)
         n = 500
         x = rng.normal(0, 1, n)
-        t = (rng.uniform(size=n) < 0.5).astype(int)  # random, no confounding
+        t = (rng.uniform(size=n) < 0.5).astype(int)
         df = pd.DataFrame({"t": t, "x": x})
         v = AssumptionVariables(df=df, treatment="t", outcome="y", covariates=["x"])
         r = check_cond_ignorability(v)
@@ -105,7 +142,7 @@ class TestCheckCondIgnorability(unittest.TestCase):
         rng = np.random.default_rng(2)
         n = 500
         x = rng.normal(0, 1, n)
-        t = (x > 0).astype(int)  # strong confounding
+        t = (x > 0).astype(int)
         df = pd.DataFrame({"t": t, "x": x})
         v = AssumptionVariables(df=df, treatment="t", outcome="y", covariates=["x"])
         r = check_cond_ignorability(v)
@@ -143,20 +180,18 @@ class TestCheckPositivity(unittest.TestCase):
         self.assertFalse(r.passed)
 
 
+# ---------------------------------------------------------------------------
+# Pre-model checks — Instrumental variables
+# ---------------------------------------------------------------------------
+
 class TestCheckIVRelevance(unittest.TestCase):
 
     def test_strong_instrument(self):
-        rng = np.random.default_rng(7)
-        n = 500
-        z = rng.normal(0, 1, n)
-        t = 0.8 * z + rng.normal(0, 0.5, n)
-        y = 2 * t + rng.normal(0, 1, n)
-        df = pd.DataFrame({"t": t, "y": y, "z": z})
-        v = AssumptionVariables(df=df, treatment="t", outcome="y", instruments=["z"])
+        v = _make_iv_vars()
         r = check_iv_relevance(v, f_threshold=10.0)
         self.assertIsInstance(r, AssumptionResult)
         if r.passed is not None:
-            self.assertTrue(r.details.get("f_statistic", 0) > 0)
+            self.assertTrue(r.details.get("f_statistic", 0) > 10.0)
 
     def test_weak_instrument(self):
         rng = np.random.default_rng(8)
@@ -174,35 +209,75 @@ class TestCheckIVRelevance(unittest.TestCase):
 class TestCheckIVExclusion(unittest.TestCase):
 
     def test_no_llm_returns_none(self):
-        v = AssumptionVariables(
-            dataset_description="Rain used as instrument for irrigation.",
-            variables_summary={"instrument": "rainfall", "treatment": "irrigation", "outcome": "crop_yield"},
-        )
-        r = check_iv_exclusion(v, llm=None)
+        r = check_iv_exclusion(_make_iv_vars(), llm=None)
+        self.assertIsInstance(r, AssumptionResult)
         self.assertIsNone(r.passed)
 
 
+class TestCheckIVExogeneity(unittest.TestCase):
+
+    def test_no_llm_returns_none(self):
+        r = check_iv_exogeneity(_make_iv_vars(), llm=None)
+        self.assertIsInstance(r, AssumptionResult)
+        self.assertIsNone(r.passed)
+
+
+class TestCheckIVMonotonicity(unittest.TestCase):
+
+    def test_no_llm_returns_none(self):
+        r = check_iv_monotonicity(_make_iv_vars(), llm=None)
+        self.assertIsInstance(r, AssumptionResult)
+        self.assertIsNone(r.passed)
+
+
+# ---------------------------------------------------------------------------
+# Pre-model checks — DiD
+# ---------------------------------------------------------------------------
+
 class TestCheckParallelTrends(unittest.TestCase):
 
-    def _make_did_df(self, n_units=50, n_periods=6, seed=0):
-        rng = np.random.default_rng(seed)
-        rows = []
-        for u in range(n_units):
-            group = int(u >= n_units // 2)
-            for t in range(n_periods):
-                y = group * 0.5 + t * 1.0 + rng.normal(0, 0.5)
-                rows.append({"unit": u, "time": t, "group": group, "y": y})
-        return pd.DataFrame(rows)
-
     def test_parallel_trends_valid(self):
-        df = self._make_did_df()
+        df = _make_did_df()
         v = AssumptionVariables(
             df=df, treatment="group", outcome="y",
-            time_var="time", group_var="group", treatment_period_start=4,
+            time_var="time", group_var="unit", treatment_period_start=4,
         )
         r = check_parallel_trends(v)
         self.assertIsInstance(r, AssumptionResult)
         self.assertIn("p_value", r.details)
+
+
+class TestCheckNoAnticipation(unittest.TestCase):
+
+    def test_no_placebo_period_returns_none(self):
+        df = _make_did_df()
+        v = AssumptionVariables(
+            df=df, treatment="group", outcome="y",
+            time_var="time", group_var="unit", treatment_period_start=4,
+        )
+        r = check_no_anticipation(v)
+        self.assertIsInstance(r, AssumptionResult)
+        self.assertIsNone(r.passed)
+
+    def test_placebo_period_after_treatment_returns_false(self):
+        df = _make_did_df()
+        v = AssumptionVariables(
+            df=df, treatment="group", outcome="y",
+            time_var="time", group_var="unit",
+            treatment_period_start=4, placebo_period_start=5,
+        )
+        r = check_no_anticipation(v)
+        self.assertFalse(r.passed)
+
+    def test_valid_placebo_period_returns_result(self):
+        df = _make_did_df()
+        v = AssumptionVariables(
+            df=df, treatment="group", outcome="y",
+            time_var="time", group_var="unit",
+            treatment_period_start=4, placebo_period_start=2,
+        )
+        r = check_no_anticipation(v)
+        self.assertIsInstance(r, AssumptionResult)
 
 
 class TestCheckBaselineOutcomeBalance(unittest.TestCase):
@@ -212,7 +287,7 @@ class TestCheckBaselineOutcomeBalance(unittest.TestCase):
         n = 200
         t = rng.integers(0, 2, n)
         time = rng.integers(0, 5, n)
-        y = rng.normal(10, 1, n)  # no effect of treatment
+        y = rng.normal(10, 1, n)
         df = pd.DataFrame({"t": t, "time": time, "y": y})
         v = AssumptionVariables(
             df=df, treatment="t", outcome="y",
@@ -220,6 +295,62 @@ class TestCheckBaselineOutcomeBalance(unittest.TestCase):
         )
         r = check_baseline_outcome_balance(v, smd_threshold=0.3)
         self.assertIsInstance(r, AssumptionResult)
+
+
+class TestCheckStableGroupComposition(unittest.TestCase):
+
+    def test_no_llm_returns_none(self):
+        df = _make_did_df()
+        v = AssumptionVariables(
+            df=df, treatment="group", outcome="y",
+            time_var="time", group_var="unit", treatment_period_start=4,
+            dataset_description="Panel of states, no attrition.",
+            variables_summary={"treatment": "group", "time": "time"},
+        )
+        r = check_stable_group_composition(v, llm=None)
+        self.assertIsInstance(r, AssumptionResult)
+        self.assertIsNone(r.passed)
+
+
+# ---------------------------------------------------------------------------
+# Pre-model checks — Frontdoor
+# ---------------------------------------------------------------------------
+
+def _make_frontdoor_vars() -> AssumptionVariables:
+    rng = np.random.default_rng(10)
+    n = 200
+    t = rng.integers(0, 2, n)
+    m = rng.integers(0, 2, n)
+    df = pd.DataFrame({"t": t, "m": m, "y": rng.normal(size=n)})
+    return AssumptionVariables(
+        df=df, treatment="t", outcome="y", mediator="m",
+        dataset_description="Smoking (T) → tar deposits (M) → lung cancer (Y).",
+        variables_summary={"treatment": "T", "mediator": "M", "outcome": "Y"},
+    )
+
+
+class TestCheckFrontdoorFullMediation(unittest.TestCase):
+
+    def test_no_llm_returns_none(self):
+        r = check_frontdoor_full_mediation(_make_frontdoor_vars(), llm=None)
+        self.assertIsInstance(r, AssumptionResult)
+        self.assertIsNone(r.passed)
+
+
+class TestCheckFrontdoorNoTMConfounding(unittest.TestCase):
+
+    def test_no_llm_returns_none(self):
+        r = check_frontdoor_no_TM_confounding(_make_frontdoor_vars(), llm=None)
+        self.assertIsInstance(r, AssumptionResult)
+        self.assertIsNone(r.passed)
+
+
+class TestCheckFrontdoorTBlocksMY(unittest.TestCase):
+
+    def test_no_llm_returns_none(self):
+        r = check_frontdoor_T_blocks_MY(_make_frontdoor_vars(), llm=None)
+        self.assertIsInstance(r, AssumptionResult)
+        self.assertIsNone(r.passed)
 
 
 class TestCheckFrontdoorPositivity(unittest.TestCase):
@@ -241,6 +372,10 @@ class TestCheckFrontdoorPositivity(unittest.TestCase):
         r = check_frontdoor_positivity(v)
         self.assertFalse(r.passed)
 
+
+# ---------------------------------------------------------------------------
+# Pre-model checks — RDD
+# ---------------------------------------------------------------------------
 
 class TestCheckRDDNoManipulation(unittest.TestCase):
 
@@ -272,7 +407,7 @@ class TestCheckRDDCovariateContinuity(unittest.TestCase):
         rng = np.random.default_rng(13)
         n = 400
         rv = rng.uniform(0, 10, n)
-        age = rng.normal(40, 5, n)  # unrelated to cutoff
+        age = rng.normal(40, 5, n)
         df = pd.DataFrame({"rv": rv, "age": age})
         v = AssumptionVariables(df=df, running_variable="rv", cutoff=5.0, covariates=["age"])
         r = check_rdd_covariate_continuity(v, bandwidth=2.0)
@@ -286,15 +421,30 @@ class TestCheckRDDCovariateContinuity(unittest.TestCase):
         self.assertIsNone(r.passed)
 
 
+class TestCheckRDDContinuityPotentialOutcomes(unittest.TestCase):
+
+    def test_no_llm_returns_none(self):
+        rng = np.random.default_rng(14)
+        rv = rng.uniform(0, 10, 200)
+        df = pd.DataFrame({"rv": rv, "y": rv + rng.normal(0, 1, 200)})
+        v = AssumptionVariables(
+            df=df, running_variable="rv", cutoff=5.0,
+            dataset_description="BAC as running variable; individuals cannot control it precisely.",
+            variables_summary={"running_variable": "rv", "cutoff": 5.0},
+        )
+        r = check_rdd_continuity_potential_outcomes(v, llm=None)
+        self.assertIsInstance(r, AssumptionResult)
+        self.assertIsNone(r.passed)
+
+
 # ---------------------------------------------------------------------------
 # Post-model checks
 # ---------------------------------------------------------------------------
 
 class TestCheckBalanceAfterWeighting(unittest.TestCase):
 
-    def test_perfect_weights_balance(self):
+    def test_equal_weights_returns_result(self):
         df = _make_df(n=300)
-        # Equal weights → same as unweighted; focus on testing the function runs
         weights = np.ones(len(df))
         v = AssumptionVariables(df=df, treatment="treat", outcome="outcome", covariates=["age", "income"])
         r = check_balance_after_weighting(v, weights=weights)
@@ -340,6 +490,30 @@ class TestCheckGPSSpecification(unittest.TestCase):
         residuals = np.random.default_rng(16).exponential(scale=1, size=300)
         r = check_gps_specification(residuals)
         self.assertIsInstance(r, AssumptionResult)
+        self.assertFalse(r.passed)
+
+
+class TestCheckIVOveridentification(unittest.TestCase):
+
+    def test_single_instrument_returns_none(self):
+        v = _make_iv_vars()
+        r = check_iv_overidentification(v, sm_results=None)
+        self.assertIsInstance(r, AssumptionResult)
+        self.assertIsNone(r.passed)
+
+
+class TestCheckGPSBalance(unittest.TestCase):
+
+    def test_returns_assumption_result(self):
+        rng = np.random.default_rng(30)
+        n = 200
+        x1 = rng.normal(0, 1, n)
+        t = 1.0 + 0.5 * x1 + rng.normal(0, 1, n)
+        gps = rng.uniform(0.1, 0.9, n)
+        df = pd.DataFrame({"t": t, "x1": x1, "gps": gps})
+        v = AssumptionVariables(df=df, treatment="t", covariates=["x1"])
+        r = check_gps_balance(v, df_with_gps=df, gps_col_name="gps")
+        self.assertIsInstance(r, AssumptionResult)
 
 
 # ---------------------------------------------------------------------------
@@ -374,6 +548,14 @@ class TestAssumptionRegistries(unittest.TestCase):
     def test_did_pre_checks_count(self):
         checks = ASSUMPTION_REGISTRY["difference_in_differences"]
         self.assertGreaterEqual(len(checks), 3)
+
+    def test_rdd_pre_checks_count(self):
+        checks = ASSUMPTION_REGISTRY["regression_discontinuity_design"]
+        self.assertGreaterEqual(len(checks), 3)
+
+    def test_frontdoor_pre_checks_count(self):
+        checks = ASSUMPTION_REGISTRY["frontdoor_adjustment"]
+        self.assertGreaterEqual(len(checks), 4)
 
 
 if __name__ == "__main__":
