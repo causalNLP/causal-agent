@@ -288,6 +288,7 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
     instrument_variable = None
     running_variable = None
     cutoff_value = None
+    treat_above_cutoff = None
     is_rct = None
     smd_score = None
 
@@ -313,10 +314,12 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
             if rdd_result:
                 running_variable = rdd_result.running_variable
                 cutoff_value = rdd_result.cutoff_value
+                treat_above_cutoff = rdd_result.treat_above_cutoff
             if running_variable not in columns or cutoff_value is None:
                 running_variable = None
                 cutoff_value = None
-            logger.info(f"LLM identified RDD: Running={running_variable}, Cutoff={cutoff_value}")
+                treat_above_cutoff = None
+            logger.info(f"LLM identified RDD: Running={running_variable}, Cutoff={cutoff_value}, Treat Above Cutoff={treat_above_cutoff}")
 
             ## For graph based methods 
             exclude_cols = [treatment_variable, outcome_variable]
@@ -377,6 +380,7 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
         ## for rdd
         "running_variable": running_variable,
         "cutoff_value": cutoff_value,
+        "treat_above_cutoff": treat_above_cutoff,
         ## for rct 
         "is_rct": is_rct,
         "treatment_reference_level": treatment_reference_level,

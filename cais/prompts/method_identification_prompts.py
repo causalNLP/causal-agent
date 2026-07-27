@@ -64,6 +64,7 @@ You are an expert in causal inference.
 You need to identify if a running variable exists for performing Regression Discontinuity Design (RDD) to answer the user query. 
 Go through the data description and available columns carefully. You need to be strict with the assessment.
 In RDD, treatment assignment (for analysis) is determined by whether a continuous variable crosses a specific threshold.
+Whether the treatment is assigned above or below the cutoff can be determined by the user query or dataset description.
 
 User Query: "{query}"
 Dataset Description: {description}
@@ -82,7 +83,11 @@ Step 2: If there is a running variable implied by the context, identify the runn
 Step 3: Identify the cutoff value from design
 - What specific threshold value determines treatment assignment?
 
-Step 4: Final determination
+Step 4: Identify if the treatment is assigned above or below the cutoff
+- Is the treatment assigned above the cutoff? Store it as a boolean value in 'treat_above_cutoff' in the JSON.
+- Store null if you are unsure.
+
+Step 5: Final determination
 - Only suggest RDD if both running variable and cutoff value can be identified
 - Return null if the assignment mechanism is not threshold-based or you are unsure.
 
@@ -90,7 +95,8 @@ Important: Return only valid JSON. No explanations, reasoning, or markdown forma
 
 {{
     "running_variable": "column_name_or_null",
-    "cutoff_value": numeric_value_or_null
+    "cutoff_value": numeric_value_or_null,
+    "treat_above_cutoff": true_false_or_null,
 }}
 """
 
