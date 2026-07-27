@@ -220,7 +220,7 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
 
     
     # --- Identify Treatment --- 
-    treatment_hints = query_info.get("potential_treatments", [])
+    treatment_hints = query_info.get("potential_treatments") or []
     dataset_treatments = dataset_analysis.get("potential_treatments", [])
     treatment_variable = _identify_variable_hybrid(role="treatment", query_hints=treatment_hints, 
                                                    dataset_suggestions=dataset_treatments, columns=columns,
@@ -232,7 +232,7 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
 
     
     # --- Identify Outcome --- 
-    outcome_hints = query_info.get("outcome_hints", [])
+    outcome_hints = query_info.get("potential_outcomes") or []
     dataset_outcomes = dataset_analysis.get("potential_outcomes", [])
     outcome_variable = _identify_variable_hybrid(role="outcome", query_hints=outcome_hints, dataset_suggestions=dataset_outcomes,
                                                  columns=columns, column_categories=column_categories,
@@ -242,14 +242,14 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
     logger.info(f"Identified Outcome: {outcome_variable}")
 
     # --- Identify Covariates --- 
-    covariate_hints = query_info.get("covariates_hints", [])
+    covariate_hints = query_info.get("covariates_hints") or []
     covariates = _identify_covariates_hybrid("covars", treatment_variable=treatment_variable, outcome_variable=outcome_variable,
                                              columns=columns, column_categories=column_categories, query_hints=covariate_hints,
                                              query_text=query_text, dataset_description=dataset_description, llm=llm)
     logger.info(f"Identified Covariates: {covariates}")
 
     # --- Identify Confounders ---
-    confounder_hints = query_info.get("covariates_hints", [])
+    confounder_hints = query_info.get("covariates_hints") or []
     confounders = _identify_covariates_hybrid("confounders", treatment_variable=treatment_variable, outcome_variable=outcome_variable,
                                               columns=columns, column_categories=column_categories, query_hints=confounder_hints,
                                               query_text=query_text, dataset_description=dataset_description, llm=llm)
@@ -460,11 +460,11 @@ def _identify_variable_hybrid(role: str, query_hints: List[str], dataset_suggest
     if not available_columns: return None
 
     # 1. Exact matches from hints
-    for hint in query_hints:
+    for hint in (query_hints or []):
         if hint in available_columns:
             candidates.add(hint)
     # 2. Add dataset suggestions
-    for sugg in dataset_suggestions:
+    for sugg in (dataset_suggestions or []):
         if sugg in available_columns:
             candidates.add(sugg)
 
