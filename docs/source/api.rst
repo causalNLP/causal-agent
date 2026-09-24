@@ -1,14 +1,12 @@
 API Reference
 =============
 
-.. autosummary::
-   :toctree: generated
-   :recursive:
+The public API is organized into the following packages:
 
-   auto_causal.components
-   auto_causal.methods
-   auto_causal.preprocess
-   auto_causal.prompts
-   auto_causal.synthetic
-   auto_causal.tools
-   auto_causal.utils
+* ``cais.components`` -- Core pipeline components.
+* ``cais.methods`` -- Causal inference estimators and diagnostics.
+* ``cais.preprocess`` -- Data preprocessing utilities.
+* ``cais.prompts`` -- Prompt templates used by the LLM integrations.
+* ``cais.synthetic`` -- Synthetic data generators.
+* ``cais.tools`` -- LangChain tool wrappers.
+* ``cais.utils`` -- Shared utilities.
