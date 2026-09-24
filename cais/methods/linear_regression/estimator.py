@@ -79,7 +79,6 @@ class LinearRegression(CausalMethod):
             outcome=outcome,
             covariates=covariates,
             query_str=query,
-            llm=get_llm_client()
         )
 
 def _call_llm_for_var(llm: BaseChatModel, prompt: str, pydantic_model: BaseModel) -> Optional[BaseModel]:
@@ -252,8 +251,18 @@ def estimate_effect(
         all_params_extracted = False # Default to False
         llm_extraction_successful = False
 
-        # Attempt LLM-based extraction if llm client and query are available
-        llm = get_llm_client()
+        # Attempt LLM-based extraction when a client is available. Estimation
+        # itself must remain usable without external API credentials.
+        if llm is None and query_str:
+            try:
+                llm = get_llm_client()
+            except (ValueError, RuntimeError) as exc:
+                logger.info(
+                    "LLM client unavailable; using deterministic parameter "
+                    "extraction: %s",
+                    exc,
+                )
+
         if llm and query_str:
             logger.info(f"Attempting LLM-based result extraction (informed by query: '{query_str[:50]}...').")
             try:
@@ -341,9 +350,46 @@ def estimate_effect(
             
             except Exception as e_llm:
                 logger.warning(f"LLM-based result extraction failed: {e_llm}. Falling back to regex.", exc_info=True)
-        
-        
-            # --- End of Existing Regex Logic Block ---
+
+        # Deterministic fallback based on the Patsy parameter names produced
+        # from the treatment term in the formula.
+        if not effect_estimates_by_level:
+            treatment_params = []
+            if treatment_patsy_term in results.params.index:
+                treatment_params.append(treatment_patsy_term)
+            else:
+                categorical_prefix = f"{treatment_patsy_term}[T."
+                treatment_params.extend(
+                    name
+                    for name in results.params.index
+                    if name.startswith(categorical_prefix) and ":" not in name
+                )
+
+            is_multilevel_treatment = (
+                is_still_categorical_in_df
+                and df_analysis[treatment_col_name].nunique() > 2
+            )
+            confidence_intervals = results.conf_int(alpha=0.05)
+
+            for param_name in treatment_params:
+                key = "treatment_effect"
+                if is_multilevel_treatment:
+                    level_match = re.search(r"\[T\.([^]]+)]", param_name)
+                    key = level_match.group(1) if level_match else param_name
+
+                effect_estimates_by_level[key] = {
+                    "estimate": results.params.loc[param_name],
+                    "p_value": results.pvalues.loc[param_name],
+                    "conf_int": confidence_intervals.loc[param_name].tolist(),
+                    "std_err": results.bse.loc[param_name],
+                }
+
+            all_params_extracted = bool(effect_estimates_by_level)
+            if not all_params_extracted:
+                logger.warning(
+                    "Could not identify treatment parameters for term '%s'.",
+                    treatment_patsy_term,
+                )
 
         # Primary effect_estimate for simple reporting (e.g. first level or the only one)
         # For multi-level, this is ambiguous. For now, let's report None or the first one.
@@ -406,4 +452,4 @@ def estimate_effect(
 
     except Exception as e:
         logger.error(f"Linear Regression failed: {e}")
-        raise # Re-raise the exception after logging 
+        raise  # Re-raise the exception after logging
