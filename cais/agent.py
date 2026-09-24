@@ -413,6 +413,9 @@ def run_causal_analysis(query: str, dataset_path: str,
             original_query = input_parsing_result["original_query"],
             excluded_methods=None)
 
+        # Check for errors from method selection before accessing 'method_info'
+        if "error" in method_selector_output and "method_info" not in method_selector_output:
+            raise ValueError(f"Method selection failed: {method_selector_output['error']}")
         
 
         print('METHOD SELECTOR OUTPUT: ', method_selector_output)
