@@ -7,6 +7,7 @@ from typing import List, Set
 from cais.methods.causal_method import CausalMethod
 from cais.methods.linear_regression.estimator import LinearRegression
 from cais.methods.regression_discontinuity.estimator import RDDRegression
+from cais.methods.regression_discontinuity.donut_estimator import DonutRDD
 from cais.methods.difference_in_differences.estimator import DiDRegression
 from cais.methods.instrumental_variable.estimator import IVRegression
 from cais.methods.propensity_score.matching import PropensityScoreMatching
@@ -38,6 +39,7 @@ class Estimators:
             # Add variables, i.e.
             LinearRegression.name : LinearRegression(),
             RDDRegression.name : RDDRegression(),
+            DonutRDD.name : DonutRDD(),
             DiDRegression.name : DiDRegression(),
             IVRegression.name : IVRegression(),
             PropensityScoreMatching.name : PropensityScoreMatching(),
