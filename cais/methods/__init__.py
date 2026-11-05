@@ -12,6 +12,7 @@ from .propensity_score.weighting import estimate_effect_trimmed_ipw
 from .frontdoor_adjustment.estimator import estimate_effect as frontdoor_estimate_effect
 from .instrumental_variable.estimator import estimate_effect as iv_estimate_effect
 from .difference_in_differences.estimator import estimate_effect as did_estimate_effect
+from .difference_in_differences.time_window import estimate_effect_time_window as did_time_window_estimate_effect
 from .diff_in_means.estimator import estimate_effect as dim_estimate_effect
 from .linear_regression.estimator import estimate_effect as lr_estimate_effect
 from .backdoor_adjustment.estimator import estimate_effect as ba_estimate_effect
@@ -27,6 +28,7 @@ METHOD_MAPPING = {
     "frontdoor_adjustment": frontdoor_estimate_effect,
     "instrumental_variable": iv_estimate_effect,
     "difference_in_differences": did_estimate_effect,
+    "difference_in_differences_time_window": did_time_window_estimate_effect,
     "regression_discontinuity_design": rdd_estimate_effect,
     "donut_rdd": donut_rdd_estimate_effect,
     "backdoor_adjustment": ba_estimate_effect,
@@ -43,6 +45,7 @@ __all__ = [
     "frontdoor_estimate_effect",
     "iv_estimate_effect",
     "did_estimate_effect",
+    "did_time_window_estimate_effect",
     "rdd_estimate_effect",
     "donut_rdd_estimate_effect",
     "dim_estimate_effect",

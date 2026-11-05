@@ -555,12 +555,32 @@ class TestDIDPath(unittest.TestCase):
 
     def test_no_anticipation_fail_bounded_goes_time_window(self):
         res = run(
-            base_props(**DID_PROPS, anticipation_known_bounded=True),
+            base_props(
+                **DID_PROPS,
+                anticipation_known_bounded=True,
+                anticipation_window_start=2,
+            ),
             checks=stub_checks(no_anticipation=False),
         )
         self.assertEqual(res.method, M_DID_TIME_WINDOW)
-        self.assertFalse(res.implemented)
-        self.assertTrue(any("not implemented" in w for w in res.warnings))
+        self.assertTrue(res.implemented)
+        self.assertEqual(res.execution["options"]["anticipation_window_start"], 2)
+
+    def test_no_anticipation_pass_with_window_goes_time_window(self):
+        res = run(
+            base_props(**DID_PROPS, anticipation_window_start=2),
+            checks=stub_checks(no_anticipation=True),
+        )
+        self.assertEqual(res.method, M_DID_TIME_WINDOW)
+        self.assertEqual(res.execution["options"]["anticipation_window_start"], 2)
+
+    def test_no_anticipation_bounded_without_window_ends(self):
+        res = run(
+            base_props(**DID_PROPS, anticipation_known_bounded=True),
+            checks=stub_checks(no_anticipation=False),
+        )
+        self.assertTrue(res.ended)
+        self.assertIn("anticipation-window start", res.end_reason)
 
     def test_untestable_gate_warns_and_continues(self):
         res = run(base_props(**DID_PROPS), checks=stub_checks(parallel_trends=None))

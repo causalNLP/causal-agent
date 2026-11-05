@@ -59,7 +59,7 @@ LEAF_IMPLEMENTED: Dict[str, bool] = {
     M_DIFF_IN_MEANS: True,
     M_IV: True,
     M_DID: True,
-    M_DID_TIME_WINDOW: False,
+    M_DID_TIME_WINDOW: True,
     M_RDD: True,
     M_DONUT_RDD: True,
     M_FUZZY_RDD: False,
@@ -579,9 +579,10 @@ class _Traversal:
         anticipation = self._maybe_reask_gate(
             "Gate: no anticipation (placebo)", "no_anticipation", "gate", anticipation
         )
+        window_start = self.props.get("anticipation_window_start")
         if anticipation is False:
-            if self.props.get("anticipation_known_bounded", False):
-                self.leaf(M_DID_TIME_WINDOW)
+            if window_start is not None or self.props.get("anticipation_known_bounded", False):
+                self._select_did_time_window()
             elif self._consult_override(
                 "Gate: no anticipation (placebo)", "no_anticipation",
                 "Anticipation effects present and not bounded.",
@@ -592,7 +593,41 @@ class _Traversal:
             return
         if anticipation is None:
             self.result.warnings.append("No-anticipation could not be tested; continuing with warning.")
-        self.leaf(M_DID)
+        if window_start is not None:
+            self._select_did_time_window()
+        else:
+            self.leaf(M_DID)
+
+    def _select_did_time_window(self) -> None:
+        """Select DiD after removing the user-supplied anticipation window."""
+        window_start = self.props.get("anticipation_window_start")
+        treatment_start = self.props.get("treatment_period_start")
+        if window_start is None or treatment_start is None:
+            self.end(
+                "Time-window DiD needs both the anticipation-window start and the "
+                "treatment start; one of them is missing."
+            )
+            return
+        self.leaf(M_DID_TIME_WINDOW)
+        self.result.execution = {
+            "method": M_DID_TIME_WINDOW,
+            "display_name": "Time-Window Difference-in-Differences",
+            "options": {
+                "anticipation_window_start": window_start,
+                "treatment_period_start": treatment_start,
+            },
+        }
+        self.result.warnings.append(
+            f"Time-window DiD will drop observations with "
+            f"{window_start} <= time < {treatment_start} (the user-supplied "
+            "anticipation window) before estimation."
+        )
+        self.step(
+            "Time-window DiD",
+            "process",
+            "anticipation window removed",
+            f"drop {window_start} <= time < {treatment_start}",
+        )
 
     def _running_variable_path(self) -> None:
         has_rv = self.props.get("has_running_variable")

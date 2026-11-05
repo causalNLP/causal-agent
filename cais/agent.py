@@ -20,6 +20,7 @@ from cais.methods.linear_regression.estimator import LinearRegression
 from cais.methods.regression_discontinuity.estimator import RDDRegression
 from cais.methods.regression_discontinuity.donut_estimator import DonutRDD
 from cais.methods.difference_in_differences.estimator import DiDRegression
+from cais.methods.difference_in_differences.time_window import DiDTimeWindow
 from cais.methods.instrumental_variable.estimator import IVRegression
 from cais.methods.propensity_score.matching import PropensityScoreMatching
 from cais.methods.propensity_score.weighting import TrimmedIPW
@@ -39,6 +40,7 @@ import json
 
 LINEAR_REGRESSION = "linear_regression"
 DIFF_IN_DIFF = "difference_in_differences"
+DID_TIME_WINDOW = "difference_in_differences_time_window"
 REGRESSION_DISCONTINUITY = "regression_discontinuity_design"
 DONUT_RDD = "donut_rdd"
 PROPENSITY_SCORE_MATCHING = "propensity_score_matching"
@@ -50,6 +52,7 @@ FRONTDOOR = "frontdoor_adjustment"
 convert = {
     LINEAR_REGRESSION: LinearRegression.name,
     DIFF_IN_DIFF: DiDRegression.name,
+    DID_TIME_WINDOW: DiDTimeWindow.name,
     REGRESSION_DISCONTINUITY: RDDRegression.name,
     DONUT_RDD: DonutRDD.name,
     INSTRUMENTAL_VARIABLE: IVRegression.name,

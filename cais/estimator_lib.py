@@ -9,6 +9,7 @@ from cais.methods.linear_regression.estimator import LinearRegression
 from cais.methods.regression_discontinuity.estimator import RDDRegression
 from cais.methods.regression_discontinuity.donut_estimator import DonutRDD
 from cais.methods.difference_in_differences.estimator import DiDRegression
+from cais.methods.difference_in_differences.time_window import DiDTimeWindow
 from cais.methods.instrumental_variable.estimator import IVRegression
 from cais.methods.propensity_score.matching import PropensityScoreMatching
 from cais.methods.propensity_score.weighting import TrimmedIPW
@@ -41,6 +42,7 @@ class Estimators:
             RDDRegression.name : RDDRegression(),
             DonutRDD.name : DonutRDD(),
             DiDRegression.name : DiDRegression(),
+            DiDTimeWindow.name : DiDTimeWindow(),
             IVRegression.name : IVRegression(),
             PropensityScoreMatching.name : PropensityScoreMatching(),
             TrimmedIPW.name : TrimmedIPW(),
