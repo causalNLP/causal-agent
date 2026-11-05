@@ -179,8 +179,10 @@ class CausalAgent():
         """Translate interpreter output into decision_tree_v2 inputs.
 
         Inputs the interpreter does not produce yet (mediator, placebo period,
-        bounded anticipation, local manipulation) are passed as unavailable so
-        the tree reports can't tell instead of guessing.
+        bounded anticipation, local manipulation, donut width) are passed as
+        unavailable so the tree reports can't tell instead of guessing. The panel
+        unit identifier comes from the dataset analyzer's temporal structure when
+        available; the group-composition check falls back to group_variable.
         """
         variables = self.variables
         analysis = self.dataset_analysis
@@ -194,6 +196,15 @@ class CausalAgent():
         if analysis is not None:
             has_temporal = has_temporal or bool(getattr(analysis, "temporal_structure_detected", False))
 
+        # Panel unit identifier, used by the group-composition check. The
+        # dataset analyzer detects it while profiling temporal structure; the
+        # check falls back to group_variable if this is unavailable.
+        unit_variable = None
+        if analysis is not None:
+            temporal = getattr(analysis, "temporal_structure", None)
+            if temporal is not None:
+                unit_variable = getattr(temporal, "id_column", None)
+
         return {
             "treatment_variable": variables.treatment_variable,
             "outcome_variable": variables.outcome_variable,
@@ -205,8 +216,11 @@ class CausalAgent():
             "cutoff_value": variables.cutoff_value,
             "time_variable": variables.time_variable,
             "group_variable": variables.group_variable,
+            "unit_variable": unit_variable,
+            "donut_width": None,
             "treatment_period_start": variables.treatment_time,
             "placebo_period_start": getattr(variables, "placebo_period_start", None),
+            "anticipation_window_start": None,
             "is_rct": bool(variables.is_rct),
             "has_temporal_structure": has_temporal,
             "is_encouragement_design": getattr(variables, "is_encouragement_design", None),

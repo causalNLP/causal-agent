@@ -61,7 +61,7 @@ LEAF_IMPLEMENTED: Dict[str, bool] = {
     M_DID: True,
     M_DID_TIME_WINDOW: False,
     M_RDD: True,
-    M_DONUT_RDD: False,
+    M_DONUT_RDD: True,
     M_FUZZY_RDD: False,
     M_IPW: True,
     M_PSM: True,
@@ -622,8 +622,13 @@ class _Traversal:
             "gate",
         )
         if no_manipulation is False or continuity is False:
-            if self.props.get("local_manipulation", False):
-                self.leaf(M_DONUT_RDD)
+            donut_width = self.props.get("donut_width")
+            if donut_width is not None:
+                self._select_donut_rdd(donut_width)
+            elif self.props.get("local_manipulation", False):
+                self.end(
+                    "Local manipulation was indicated but no donut width was supplied."
+                )
             elif self._consult_override(
                 "Gates: No manipulation / Covariate continuity (McCrary test)",
                 "rdd_no_manipulation",
@@ -640,6 +645,27 @@ class _Traversal:
         self.leaf(M_RDD)
 
     # -- identification options (instrument / mediator / backdoor) ----------
+
+    def _select_donut_rdd(self, donut_width: Any) -> None:
+        """Select donut RDD and record the user/analysis-supplied band."""
+        width = float(donut_width)
+        self.leaf(M_DONUT_RDD)
+        self.result.execution = {
+            "method": M_DONUT_RDD,
+            "display_name": "Donut RDD",
+            "options": {"donut_width": width},
+        }
+        self.result.warnings.append(
+            f"Density/covariate-continuity gate failed; using donut RDD with a "
+            f"{width:g}-unit band around the cutoff. The estimate refers to units "
+            "outside that band, not to the cutoff limit."
+        )
+        self.step(
+            "Donut RDD",
+            "process",
+            "donut width applied",
+            f"drop units with |running variable − cutoff| < {width:g}",
+        )
 
     def _options(self, non_binary: bool) -> None:
         if self._try_instrument():
@@ -894,6 +920,7 @@ def select_method_v2(
       treatment_variable, outcome_variable, treatment_variable_type,
       covariates, instrument_variable, mediator_variable, running_variable,
       has_running_variable, cutoff_value, time_variable, group_variable,
+      unit_variable, donut_width, anticipation_window_start,
       treatment_period_start, placebo_period_start, is_rct,
       has_temporal_structure,
       is_encouragement_design, has_pre_treatment_variables,
@@ -1002,9 +1029,11 @@ def build_default_checks(properties: Dict[str, Any], df, description, llm, thres
         cutoff=properties.get("cutoff_value"),
         time_var=properties.get("time_variable"),
         group_var=properties.get("group_variable"),
+        unit_var=properties.get("unit_variable"),
         mediator=properties.get("mediator_variable"),
         treatment_period_start=properties.get("treatment_period_start"),
         placebo_period_start=properties.get("placebo_period_start"),
+        anticipation_window_start=properties.get("anticipation_window_start"),
         dataset_description=description,
         variables_summary={
             "treatment": properties.get("treatment_variable"),

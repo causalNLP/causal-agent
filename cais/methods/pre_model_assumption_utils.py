@@ -290,14 +290,143 @@ def check_parallel_trends(
     )
 
 
+def _check_bounded_anticipation(
+    vars: AssumptionVariables,
+    window_start: Any,
+    alpha: float,
+) -> AssumptionResult:
+    """Test whether outcomes already diverge before the anticipation window.
+
+    ``window_start`` is the user-supplied beginning of the early-response
+    period. Only periods before it are used, so changes inside the window do
+    not count as evidence against bounded anticipation.
+    """
+    df = vars.df
+    time_var = vars.time_var
+    outcome = vars.outcome
+    treatment = vars.treatment
+
+    if df is None or not time_var or not outcome or not treatment:
+        return AssumptionResult(
+            passed=None,
+            reasoning=(
+                "Bounded-anticipation check cannot run: time, outcome, or "
+                "treatment/group column is missing."
+            ),
+        )
+
+    try:
+        if vars.treatment_period_start is not None and window_start >= vars.treatment_period_start:
+            return AssumptionResult(
+                passed=None,
+                reasoning=(
+                    "Anticipation window must start strictly before the treatment "
+                    "period start."
+                ),
+            )
+    except TypeError:
+        return AssumptionResult(
+            passed=None,
+            reasoning=(
+                "Anticipation window and treatment start are not comparable; "
+                "they must use the same time units."
+            ),
+        )
+
+    try:
+        pre = df[df[time_var] < window_start]
+    except Exception as exc:
+        return AssumptionResult(
+            passed=None,
+            reasoning=f"Bounded-anticipation check could not filter pre-window data: {exc}",
+        )
+
+    if pre.empty:
+        return AssumptionResult(
+            passed=None,
+            reasoning="No observations exist before the stated anticipation window.",
+        )
+    if pre[time_var].nunique() < 2:
+        return AssumptionResult(
+            passed=None,
+            reasoning=(
+                "At least two pre-window periods are needed to test for early "
+                "divergence; only one is available."
+            ),
+        )
+    if pre[treatment].nunique() < 2:
+        return AssumptionResult(
+            passed=None,
+            reasoning=(
+                "Bounded-anticipation check needs both treated and control units "
+                "before the window."
+            ),
+        )
+    if len(pre) < 20:
+        return AssumptionResult(
+            passed=None,
+            reasoning="Too few pre-window observations to test for early divergence.",
+        )
+
+    try:
+        result = validate_parallel_trends(
+            df,
+            time_var,
+            outcome,
+            treatment,
+            window_start,
+            alpha=alpha,
+        )
+    except Exception as exc:
+        return AssumptionResult(
+            passed=None,
+            reasoning=f"Bounded-anticipation test could not run: {exc}",
+        )
+
+    passed = result.get("valid")
+    p_value = result.get("p_value")
+    detail = result.get("details") or ""
+    p_text = f"{p_value:.4f}" if p_value is not None else "not available"
+    if passed is None:
+        reasoning = f"Bounded anticipation could not be tested: {detail}"
+    elif passed:
+        reasoning = (
+            "No evidence of divergence before the stated anticipation window "
+            f"(p={p_text}). This supports bounded anticipation but does not "
+            "prove that no anticipation occurred."
+        )
+    else:
+        reasoning = (
+            "Outcomes already differ before the stated anticipation window "
+            f"(p={p_text}), contradicting bounded anticipation."
+        )
+
+    return AssumptionResult(
+        passed=passed,
+        reasoning=reasoning,
+        details={
+            "test_type": "pre_window_trend_test",
+            "window_start": window_start,
+            "p_value": p_value,
+            "alpha": alpha,
+            "n_pre_window": int(len(pre)),
+            "pre_window_periods": int(pre[time_var].nunique()),
+        },
+    )
+
+
 def check_no_anticipation(vars: AssumptionVariables, alpha: float = 0.10) -> AssumptionResult:
     """No anticipation: treatment has no effect before implementation.
 
-    Runs a placebo DiD restricted to pre-treatment periods, avoiding contamination
-    from the actual treatment effect. Uses Q() quoting for compatibility with
-    column names that contain underscores or special characters.
+    If ``anticipation_window_start`` is supplied, tests whether the groups
+    diverge before that window (bounded anticipation). Otherwise runs the older
+    single placebo-period DiD restricted to pre-treatment periods.
     """
     import statsmodels.formula.api as smf
+
+    window_start = getattr(vars, "anticipation_window_start", None)
+    if window_start is not None:
+        return _check_bounded_anticipation(vars, window_start, alpha)
 
     df = vars.df
     time_var = vars.time_var
@@ -385,13 +514,289 @@ def check_baseline_outcome_balance(
     )
 
 
-def check_stable_group_composition(vars: AssumptionVariables, llm=None) -> AssumptionResult:
-    """Stable group composition: no differential attrition due to treatment."""
-    return _llm_argue_assumption(
-        "Stable group composition",
-        "Unit composition of treatment and control groups does not change as a result "
-        "of treatment (no differential attrition or selective entry/exit).",
-        vars, llm,
+def check_stable_group_composition(
+    vars: AssumptionVariables,
+    llm=None,
+    alpha: float = 0.05,
+    min_units_per_group: int = 10,
+) -> AssumptionResult:
+    """Stable group composition: no differential attrition or entry.
+
+    Deterministic panel check. Requires a unit identifier (``unit_var``, or
+    ``group_var`` as a fallback), a time column, and a binary treatment/group
+    indicator that is constant within units. It compares dropout among units
+    observed in the first period and entry among units observed in the last
+    period with Fisher's exact test.
+
+    Returns ``passed=None`` ("can't tell") whenever the inputs are missing or too
+    thin to test; the tree treats that as a warning and continues. ``llm`` is
+    accepted for signature compatibility but is not used: this assumption is
+    checked from the data, not argued from the description.
+    """
+    del llm  # group composition is tested from the data, not argued by the LLM
+    df = vars.df
+    if df is None or not hasattr(df, "columns"):
+        return AssumptionResult(
+            passed=None,
+            reasoning="Group composition cannot be tested: no dataframe was provided.",
+        )
+
+    unit = vars.unit_var or vars.group_var
+    unit_source = "unit_var" if vars.unit_var else "group_var (fallback)"
+    time_col = vars.time_var
+    group_col = vars.treatment
+
+    missing = [
+        label
+        for label, name in (
+            ("unit identifier (unit_var or group_var)", unit),
+            ("time variable", time_col),
+            ("treatment/group variable", group_col),
+        )
+        if not name
+    ]
+    if missing:
+        return AssumptionResult(
+            passed=None,
+            reasoning="Group composition cannot be tested: missing " + ", ".join(missing) + ".",
+            details={"required": ["unit_var/group_var", "time_var", "treatment"]},
+        )
+
+    absent = [name for name in (unit, time_col, group_col) if name not in df.columns]
+    if absent:
+        return AssumptionResult(
+            passed=None,
+            reasoning=(
+                "Group composition cannot be tested: column(s) not in the dataset: "
+                + ", ".join(repr(name) for name in absent)
+                + "."
+            ),
+            details={"missing_columns": absent},
+        )
+    if len({unit, time_col, group_col}) < 3:
+        return AssumptionResult(
+            passed=None,
+            reasoning=(
+                "Group composition cannot be tested: the unit, time, and "
+                "treatment/group columns must be distinct."
+            ),
+        )
+
+    pairs = (
+        df[[unit, time_col, group_col]]
+        .dropna()
+        .drop_duplicates()
+    )
+    n_units = int(pairs[unit].nunique())
+    n_periods = int(pairs[time_col].nunique())
+    if n_units < 2:
+        return AssumptionResult(
+            passed=None,
+            reasoning="Group composition cannot be tested: fewer than two units were observed.",
+        )
+    if n_periods < 2:
+        return AssumptionResult(
+            passed=None,
+            reasoning="Group composition cannot be tested: fewer than two time periods were observed.",
+        )
+
+    per_unit_groups = pairs.groupby(unit)[group_col].nunique()
+    varying = int((per_unit_groups > 1).sum())
+    if varying:
+        return AssumptionResult(
+            passed=None,
+            reasoning=(
+                "Group composition cannot be tested: the treatment/group indicator "
+                f"varies within {varying} unit(s); a stable treatment-group "
+                "indicator is required."
+            ),
+        )
+
+    unit_group = pairs.groupby(unit)[group_col].first()
+    group_values = list(pd.unique(unit_group))
+    if len(group_values) != 2:
+        return AssumptionResult(
+            passed=None,
+            reasoning=(
+                "Group composition cannot be tested: expected a binary group "
+                f"indicator, found {len(group_values)} value(s) "
+                f"({', '.join(str(value) for value in group_values[:5])})."
+            ),
+        )
+    group_values = sorted(group_values, key=lambda value: str(value))
+
+    periods = list(pd.unique(pairs[time_col]))
+    try:
+        periods = sorted(periods)
+    except TypeError:
+        return AssumptionResult(
+            passed=None,
+            reasoning="Group composition cannot be tested: time values are not orderable.",
+        )
+    first_period, last_period = periods[0], periods[-1]
+
+    start_units = set(pairs.loc[pairs[time_col] == first_period, unit])
+    end_units = set(pairs.loc[pairs[time_col] == last_period, unit])
+    if not start_units or not end_units:
+        return AssumptionResult(
+            passed=None,
+            reasoning="Group composition cannot be tested: the first or last period has no units.",
+        )
+
+    def _group_frame(units):
+        frame = pd.DataFrame({unit: list(units)})
+        frame["__group__"] = frame[unit].map(unit_group)
+        return frame
+
+    start_frame = _group_frame(start_units)
+    end_frame = _group_frame(end_units)
+
+    # Dropout: baseline units absent from the last period.
+    start_totals = {
+        value: int(start_frame["__group__"].eq(value).sum()) for value in group_values
+    }
+    if min(start_totals.values()) < min_units_per_group:
+        return AssumptionResult(
+            passed=None,
+            reasoning=(
+                "Group composition cannot be tested: too few units per group in "
+                "the first period ("
+                + ", ".join(f"{value}: {start_totals[value]}" for value in group_values)
+                + f"); need at least {min_units_per_group} per group."
+            ),
+            details={"start_group_counts": {str(k): v for k, v in start_totals.items()}},
+        )
+    dropout_events = {
+        value: int(
+            (start_frame["__group__"].eq(value) & ~start_frame[unit].isin(end_units)).sum()
+        )
+        for value in group_values
+    }
+
+    # Entry: last-period units absent from the first period.
+    end_totals = {
+        value: int(end_frame["__group__"].eq(value).sum()) for value in group_values
+    }
+    entry_events = {
+        value: int(
+            (end_frame["__group__"].eq(value) & ~end_frame[unit].isin(start_units)).sum()
+        )
+        for value in group_values
+    }
+
+    dropout_table = [
+        [dropout_events[value], start_totals[value] - dropout_events[value]]
+        for value in group_values
+    ]
+    try:
+        _, p_dropout = scipy_stats.fisher_exact(dropout_table)
+        p_dropout = float(p_dropout)
+    except Exception:
+        p_dropout = None
+    if p_dropout is None:
+        return AssumptionResult(
+            passed=None,
+            reasoning="Group composition could not be tested: the dropout test failed to run.",
+        )
+
+    p_entry = None
+    if min(end_totals.values()) >= min_units_per_group:
+        entry_table = [
+            [entry_events[value], end_totals[value] - entry_events[value]]
+            for value in group_values
+        ]
+        try:
+            _, p_entry = scipy_stats.fisher_exact(entry_table)
+            p_entry = float(p_entry)
+        except Exception:
+            p_entry = None
+
+    dropout_rates = {
+        value: (dropout_events[value] / start_totals[value] if start_totals[value] else 0.0)
+        for value in group_values
+    }
+    entry_rates = {
+        value: (entry_events[value] / end_totals[value] if end_totals[value] else 0.0)
+        for value in group_values
+    }
+
+    def _fmt_dropout():
+        return ", ".join(
+            f"{value}: {dropout_rates[value]:.1%} (n={start_totals[value]})"
+            for value in group_values
+        )
+
+    def _fmt_entry():
+        return ", ".join(
+            f"{value}: {entry_rates[value]:.1%} (n={end_totals[value]})"
+            for value in group_values
+        )
+
+    failures = []
+    if p_dropout <= alpha:
+        failures.append(
+            "differential dropout (" + _fmt_dropout() + f"; Fisher p={p_dropout:.3f})"
+        )
+    if p_entry is not None and p_entry <= alpha:
+        failures.append(
+            "differential entry (" + _fmt_entry() + f"; Fisher p={p_entry:.3f})"
+        )
+
+    details = {
+        "unit_variable": unit,
+        "unit_source": unit_source,
+        "time_variable": time_col,
+        "group_variable": group_col,
+        "n_units": n_units,
+        "n_periods": n_periods,
+        "first_period": str(first_period),
+        "last_period": str(last_period),
+        "dropout": {
+            str(value): {
+                "n": start_totals[value],
+                "events": dropout_events[value],
+                "rate": dropout_rates[value],
+            }
+            for value in group_values
+        },
+        "entry": {
+            str(value): {
+                "n": end_totals[value],
+                "events": entry_events[value],
+                "rate": entry_rates[value],
+            }
+            for value in group_values
+        },
+        "p_dropout": p_dropout,
+        "p_entry": p_entry,
+        "alpha": alpha,
+        "min_units_per_group": min_units_per_group,
+    }
+
+    if failures:
+        return AssumptionResult(
+            passed=False,
+            reasoning=(
+                "Group composition changed differentially: "
+                + "; ".join(failures)
+                + ". The treated and control groups may not be comparable over time."
+            ),
+            details=details,
+        )
+
+    entry_sentence = (
+        f"entry {_fmt_entry()} (Fisher p={p_entry:.3f})."
+        if p_entry is not None
+        else "entry could not be tested (too few units per group in the last period)."
+    )
+    return AssumptionResult(
+        passed=True,
+        reasoning=(
+            "Group composition looks stable: "
+            f"dropout {_fmt_dropout()} "
+            f"(Fisher p={p_dropout:.3f}); {entry_sentence}"
+        ),
+        details=details,
     )
 
 
@@ -460,48 +865,30 @@ def check_frontdoor_positivity(
 
 def check_rdd_no_manipulation(
     vars: AssumptionVariables,
-    n_bins: int = 50,
-    bandwidth: float = None,
     alpha: float = 0.05,
-    bandwidth_fraction: float = 0.25,
+    sensitivity: bool = False,
+    **kwargs,
 ) -> AssumptionResult:
-    """McCrary-style density test: check for bunching at the cutoff."""
-    rv = vars.df[vars.running_variable].dropna()
+    """Density-continuity test around the RDD cutoff.
 
-    if bandwidth is None:
-        bandwidth = (rv.max() - rv.min()) * bandwidth_fraction
+    Delegates to the standalone CJM/McCrary test (``rddensity``). The old
+    binomial 50/50 comparison is intentionally retired: it conflated a sloping
+    density with a discontinuity. Returns ``passed=None`` whenever the test
+    cannot run.
+    """
+    from cais.methods.regression_discontinuity.density_test import mccrary_density_test
 
-    near = rv[(rv >= vars.cutoff - bandwidth) & (rv <= vars.cutoff + bandwidth)]
-    below = near[near < vars.cutoff]
-    above = near[near >= vars.cutoff]
-
-    if len(below) < 10 or len(above) < 10:
+    if vars is None or vars.df is None:
         return AssumptionResult(
             passed=None,
-            reasoning="Too few observations near cutoff for density test.",
+            reasoning="Density test cannot run: no dataframe was provided.",
         )
-
-    total = len(below) + len(above)
-    try:
-        p_value = scipy_stats.binomtest(len(below), total, 0.5).pvalue
-    except AttributeError:
-        p_value = scipy_stats.binom_test(len(below), total, 0.5)
-
-    passed = p_value > alpha
-    status_msg = "No evidence of manipulation." if passed else "Significant density discontinuity — possible manipulation."
-    return AssumptionResult(
-        passed=passed,
-        reasoning=(
-            f"Density test around cutoff ({vars.cutoff}): {len(below)} below, {len(above)} above "
-            f"(p={p_value:.4f}). Note: This binomial test is a local approximation of "
-            f"density continuity and may be sensitive to the underlying distribution's slope. "
-            f"{status_msg}"
-        ),
-        details={
-            "n_below": len(below), "n_above": len(above),
-            "p_value": p_value, "bandwidth": bandwidth,
-            "test_type": "binomial_density_approximation",
-        },
+    return mccrary_density_test(
+        vars.df,
+        vars.running_variable,
+        vars.cutoff,
+        alpha=alpha,
+        sensitivity=sensitivity,
     )
 
 

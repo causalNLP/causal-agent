@@ -94,6 +94,7 @@ class TestAssumptionModels(unittest.TestCase):
     def test_assumption_variables_defaults(self):
         v = AssumptionVariables()
         self.assertIsNone(v.df)
+        self.assertIsNone(v.unit_var)
         self.assertEqual(v.covariates, [])
         self.assertEqual(v.instruments, [])
 
@@ -283,6 +284,52 @@ class TestCheckNoAnticipation(unittest.TestCase):
         self.assertIsInstance(r, AssumptionResult)
 
 
+    def test_bounded_window_without_early_divergence_is_assessed(self):
+        df = _make_did_df()
+        v = AssumptionVariables(
+            df=df, treatment="group", outcome="y",
+            time_var="time", group_var="unit", unit_var="unit",
+            treatment_period_start=4, anticipation_window_start=3,
+        )
+        r = check_no_anticipation(v)
+        self.assertIsNotNone(r.passed)
+        self.assertIn("anticipation", r.reasoning.lower())
+
+    def test_bounded_window_with_early_divergence_fails(self):
+        df = _make_did_df()
+        df["y"] = df["y"] + df["group"] * df["time"] * 2.0
+        v = AssumptionVariables(
+            df=df, treatment="group", outcome="y",
+            time_var="time", group_var="unit", unit_var="unit",
+            treatment_period_start=4, anticipation_window_start=3,
+        )
+        r = check_no_anticipation(v)
+        self.assertFalse(r.passed)
+        self.assertIn("differ before", r.reasoning.lower())
+
+    def test_bounded_window_after_treatment_returns_none(self):
+        df = _make_did_df()
+        v = AssumptionVariables(
+            df=df, treatment="group", outcome="y",
+            time_var="time", group_var="unit", unit_var="unit",
+            treatment_period_start=4, anticipation_window_start=4,
+        )
+        r = check_no_anticipation(v)
+        self.assertIsNone(r.passed)
+        self.assertIn("before the treatment", r.reasoning)
+
+    def test_bounded_window_without_pre_periods_returns_none(self):
+        df = _make_did_df()
+        v = AssumptionVariables(
+            df=df, treatment="group", outcome="y",
+            time_var="time", group_var="unit", unit_var="unit",
+            treatment_period_start=4, anticipation_window_start=0,
+        )
+        r = check_no_anticipation(v)
+        self.assertIsNone(r.passed)
+        self.assertIn("before the stated anticipation window", r.reasoning)
+
+
 class TestCheckBaselineOutcomeBalance(unittest.TestCase):
 
     def test_balanced_baseline(self):
@@ -302,17 +349,92 @@ class TestCheckBaselineOutcomeBalance(unittest.TestCase):
 
 class TestCheckStableGroupComposition(unittest.TestCase):
 
-    def test_no_llm_returns_none(self):
+    def _vars(self, df, **overrides):
+        params = dict(
+            df=df, treatment="group", outcome="y",
+            time_var="time", unit_var="unit",
+        )
+        params.update(overrides)
+        return AssumptionVariables(**params)
+
+    def test_balanced_panel_passes(self):
+        df = _make_did_df(n_units=60)
+        r = check_stable_group_composition(self._vars(df), llm=None)
+        self.assertIsInstance(r, AssumptionResult)
+        self.assertTrue(r.passed)
+        self.assertEqual(r.details["n_units"], 60)
+        self.assertIn("p_dropout", r.details)
+
+    def test_missing_unit_identifier_returns_none(self):
         df = _make_did_df()
         v = AssumptionVariables(
-            df=df, treatment="group", outcome="y",
-            time_var="time", group_var="unit", treatment_period_start=4,
-            dataset_description="Panel of states, no attrition.",
-            variables_summary={"treatment": "group", "time": "time"},
+            df=df, treatment="group", outcome="y", time_var="time",
         )
         r = check_stable_group_composition(v, llm=None)
         self.assertIsInstance(r, AssumptionResult)
         self.assertIsNone(r.passed)
+        self.assertIn("unit identifier", r.reasoning)
+
+    def test_falls_back_to_group_variable(self):
+        df = _make_did_df(n_units=60)
+        v = AssumptionVariables(
+            df=df, treatment="group", outcome="y",
+            time_var="time", group_var="unit",
+        )
+        r = check_stable_group_composition(v, llm=None)
+        self.assertTrue(r.passed)
+        self.assertEqual(r.details["unit_source"], "group_var (fallback)")
+
+    def test_differential_dropout_fails(self):
+        df = _make_did_df(n_units=60, n_periods=4)
+        last_period = df["time"].max()
+        treated_units = df.loc[df["group"] == 1, "unit"].unique()
+        dropped = treated_units[:20]
+        df = df[~((df["unit"].isin(dropped)) & (df["time"] == last_period))]
+
+        r = check_stable_group_composition(self._vars(df), llm=None)
+        self.assertFalse(r.passed)
+        self.assertLess(r.details["p_dropout"], 0.05)
+        self.assertIn("differential dropout", r.reasoning)
+
+    def test_differential_entry_fails(self):
+        df = _make_did_df(n_units=60, n_periods=4)
+        last_period = df["time"].max()
+        entrants = pd.DataFrame({
+            "unit": range(1000, 1020),
+            "time": last_period,
+            "group": 1,
+            "y": 0.0,
+        })
+        df = pd.concat([df, entrants], ignore_index=True)
+
+        r = check_stable_group_composition(self._vars(df), llm=None)
+        self.assertFalse(r.passed)
+        self.assertLess(r.details["p_entry"], 0.05)
+        self.assertIn("differential entry", r.reasoning)
+
+    def test_too_few_units_per_group_returns_none(self):
+        df = _make_did_df(n_units=10)  # 5 units per group
+        r = check_stable_group_composition(self._vars(df), llm=None)
+        self.assertIsNone(r.passed)
+        self.assertIn("too few units", r.reasoning)
+
+    def test_non_binary_group_returns_none(self):
+        df = _make_did_df(n_units=60)
+        df.loc[df["unit"] == 0, "group"] = 2
+        r = check_stable_group_composition(self._vars(df), llm=None)
+        self.assertIsNone(r.passed)
+        self.assertIn("binary group indicator", r.reasoning)
+
+    def test_time_varying_group_returns_none(self):
+        df = _make_did_df(n_units=60)
+        last_period = df["time"].max()
+        mask = (df["unit"] == 0) & (df["time"] == last_period)
+        df.loc[mask, "group"] = 1 - df.loc[mask, "group"]
+
+        r = check_stable_group_composition(self._vars(df), llm=None)
+        self.assertIsNone(r.passed)
+        self.assertIn("varies within", r.reasoning)
 
 
 # ---------------------------------------------------------------------------
@@ -387,7 +509,7 @@ class TestCheckRDDNoManipulation(unittest.TestCase):
         rv = rng.uniform(0, 10, 500)
         df = pd.DataFrame({"rv": rv, "y": rv + rng.normal(0, 1, 500)})
         v = AssumptionVariables(df=df, running_variable="rv", cutoff=5.0)
-        r = check_rdd_no_manipulation(v, bandwidth=2.0)
+        r = check_rdd_no_manipulation(v)
         self.assertIsInstance(r, AssumptionResult)
         self.assertIn("p_value", r.details)
         self.assertTrue(r.passed)
@@ -399,7 +521,7 @@ class TestCheckRDDNoManipulation(unittest.TestCase):
         rv = np.concatenate([below, above])
         df = pd.DataFrame({"rv": rv, "y": rv + rng.normal(0, 1, len(rv))})
         v = AssumptionVariables(df=df, running_variable="rv", cutoff=5.0)
-        r = check_rdd_no_manipulation(v, bandwidth=1.5)
+        r = check_rdd_no_manipulation(v)
         self.assertIsInstance(r, AssumptionResult)
         self.assertFalse(r.passed)
 

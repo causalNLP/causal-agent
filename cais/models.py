@@ -281,9 +281,11 @@ class AssumptionVariables(BaseModel):
     cutoff: Optional[float] = None
     time_var: Optional[str] = None
     group_var: Optional[str] = None
+    unit_var: Optional[str] = None
     mediator: Optional[str] = None
     treatment_period_start: Optional[Any] = None
     placebo_period_start: Optional[Any] = None
+    anticipation_window_start: Optional[Any] = None
     dataset_description: Optional[str] = None
     variables_summary: Dict[str, Any] = Field(default_factory=dict)
 

@@ -596,11 +596,21 @@ class TestRDDPath(unittest.TestCase):
 
     def test_manipulation_fail_local_goes_donut(self):
         res = run(
-            base_props(**RDD_PROPS, local_manipulation=True),
+            base_props(**RDD_PROPS, local_manipulation=True, donut_width=0.5),
             checks=stub_checks(rdd_no_manipulation=False),
         )
         self.assertEqual(res.method, M_DONUT_RDD)
-        self.assertFalse(res.implemented)
+        self.assertTrue(res.implemented)
+        self.assertEqual(res.execution["method"], M_DONUT_RDD)
+        self.assertEqual(res.execution["options"]["donut_width"], 0.5)
+
+    def test_manipulation_fail_local_without_width_ends(self):
+        res = run(
+            base_props(**RDD_PROPS, local_manipulation=True),
+            checks=stub_checks(rdd_no_manipulation=False),
+        )
+        self.assertTrue(res.ended)
+        self.assertIn("no donut width", res.end_reason)
 
     def test_manipulation_fail_no_local_ends(self):
         res = run(base_props(**RDD_PROPS), checks=stub_checks(rdd_no_manipulation=False))
@@ -609,10 +619,11 @@ class TestRDDPath(unittest.TestCase):
 
     def test_covariate_continuity_fail_local_goes_donut(self):
         res = run(
-            base_props(**RDD_PROPS, local_manipulation=True),
+            base_props(**RDD_PROPS, local_manipulation=True, donut_width=0.5),
             checks=stub_checks(rdd_covariate_continuity=False),
         )
         self.assertEqual(res.method, M_DONUT_RDD)
+        self.assertTrue(res.implemented)
 
     def test_untestable_rdd_gate_warns_and_continues(self):
         res = run(base_props(**RDD_PROPS), checks=stub_checks(rdd_no_manipulation=None))
@@ -858,6 +869,7 @@ class TestIntegrationRealChecks(unittest.TestCase):
             covariates=[],
             time_variable="year",
             group_variable="state",
+            unit_variable="state",
             has_temporal_structure=True,
             treatment_period_start=1988,
             is_rct=False,
@@ -874,6 +886,9 @@ class TestIntegrationRealChecks(unittest.TestCase):
         self.assertEqual(res.method, M_DID)
         self.assertTrue(res.assumptions["parallel_trends"].passed)
         self.assertIsNotNone(res.assumptions["parallel_trends"].details.get("p_value"))
+        # Only one treated state, so differential attrition is not testable.
+        self.assertIsNone(res.assumptions["stable_group_composition"].passed)
+        self.assertIn("too few units", res.assumptions["stable_group_composition"].reasoning)
         # placebo period is not available anywhere yet -> inconclusive, warn and continue
         self.assertIsNone(res.assumptions["no_anticipation"].passed)
         # LLM checks without an LLM must be inconclusive
