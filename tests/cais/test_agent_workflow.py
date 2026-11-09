@@ -379,6 +379,44 @@ class TestDecisionTreeV2Wiring(unittest.TestCase):
         self.assertEqual(captured["ps_bounds"], [0.1, 0.9])
         self.assertEqual(agent.results["effect_estimate"], 1.23)
 
+    def test_execute_method_applies_leaf_treatment_override(self):
+        """A leaf can remap the grouping variable for one execution (e.g. ITT
+        runs diff-in-means on the assignment column, not the received
+        treatment); the option is applied to the variables and not leaked into
+        estimator kwargs."""
+        agent = self._make_agent()
+        captured = {}
+
+        class FakeEstimator:
+            def __call__(self, df=None, variables=None, query=None, **options):
+                captured["variables"] = variables
+                captured.update(options)
+                return {"effect_estimate": 0.5}
+
+        agent.estimators.estimators[TrimmedIPW.name] = FakeEstimator()
+        agent.selected_method = "trimmed_ipw"
+        agent.method_info = MagicMock()
+        agent.tree_result = TreeResult(
+            method="trimmed_ipw",
+            implemented=True,
+            execution={
+                "method": "trimmed_ipw",
+                "display_name": "Trial run with assignment grouping",
+                # "covariate1" stands in for the assignment column, which must
+                # exist in the dataset for the dropna in execute_method.
+                "options": {"treatment_variable": "covariate1"},
+            },
+        )
+
+        with patch('cais.agent.explanation_generator_tool') as mock_explain:
+            mock_explain.func.return_value = {"explanation": "ok"}
+            agent.execute_method()
+
+        self.assertEqual(agent.variables.treatment_variable, "covariate1")
+        self.assertEqual(captured["variables"].treatment_variable, "covariate1")
+        self.assertNotIn("treatment_variable", captured)
+        self.assertEqual(agent.results["effect_estimate"], 0.5)
+
     def test_trimmed_ipw_is_registered_for_execution(self):
         from cais.agent import convert
         from cais.estimator_lib import Estimators

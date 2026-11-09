@@ -473,6 +473,18 @@ class CausalAgent():
         execution = dict(getattr(self.tree_result, "execution", {}) or {})
         execution_method = execution.get("method") or self.selected_method
         method_options = dict(execution.get("options") or {})
+        # Leaf-level variable remap: e.g. the ITT leaf runs diff-in-means with
+        # the assignment column as the grouping variable, not the received
+        # treatment. Applied before data prep so NaN handling keys on the
+        # right column on both primary and fallback execution paths.
+        leaf_treatment = method_options.pop("treatment_variable", None)
+        if leaf_treatment and self.variables is not None:
+            logger.info(
+                "Execution leaf overrides the treatment column: %s -> %s",
+                self.variables.treatment_variable,
+                leaf_treatment,
+            )
+            self.variables.treatment_variable = leaf_treatment
         logger.info(f"Executing '{execution_method}' with options {method_options}")
         try:
             estimator = self.estimators[

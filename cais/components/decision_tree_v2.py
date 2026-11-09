@@ -109,6 +109,39 @@ _PERIOD_TOKEN_RE = re.compile(
 )
 _NUMBER_RE = re.compile(r"-?\d+(?:\.\d+)?")
 
+# Encouragement-branch estimand question. The query interpreter will eventually
+# parse the answer from the user query itself; until then, the user's literal
+# reply is keyword-parsed and anything unclear defaults to the received-
+# treatment estimand, as agreed with the team.
+ESTIMAND_QUESTION = (
+    "Does the analysis target the effect of the assignment/encouragement "
+    "(intention-to-treat, ITT) or the effect of actually receiving the treatment? "
+    "Reply 'assignment' or 'received'; 'skip' or empty = default: effect of "
+    "receiving the treatment."
+)
+_ITT_RE = re.compile(
+    r"\b(itt|intention\W*to\W*treat|assign\w*|encourag\w*|offered|invited|mobiliz\w*)\b",
+    re.IGNORECASE,
+)
+_RECEIVED_RE = re.compile(
+    r"\b(receiv\w*|treat\w*|taken|taking|take\W*up|uptake|attend\w*|compli\w*|actual\w*|delivered|consumed|used)\b",
+    re.IGNORECASE,
+)
+
+
+def parse_estimand_answer(answer: str) -> Optional[str]:
+    """Keyword-parse a user reply to the estimand question (stub parser).
+
+    Returns "itt", "treatment_effect", or None when nothing recognizable was
+    said. Assignment words are matched before received-treatment words, because
+    phrases like "effect of being assigned the treatment" contain both.
+    """
+    if _ITT_RE.search(answer):
+        return "itt"
+    if _RECEIVED_RE.search(answer):
+        return "treatment_effect"
+    return None
+
 
 def extract_period_starts(answer: str, current: Dict[str, Any]) -> Dict[str, float]:
     """Parse the no-anticipation question's answer into period starts.
@@ -169,6 +202,9 @@ class TreeResult:
 
     method: Optional[str] = None
     variant: Optional[str] = None
+    # Encouragement-branch estimand: "itt" (effect of the assignment) or
+    # "treatment_effect" (effect of the received treatment). None elsewhere.
+    estimand: Optional[str] = None
     implemented: bool = True
     asks_used: int = 0  # follow-up questions asked to reach this result
     ended: bool = False
@@ -191,6 +227,7 @@ class TreeResult:
         return {
             "method": self.method,
             "variant": self.variant,
+            "estimand": self.estimand,
             "implemented": self.implemented,
             "asks_used": self.asks_used,
             "ended": self.ended,
@@ -530,24 +567,103 @@ class _Traversal:
             self.leaf(M_OLS_PRE_TREATMENT if has_pre else M_DIFF_IN_MEANS)
             return
 
+        # Left branch (team decision, Nov 8): first settle which quantity the
+        # run targets, then either report the assignment effect directly or
+        # require a strong instrument for the received-treatment effect.
+        estimand = self._ask_estimand()
+        if estimand == "itt":
+            self._select_dim_on_assignment()
+            return
+        has_candidate = self.props.get("has_valid_instrument")
+        if has_candidate is None:
+            has_candidate = bool(self.props.get("instrument_variable"))
+        self.step("Is there a candidate instrument?", "criteria", "Yes" if has_candidate else "No")
+        if not has_candidate:
+            self.end(
+                "Unsupported: no candidate instrument, so the effect of the "
+                "received treatment cannot be identified on encouragement-design data."
+            )
+            return
         relevance = self.checked("Gate: Relevance (High F-stat)", "iv_relevance", "gate")
         if relevance is True:
-            self.leaf(M_DIFF_IN_MEANS, variant="on_assignment")
+            self._iv_advisories()
+            self.leaf(M_IV)
             return
-        if relevance is None:
-            self.result.warnings.append(
-                "Instrument relevance could not be tested; routing to the validity check."
-            )
-        # F < 10 (or untestable): only proceed with a valid instrument
-        has_valid = self.props.get("has_valid_instrument")
-        if has_valid is None:
-            has_valid = bool(self.props.get("instrument_variable"))
-        self.step("Is there a valid instrument?", "criteria", "Yes" if has_valid else "No")
-        if not has_valid:
-            self.end("Weak instrument (F < 10) and no valid instrument for the encouragement design.")
+        # Weak or untestable first stage: interactive runs may still insist on
+        # IV (batch runs cannot and stop), consistent with the observational path.
+        if self._consult_override(
+            "Gate: Relevance (High F-stat)", "iv_relevance",
+            "Weak or unverifiable instrument (first-stage F < 10 or not computable): "
+            "the effect of the received treatment cannot be reported reliably.",
+        ):
+            self.leaf(M_IV)
             return
-        self._iv_advisories()
-        self.leaf(M_IV)
+        self.end(
+            "Unsupported: weak or unverifiable instrument - the effect of the "
+            "received treatment cannot be reported; the assignment effect (ITT) "
+            "remains available if wanted."
+        )
+
+    def _ask_estimand(self) -> str:
+        """Settle the encouragement-branch estimand: "itt" or "treatment_effect".
+
+        Order: (1) an explicit ``estimand`` property (the interpreter's future
+        integration point); (2) asking the user -- budgeted like the other
+        follow-up questions, replies keyword-parsed until the interpreter owns
+        this; (3) default "treatment_effect", per the team decision.
+        """
+        node = "Which estimand: assignment effect or effect of receiving treatment?"
+        provided = self.props.get("estimand")
+        if provided in ("itt", "treatment_effect"):
+            self.result.estimand = provided
+            self.step(node, "process", f"provided: {provided}", "")
+            return provided
+        if self.prompt_callback is None:
+            self.result.estimand = "treatment_effect"
+            self.step(node, "process", "default treatment_effect (no user available in batch)", "")
+            return "treatment_effect"
+        question = ESTIMAND_QUESTION
+        for _ in range(MAX_PROMPTS):
+            if self.asks_used >= MAX_TOTAL_ASKS:
+                break
+            answer = self._prompt(question)
+            if not answer:
+                self.result.estimand = "treatment_effect"
+                self.step(node, "process", "default treatment_effect (no user answer)", f"question: {question}")
+                return "treatment_effect"
+            self.asks_used += 1
+            parsed = parse_estimand_answer(answer)
+            if parsed is not None:
+                self.result.estimand = parsed
+                self.step(
+                    node, "process",
+                    f"answered ({self.asks_used}/{MAX_TOTAL_ASKS}): {parsed}",
+                    f"answer: {answer!r}",
+                )
+                return parsed
+            self.step(node, "process", f"unclear answer ({self.asks_used}/{MAX_TOTAL_ASKS})", f"answer: {answer!r}")
+            question = f"Could not read that ({answer!r}). {ESTIMAND_QUESTION}"
+        self.result.estimand = "treatment_effect"
+        self.step(node, "process", "default treatment_effect (no clear answer)", "")
+        return "treatment_effect"
+
+    def _select_dim_on_assignment(self) -> None:
+        """Select diff-in-means on the assignment column (intention-to-treat)."""
+        assignment = self.props.get("instrument_variable")
+        if isinstance(assignment, (list, tuple)):
+            assignment = assignment[0] if assignment else None
+        if not assignment:
+            assignment = self.props.get("treatment_variable")
+        self.leaf(M_DIFF_IN_MEANS, variant="on_assignment")
+        self.result.execution = {
+            "method": M_DIFF_IN_MEANS,
+            "display_name": "Difference-in-Means on Assignment (ITT)",
+            "options": {"treatment_variable": assignment},
+        }
+        self.result.warnings.append(
+            "Estimand is the effect of the assignment (ITT); the estimate groups "
+            "units by the assignment column, not by the received treatment."
+        )
 
     def _observational_branch(self) -> None:
         treatment_type = self.props.get("treatment_variable_type", "binary")

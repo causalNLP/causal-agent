@@ -476,39 +476,158 @@ class TestRCTBranch(unittest.TestCase):
         res = run(base_props(is_rct=True, covariates=[], has_pre_treatment_variables=False))
         self.assertEqual(res.method, M_DIFF_IN_MEANS)
 
-    def test_encouragement_strong_f_assignment_analysis(self):
+    # -- batch mode (no user): estimand defaults to the received treatment --
+
+    def test_encouragement_batch_strong_f_selects_iv(self):
         res = run(
             base_props(is_rct=True, instrument_variable="z", is_encouragement_design=True),
             checks=stub_checks(iv_relevance=True),
         )
-        self.assertEqual(res.method, M_DIFF_IN_MEANS)
-        self.assertEqual(res.variant, "on_assignment")
-
-    def test_encouragement_weak_f_with_valid_instrument_iv(self):
-        res = run(
-            base_props(is_rct=True, instrument_variable="z", is_encouragement_design=True),
-            checks=stub_checks(iv_relevance=False),
-        )
         self.assertEqual(res.method, M_IV)
+        self.assertEqual(res.estimand, "treatment_effect")
         self.assertIn("iv_exclusion", res.assumptions)
         self.assertIn("iv_exogeneity", res.assumptions)
         self.assertIn("iv_monotonicity", res.assumptions)
 
-    def test_encouragement_weak_f_without_instrument_ends(self):
+    def test_encouragement_batch_weak_f_ends_unsupported(self):
+        res = run(
+            base_props(is_rct=True, instrument_variable="z", is_encouragement_design=True),
+            checks=stub_checks(iv_relevance=False),
+        )
+        self.assertTrue(res.ended)
+        self.assertIsNone(res.method)
+        self.assertIn("Unsupported", res.end_reason)
+
+    def test_encouragement_batch_untestable_f_ends_like_weak(self):
+        res = run(
+            base_props(is_rct=True, instrument_variable="z", is_encouragement_design=True),
+            checks=stub_checks(iv_relevance=None),
+        )
+        self.assertTrue(res.ended)
+        self.assertIsNone(res.method)
+        self.assertIn("Unsupported", res.end_reason)
+
+    def test_encouragement_without_instrument_ends_before_gate(self):
         res = run(
             base_props(is_rct=True, instrument_variable=None, is_encouragement_design=True),
             checks=stub_checks(iv_relevance=False),
         )
         self.assertTrue(res.ended)
-        self.assertIn("Weak instrument", res.end_reason)
+        self.assertIsNone(res.method)
+        self.assertIn("no candidate instrument", res.end_reason)
 
-    def test_encouragement_relevance_untestable_routes_to_validity(self):
+    # -- interactive mode: the user answers the estimand question ----------
+
+    def _queue_prompt(self, answers):
+        queue = list(answers)
+        return lambda q: queue.pop(0) if queue else None
+
+    def test_encouragement_user_chooses_assignment(self):
         res = run(
-            base_props(is_rct=True, instrument_variable="z", is_encouragement_design=True),
-            checks=stub_checks(iv_relevance=None),
+            base_props(
+                is_rct=True,
+                instrument_variable="z",
+                is_encouragement_design=True,
+                dataset_description="Short description.",
+            ),
+            checks=stub_checks(iv_relevance=True),
+            prompt_callback=self._queue_prompt(["the effect of assignment, ITT"]),
+        )
+        self.assertEqual(res.estimand, "itt")
+        self.assertEqual(res.method, M_DIFF_IN_MEANS)
+        self.assertEqual(res.variant, "on_assignment")
+        self.assertEqual(res.execution.get("method"), M_DIFF_IN_MEANS)
+        self.assertEqual(res.execution.get("options"), {"treatment_variable": "z"})
+        self.assertNotIn("iv_relevance", res.assumptions)
+        self.assertEqual(res.asks_used, 1)
+
+    def test_encouragement_user_chooses_received_treatment(self):
+        res = run(
+            base_props(
+                is_rct=True,
+                instrument_variable="z",
+                is_encouragement_design=True,
+                dataset_description="Short description.",
+            ),
+            checks=stub_checks(iv_relevance=True),
+            prompt_callback=self._queue_prompt(["the effect of receiving the treatment"]),
+        )
+        self.assertEqual(res.estimand, "treatment_effect")
+        self.assertEqual(res.method, M_IV)
+        self.assertEqual(res.asks_used, 1)
+
+    def test_encouragement_unclear_answer_then_default(self):
+        res = run(
+            base_props(
+                is_rct=True,
+                instrument_variable="z",
+                is_encouragement_design=True,
+                dataset_description="Short description.",
+            ),
+            checks=stub_checks(iv_relevance=True),
+            prompt_callback=self._queue_prompt(["banana"]),
+        )
+        self.assertEqual(res.estimand, "treatment_effect")
+        self.assertEqual(res.method, M_IV)
+        self.assertEqual(res.asks_used, 1)
+
+    def test_provided_estimand_itt_skips_asking(self):
+        res = run(
+            base_props(
+                is_rct=True,
+                instrument_variable="z",
+                is_encouragement_design=True,
+                estimand="itt",
+            ),
+            checks=stub_checks(iv_relevance=True),
+        )
+        self.assertEqual(res.estimand, "itt")
+        self.assertEqual(res.method, M_DIFF_IN_MEANS)
+        self.assertEqual(res.variant, "on_assignment")
+        self.assertEqual(res.asks_used, 0)
+
+    def test_provided_estimand_treatment_effect_skips_asking(self):
+        res = run(
+            base_props(
+                is_rct=True,
+                instrument_variable="z",
+                is_encouragement_design=True,
+                estimand="treatment_effect",
+            ),
+            checks=stub_checks(iv_relevance=True),
+        )
+        self.assertEqual(res.estimand, "treatment_effect")
+        self.assertEqual(res.method, M_IV)
+        self.assertEqual(res.asks_used, 0)
+
+    def test_encouragement_weak_f_override_continues_to_iv(self):
+        res = run(
+            base_props(
+                is_rct=True,
+                instrument_variable="z",
+                is_encouragement_design=True,
+                dataset_description="Short description.",
+            ),
+            checks=stub_checks(iv_relevance=False),
+            prompt_callback=self._queue_prompt(["treatment effect", "y"]),
         )
         self.assertEqual(res.method, M_IV)
-        self.assertTrue(any("relevance" in w.lower() for w in res.warnings))
+        self.assertTrue(any(s.outcome == "user passed the failed gate" for s in res.steps))
+
+    def test_encouragement_weak_f_user_declines_override_ends(self):
+        res = run(
+            base_props(
+                is_rct=True,
+                instrument_variable="z",
+                is_encouragement_design=True,
+                dataset_description="Short description.",
+            ),
+            checks=stub_checks(iv_relevance=False),
+            prompt_callback=self._queue_prompt(["treatment effect", "n"]),
+        )
+        self.assertTrue(res.ended)
+        self.assertIsNone(res.method)
+        self.assertIn("Unsupported", res.end_reason)
 
 
 # ---------------------------------------------------------------------------
