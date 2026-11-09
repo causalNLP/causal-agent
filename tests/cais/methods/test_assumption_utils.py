@@ -545,6 +545,54 @@ class TestCheckRDDCovariateContinuity(unittest.TestCase):
         r = check_rdd_covariate_continuity(v)
         self.assertIsNone(r.passed)
 
+    def test_running_variable_in_covariates_is_ignored(self):
+        # The design rule itself (the running variable) must never be treated
+        # as a background covariate: across the cutoff its values differ by
+        # construction, so including it reports a manufactured violation.
+        rng = np.random.default_rng(21)
+        n = 400
+        rv = rng.uniform(0, 10, n)
+        age = rng.normal(40, 5, n)
+        df = pd.DataFrame({"rv": rv, "age": age})
+        v = AssumptionVariables(
+            df=df, running_variable="rv", cutoff=5.0, covariates=["age", "rv"]
+        )
+        r = check_rdd_covariate_continuity(v, bandwidth=2.0)
+        self.assertTrue(r.passed)
+        self.assertNotIn("rv", (r.details or {}).get("covariate_tests", {}))
+
+    def test_only_running_variable_left_returns_none(self):
+        df = pd.DataFrame({"rv": np.linspace(0, 10, 100)})
+        v = AssumptionVariables(df=df, running_variable="rv", cutoff=5.0, covariates=["rv"])
+        r = check_rdd_covariate_continuity(v)
+        self.assertIsNone(r.passed)
+        self.assertIn("no covariates remain", r.reasoning)
+
+    def test_single_borderline_flag_does_not_fail_family(self):
+        # One covariate with 0.0125 < p < 0.05 among four tests is a chance
+        # imbalance at the family level; the Bonferroni-corrected verdict
+        # must pass while raw p-values stay visible.
+        rng = np.random.default_rng(31)
+        n = 300
+        rv = rng.uniform(0, 10, n)
+        below_idx, above_idx = 0, 0
+        diffs = {c: 0.0 for c in ["a", "b", "c", "d"]}
+        diffs["d"] = 0.45  # tuned so its t-test lands between alpha/4 and alpha
+        data = {"rv": rv}
+        for c, d in diffs.items():
+            data[c] = rng.normal(0, 1, n) + d * (rv > 5.0)
+        df = pd.DataFrame(data)
+        v = AssumptionVariables(
+            df=df, running_variable="rv", cutoff=5.0,
+            covariates=["a", "b", "c", "d"],
+        )
+        r = check_rdd_covariate_continuity(v, bandwidth=2.0)
+        p_d = (r.details or {})["covariate_tests"]["d"]["p_value"]
+        self.assertGreater(p_d, 0.0125)
+        self.assertLess(p_d, 0.05)
+        self.assertTrue(r.passed)
+        self.assertEqual((r.details or {}).get("per_test_alpha"), 0.0125)
+
 
 class TestCheckRDDContinuityPotentialOutcomes(unittest.TestCase):
 

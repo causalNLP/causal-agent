@@ -155,6 +155,7 @@ class CausalAgent():
         self.dataset_analysis = dataset_analysis
         #self.query_interpreter_output = query_interpreter_output
         self.variables = query_interpreter_output.variables
+        self._strip_design_columns_from_covariates()
 
     def select_method(self, query=None, llm_decision=True):
 
@@ -407,6 +408,7 @@ class CausalAgent():
             iv_discovery_output_dict = iv_discovery_output
             
         self.variables = Variables(**iv_discovery_output_dict["variables"])
+        self._strip_design_columns_from_covariates()
         return self.variables
 
     def validate_method(self, query=None):
@@ -440,6 +442,36 @@ class CausalAgent():
         )
       
         self.variables = Variables(**controls_selector_output['variables']) # refined controls; need to update after cleaning
+        self._strip_design_columns_from_covariates()
+
+    def _strip_design_columns_from_covariates(self) -> None:
+        """Remove design-role columns from the covariate/confounder lists.
+
+        Columns that define the identification design (treatment, outcome,
+        running variable, instrument, mediator) must never appear in the
+        covariate list: downstream consumers (e.g. the RDD covariate-continuity
+        check) would otherwise test a column against the rule that defines it
+        and read the rule itself as a violation.
+        """
+        variables = self.variables
+        design = {
+            variables.treatment_variable, variables.outcome_variable,
+            variables.running_variable, variables.instrument_variable,
+            getattr(variables, "mediator_variable", None),
+        }
+        design = {name for name in design if name}
+        if not design:
+            return
+        removed = [c for c in (variables.covariates or []) if c in design]
+        variables.covariates = [c for c in (variables.covariates or []) if c not in design]
+        if removed and hasattr(variables, "confounders"):
+            variables.confounders = [
+                c for c in (variables.confounders or []) if c not in design
+            ]
+        if removed:
+            logger.info(
+                "Removed design columns %s from covariate list", removed
+            )
 
     def clean_dataset(self, query=None):   
 

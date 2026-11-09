@@ -902,6 +902,22 @@ def check_rdd_covariate_continuity(
     if not vars.covariates:
         return AssumptionResult(passed=None, reasoning="No covariates provided.")
 
+    # The running variable cannot be tested for continuity at its own cutoff:
+    # below-cutoff and above-cutoff values differ by construction, so including
+    # it would turn the design rule itself into a manufactured violation.
+    if vars.running_variable in vars.covariates:
+        vars.covariates = [
+            c for c in vars.covariates if c != vars.running_variable
+        ]
+        if not vars.covariates:
+            return AssumptionResult(
+                passed=None,
+                reasoning=(
+                    "After removing the running variable from the covariate "
+                    "list, no covariates remain to test."
+                ),
+            )
+
     if bandwidth is None:
         rv_range = vars.df[vars.running_variable].max() - vars.df[vars.running_variable].min()
         bandwidth = bandwidth_fraction * rv_range
@@ -917,23 +933,40 @@ def check_rdd_covariate_continuity(
         return AssumptionResult(passed=None, reasoning="Too few observations near cutoff.")
 
     results = {}
-    discontinuous = []
     for cov in vars.covariates:
         if cov not in df_bw.columns:
             continue
         t_stat, p_val = scipy_stats.ttest_ind(below[cov].dropna(), above[cov].dropna(), equal_var=False)
         results[cov] = {"t_stat": float(t_stat), "p_value": float(p_val)}
-        if p_val < alpha:
-            discontinuous.append(cov)
+
+    # Family-wise control: without a correction, testing k covariates at
+    # alpha 0.05 rejects a clean cutoff roughly k-in-20 times by chance. The
+    # gate's verdict should hold the intended 5% error rate over the whole
+    # set, so each test is judged at alpha/k (Bonferroni); raw p-values stay
+    # in details for inspection.
+    if results:
+        per_test_alpha = alpha / len(results)
+    else:
+        per_test_alpha = alpha
+    discontinuous = [
+        cov for cov, test in results.items() if test["p_value"] < per_test_alpha
+    ]
 
     passed = len(discontinuous) == 0
     return AssumptionResult(
         passed=passed,
         reasoning=(
-            f"Covariate continuity at cutoff ({vars.cutoff}) on {len(results)} covariates. "
+            f"Covariate continuity at cutoff ({vars.cutoff}) on {len(results)} covariates "
+            f"(per-test alpha {per_test_alpha:.4f}, Bonferroni). "
             f"{'All continuous.' if passed else f'Discontinuous: {discontinuous}.'}"
         ),
-        details={"covariate_tests": results, "discontinuous": discontinuous, "bandwidth": bandwidth, "alpha": alpha},
+        details={
+            "covariate_tests": results,
+            "discontinuous": discontinuous,
+            "bandwidth": bandwidth,
+            "alpha": alpha,
+            "per_test_alpha": per_test_alpha,
+        },
     )
 
 
