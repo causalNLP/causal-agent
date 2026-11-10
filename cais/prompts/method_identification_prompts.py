@@ -26,17 +26,40 @@ Available Columns: {column_info}
 
 Think through this step by step:
 
+Step 0: Classify the uptake regime FIRST -- this decides whether an instrument
+can exist at all.
+- DRIVEN: the description says some factor determined or drove who received
+  treatment -- an assignment or eligibility rule, an offer or invitation, a
+  provider or system decision, funding, a lottery -- OR receipt is described as
+  tied to a factor OUTSIDE the unit's own control: a provider attribute
+  (experience, staffing), a system or area condition (local unemployment or
+  prices, budgets, policies, exposure rules). Uptake need not be formally
+  assigned; what matters is an outside driver of who gets treated.
+- VOLUNTARY/SELF-SELECTED: units effectively chose their own uptake ('chose to
+  participate', 'opted in', 'enrolled themselves', uptake described as a personal
+  decision) and no outside driver is described. The unit's own characteristics
+  (its income, residence, health, history) are NOT outside drivers -- described
+  differences between participants and non-participants are exactly the
+  confounding that matching or regression adjusts for, not an instrument.
+- If VOLUNTARY/SELF-SELECTED, return null for ALL fields. An instrument requires
+  an outside driver of receipt; in a self-selected design there is none, and
+  adjustment methods (matching, regression) are the right tools. Abstaining here
+  is the correct answer, not a failure.
+
 Step 1: Understand the causal question
 - What causal effect is the user trying to estimate?
 - What might confound treatment and outcome? (Context only; not your job to fix here.)
 
-Step 2: Nominate candidates
+Step 2: Nominate candidates (only if the regime is ASSIGNED/ENCOURAGED)
 - Find columns that plausibly determine treatment assignment or uptake.
 - Patterns that suggest a candidate: assignment-like flags ('assigned', 'offered',
   'invited', 'enrolled', 'push'); design determinants the description names
   (eligibility rules, income thresholds, unemployment rates, program funding,
   provider experience, lottery components).
-- Exclude the treatment and outcome variables themselves.
+- NEVER nominate: the treatment or outcome columns themselves; time or period
+  flags (columns marking pre/post periods such as 'post_intervention',
+  'post_policy_period', year or wave dummies) -- they occur at or after treatment
+  time and cannot determine assignment.
 - Only nominate variables that exist in the available columns list.
 
 Step 3: Ground each candidate
@@ -44,13 +67,13 @@ Step 3: Ground each candidate
   verbatim, or null if no sentence supports it.
 - Set 'basis' to 'design-stated' when the quoted sentence ties the candidate to
   the treatment decision; otherwise 'name-only' (trusted for its meaning, to be
-  Verified by the program from data).
+  verified by the program from data).
 
 Step 4: Decide 'instrument_variable'
 - Return the best candidate in 'instrument_variable'; list up to three in 'candidates'.
 - Only select variables from the available columns; do not create new variables.
-- If nothing in the design plausibly determines treatment, return null for all
-  fields rather than guessing from unrelated columns.
+- If the regime is voluntary or nothing in the design plausibly determines
+  treatment, return null for all fields rather than guessing from unrelated columns.
 
 Important: Return only valid JSON. No explanations, reasoning, or markdown formatting.
 

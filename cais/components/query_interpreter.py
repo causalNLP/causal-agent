@@ -394,7 +394,16 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
             if isinstance(quote, str) and quote.strip() and not quote_ok:
                 logger.info("IV nomination quote not found verbatim in the description; demoting basis to 'name-only'.")
                 basis = "name-only"
-            valid_candidates = [c for c in candidates if c in columns]
+            # Design columns can never be instruments: they occur at or after
+            # treatment time (period flags, the treatment itself) or are the
+            # quantity being explained. Belt-and-braces against prompt misses.
+            design_cols = {
+                c for c in (treatment_variable, outcome_variable, time_variable, did_term)
+                if isinstance(c, str) and c
+            }
+            if instrument_variable in design_cols:
+                instrument_variable = None
+            valid_candidates = [c for c in candidates if c in columns and c not in design_cols]
             # Chain: best -> first roster-valid candidate
             if instrument_variable not in columns:
                 instrument_variable = None
