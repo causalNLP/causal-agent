@@ -7,10 +7,16 @@ within the query_interpreter component.
 # query, description, column_info, treatment, outcome
 
 IV_IDENTIFICATION_PROMPT_TEMPLATE = """
-You are an expert in causal inference. 
-You need to assess whether a valid instrument exists in the dataset to apply Instrumental Variable (IV) methods for estimating causal effects to answer the user query.
-Use systematic reasoning to evaluate potential instruments against strict criteria. You need to be strict with the assessment.
-Do not suggest IV based on weak reasoning. 
+You are an expert in causal inference.
+Your task is to NOMINATE instrumental-variable candidates: columns that plausibly
+Determine who receives the treatment -- or how much treatment they receive -- based
+on the study design described in the text.
+
+This is a nomination task, not a validity verdict. Do NOT try to certify untestable
+conditions (exclusion restriction, independence): they are argued separately, and
+the program verifies instrument strength statistically from the data and discards
+weak candidates. Nominating a plausible design column is helpful; withholding it
+for untestable reasons is not.
 
 User Query: "{query}"
 Dataset Description: {description}
@@ -22,40 +28,37 @@ Think through this step by step:
 
 Step 1: Understand the causal question
 - What causal effect is the user trying to estimate?
-- What potential unobserved confounders might affect treatment and outcome?
+- What might confound treatment and outcome? (Context only; not your job to fix here.)
 
-Step 2: Identify potential instrumental variables
-- Which columns could plausibly serve as instruments?
-- Exclude the treatment and outcome variables themselves
-- Look for variables that might influence treatment assignment and do not directly affect the outcome
-- Only consider variables that exist in the available columns list
+Step 2: Nominate candidates
+- Find columns that plausibly determine treatment assignment or uptake.
+- Patterns that suggest a candidate: assignment-like flags ('assigned', 'offered',
+  'invited', 'enrolled', 'push'); design determinants the description names
+  (eligibility rules, income thresholds, unemployment rates, program funding,
+  provider experience, lottery components).
+- Exclude the treatment and outcome variables themselves.
+- Only nominate variables that exist in the available columns list.
 
-Step 3: Evaluate each potential IV against the four key conditions
+Step 3: Ground each candidate
+- Quote the sentence from the dataset description that led you to the candidate,
+  verbatim, or null if no sentence supports it.
+- Set 'basis' to 'design-stated' when the quoted sentence ties the candidate to
+  the treatment decision; otherwise 'name-only' (trusted for its meaning, to be
+  Verified by the program from data).
 
-Condition 1 - Relevance:
-- Does this variable directly influence the treatment?
-
-Condition 2 - Exclusion restriction:
-- Does this variable affect the outcome only through the treatment? There should be no direct pathway from instrument to outcome bypassing treatment. 
-
-Condition 3 - Independence:
-- Is this variable as good as randomly assigned with respect to unobserved confounders? This means 
-    it should not be correlated with any factors that affect the outcome other than through treatment.
-
-Those are general IV assumptions. However, we also see if this is an encouragement design or encouragement-like setting.
-Condition 4 - Compliance:
-- Is there compliance variation, i.e., some units who weren't eligible to get the treatment got treatment or vice versa?
-- Do we have data showing some units didn't follow their assigned treatment? If there is no data on compliance, discard this condition.
-
-Step 4: Make final determination
-- Select the best candidate only if it satisfies all conditions
-- If no good candidates exist, return null
-- Only select variables from the available columns; do not create new variables
+Step 4: Decide 'instrument_variable'
+- Return the best candidate in 'instrument_variable'; list up to three in 'candidates'.
+- Only select variables from the available columns; do not create new variables.
+- If nothing in the design plausibly determines treatment, return null for all
+  fields rather than guessing from unrelated columns.
 
 Important: Return only valid JSON. No explanations, reasoning, or markdown formatting.
 
 {{
-    "instrument_variable": "column_name_or_null"
+    "instrument_variable": "best_candidate_or_null",
+    "candidates": ["up_to_three_candidates_or_null"],
+    "basis": "design-stated_or_name-only_or_null",
+    "quote": "verbatim_sentence_or_null"
 }}
 """
 

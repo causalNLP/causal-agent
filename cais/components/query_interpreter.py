@@ -377,13 +377,53 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
             is_rct = rct_result.is_rct if rct_result else None
             logger.info(f"LLM identified RCT: {is_rct}")
 
-            # Check for IV
+            # Check for IV (nomination semantics: see LLMIVars docstring)
             prompt_iv = _create_identify_prompt("instrumental variable", query_text, dataset_description, columns, column_categories, treatment_variable, outcome_variable)
             iv_result = _call_llm_for_var(llm, prompt_iv, LLMIVars)
             instrument_variable = iv_result.instrument_variable if iv_result else None
+
+            # Receipt checks on the nomination extras. Defensive reads keep
+            # mock results in tests (which carry no election fields) working.
+            raw_candidates = getattr(iv_result, "candidates", None) if iv_result else None
+            candidates = [c for c in raw_candidates if isinstance(c, str)] if isinstance(raw_candidates, list) else []
+            basis = getattr(iv_result, "basis", None) if iv_result else None
+            if not isinstance(basis, str):
+                basis = None
+            quote = getattr(iv_result, "quote", None) if iv_result else None
+            quote_ok = isinstance(quote, str) and bool(dataset_description) and quote.strip() in str(dataset_description)
+            if isinstance(quote, str) and quote.strip() and not quote_ok:
+                logger.info("IV nomination quote not found verbatim in the description; demoting basis to 'name-only'.")
+                basis = "name-only"
+            valid_candidates = [c for c in candidates if c in columns]
+            # Chain: best -> first roster-valid candidate
             if instrument_variable not in columns:
-                instrument_variable = None  
-            logger.info(f"LLM identified IV: {instrument_variable}")
+                instrument_variable = None
+                for cand in valid_candidates:
+                    instrument_variable = cand
+                    break
+            # Among the nominated candidates only, prefer one with a passing
+            # first-stage F (e.g. the nomination flagged the assigned flag but
+            # the roster also listed the strong experience column).
+            if valid_candidates:
+                try:
+                    iv_df = pd.read_csv(dataset_analysis["dataset_info"]["file_path"])
+                except Exception as iv_df_err:
+                    iv_df = None
+                    logger.warning("IV candidate screening skipped (cannot read dataset): %s", iv_df_err)
+                if iv_df is not None:
+                    design_covariates = [c for c in list(covariates or []) + list(confounders or []) if c != treatment_variable and c != outcome_variable]
+                    scored = [(c, basis) for c in valid_candidates]
+                    selected = _first_strong_nominated_candidate(
+                        iv_df, treatment_variable, scored,
+                        covariates=design_covariates,
+                    )
+                    if selected and selected != instrument_variable:
+                        logger.info("IV candidate fallback: %s -> %s (first-stage F passed)", instrument_variable, selected)
+                        instrument_variable = selected
+            logger.info(
+                "LLM identified IV: %s (candidates=%s basis=%s quote_ok=%s)",
+                instrument_variable, valid_candidates, basis, quote_ok,
+            )
 
             # Check for RDD
             prompt_rdd = _create_identify_prompt("regression discontinuity (running variable and cutoff)", query_text, dataset_description, columns, column_categories, treatment_variable, outcome_variable)
@@ -659,6 +699,35 @@ def _create_identify_prompt(target: str, query: str, description: Optional[str],
     prompt = template.format(query=query, description=description or 'N/A', column_info=column_info,
                              treatment=treatment or 'N/A', outcome=outcome or 'N/A')
     return prompt
+
+def _first_strong_nominated_candidate(
+    df: pd.DataFrame,
+    treatment_variable: Optional[str],
+    candidates: List[Tuple[str, Optional[str]]],
+    f_threshold: float = 10.0,
+    covariates: Optional[List[str]] = None,
+) -> Optional[str]:
+    """Return the first nominated candidate whose first-stage F passes the threshold.
+
+    This is a veto, not a ranking: ordering comes from the nomination (best
+    first), and only candidates the interpreter itself nominated are eligible.
+    Never runs over background columns, so a strong confounder cannot win by
+    magnitude alone. Returns None when no candidate (or no data) is usable,
+    in which case the caller keeps its current instrument choice and the
+    decision tree's own relevance gate retains the final say.
+    """
+    if df is None or not treatment_variable or treatment_variable not in getattr(df, "columns", []):
+        return None
+    from cais.methods.instrumental_variable.diagnostics import calculate_first_stage_f_statistic
+    for candidate, _label in candidates:
+        if candidate not in df.columns:
+            continue
+        usable_covariates = [c for c in (covariates or []) if c != candidate and c in getattr(df, "columns", [])]
+        f_stat, _p = calculate_first_stage_f_statistic(df, treatment_variable, [candidate], usable_covariates)
+        if f_stat is not None and f_stat >= f_threshold:
+            return candidate
+    return None
+
 
 def _call_llm_for_var(llm: BaseChatModel, prompt: str, pydantic_model: BaseModel) -> Optional[BaseModel]:
     """Helper to call LLM with structured output and handle errors."""

@@ -13,9 +13,17 @@ class LLMSelectedCovariates(BaseModel):
     covariates: List[str] = Field(default_factory=list, description="The list of selected covariate column names.")
     reasoning: Optional[str] = Field(None, description="The identified estimand")
 class LLMIVars(BaseModel):
-    """Pydantic model for identifying IVs."""
-    instrument_variable: Optional[str] = Field(None, description="The identified instrumental variable column name.")
-    
+    """Pydantic model for identifying IVs.
+
+    Nomination semantics: the model proposes instrument candidates; the
+    program verifies strength statistically (first-stage F) and the decision
+    tree keeps its own gate. Exclusion/independence are argued later, not
+    certified here, so the prompt must not demand a validity verdict.
+    """
+    instrument_variable: Optional[str] = Field(None, description="The best instrumental variable column name, or null.")
+    candidates: Optional[List[str]] = Field(None, description="Up to three nominated instrument candidate column names.")
+    basis: Optional[str] = Field(None, description="'design-stated' if a description sentence ties the candidate to treatment assignment, else 'name-only'.")
+    quote: Optional[str] = Field(None, description="The description sentence the nomination is based on, verbatim, or null.")
 class LLMEstimand(BaseModel):
     """Pydantic model for identifying estimand"""
     estimand: Optional[str] = Field(None, description="The identified estimand")
