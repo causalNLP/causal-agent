@@ -581,7 +581,9 @@ class _Traversal:
         if not has_candidate:
             self.end(
                 "Unsupported: no candidate instrument, so the effect of the "
-                "received treatment cannot be identified on encouragement-design data."
+                "received treatment cannot be identified on encouragement-design "
+                "data; the assignment effect (ITT) also cannot be computed "
+                "because no assignment column was identified."
             )
             return
         relevance = self.checked("Gate: Relevance (High F-stat)", "iv_relevance", "gate")
@@ -590,7 +592,9 @@ class _Traversal:
             self.leaf(M_IV)
             return
         # Weak or untestable first stage: interactive runs may still insist on
-        # IV (batch runs cannot and stop), consistent with the observational path.
+        # IV; otherwise report the assignment effect (ITT), which a randomized
+        # encouragement design identifies regardless of instrument strength
+        # (team decision, Nov 9) instead of ending the pipeline.
         if self._consult_override(
             "Gate: Relevance (High F-stat)", "iv_relevance",
             "Weak or unverifiable instrument (first-stage F < 10 or not computable): "
@@ -598,11 +602,16 @@ class _Traversal:
         ):
             self.leaf(M_IV)
             return
-        self.end(
-            "Unsupported: weak or unverifiable instrument - the effect of the "
-            "received treatment cannot be reported; the assignment effect (ITT) "
-            "remains available if wanted."
+        self.step(
+            "Weak first stage: report the assignment effect (ITT) instead",
+            "process", "fallback to diff-in-means on assignment", "",
         )
+        self.result.warnings.append(
+            "First-stage F < 10 or not computable (weak instrument): the "
+            "received-treatment effect (LATE) is not reliably estimable; "
+            "reporting the assignment effect (ITT) instead of ending."
+        )
+        self._select_dim_on_assignment()
 
     def _ask_estimand(self) -> str:
         """Settle the encouragement-branch estimand: "itt" or "treatment_effect".

@@ -489,23 +489,27 @@ class TestRCTBranch(unittest.TestCase):
         self.assertIn("iv_exogeneity", res.assumptions)
         self.assertIn("iv_monotonicity", res.assumptions)
 
-    def test_encouragement_batch_weak_f_ends_unsupported(self):
+    def test_encouragement_batch_weak_f_falls_back_to_itt(self):
         res = run(
             base_props(is_rct=True, instrument_variable="z", is_encouragement_design=True),
             checks=stub_checks(iv_relevance=False),
         )
-        self.assertTrue(res.ended)
-        self.assertIsNone(res.method)
-        self.assertIn("Unsupported", res.end_reason)
+        self.assertFalse(res.ended)
+        self.assertEqual(res.method, M_DIFF_IN_MEANS)
+        self.assertEqual(res.variant, "on_assignment")
+        self.assertEqual(res.execution.get("options"), {"treatment_variable": "z"})
+        self.assertTrue(any("weak instrument" in w.lower() for w in res.warnings))
 
-    def test_encouragement_batch_untestable_f_ends_like_weak(self):
+    def test_encouragement_batch_untestable_f_falls_back_to_itt(self):
         res = run(
             base_props(is_rct=True, instrument_variable="z", is_encouragement_design=True),
             checks=stub_checks(iv_relevance=None),
         )
-        self.assertTrue(res.ended)
-        self.assertIsNone(res.method)
-        self.assertIn("Unsupported", res.end_reason)
+        self.assertFalse(res.ended)
+        self.assertEqual(res.method, M_DIFF_IN_MEANS)
+        self.assertEqual(res.variant, "on_assignment")
+        self.assertEqual(res.execution.get("options"), {"treatment_variable": "z"})
+        self.assertTrue(any("weak instrument" in w.lower() for w in res.warnings))
 
     def test_encouragement_without_instrument_ends_before_gate(self):
         res = run(
@@ -614,7 +618,7 @@ class TestRCTBranch(unittest.TestCase):
         self.assertEqual(res.method, M_IV)
         self.assertTrue(any(s.outcome == "user passed the failed gate" for s in res.steps))
 
-    def test_encouragement_weak_f_user_declines_override_ends(self):
+    def test_encouragement_weak_f_user_declines_override_falls_back_to_itt(self):
         res = run(
             base_props(
                 is_rct=True,
@@ -625,9 +629,10 @@ class TestRCTBranch(unittest.TestCase):
             checks=stub_checks(iv_relevance=False),
             prompt_callback=self._queue_prompt(["treatment effect", "n"]),
         )
-        self.assertTrue(res.ended)
-        self.assertIsNone(res.method)
-        self.assertIn("Unsupported", res.end_reason)
+        self.assertFalse(res.ended)
+        self.assertEqual(res.method, M_DIFF_IN_MEANS)
+        self.assertEqual(res.variant, "on_assignment")
+        self.assertTrue(any("weak instrument" in w.lower() for w in res.warnings))
 
 
 # ---------------------------------------------------------------------------
