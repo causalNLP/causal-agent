@@ -316,6 +316,63 @@ class TestDecisionTreeV2Wiring(unittest.TestCase):
         self.assertIsNone(mock_tree.call_args.kwargs["prompt_callback"])
 
     @patch('cais.agent.run_decision_tree_v2')
+    def test_stage1_asks_for_description_interactively(self, mock_tree):
+        """Without a description, an interactive run asks before Stage 1 and the
+        answer becomes the description the whole pipeline sees."""
+        mock_tree.return_value = TreeResult(method="difference_in_differences", implemented=True)
+        agent = self._make_agent()
+        agent.dataset_description = None
+        agent.analyse_dataset = MagicMock()
+        agent.select_controls = MagicMock()
+        agent.clean_dataset = MagicMock()
+        agent.execute_method = MagicMock(return_value={"results": {}, "explanation": "ok"})
+        callback = MagicMock(return_value="Panel of cigarette sales.")
+
+        agent.run_analysis("q", prompt_callback=callback)
+
+        callback.assert_called_once()
+        agent.analyse_dataset.assert_called_once()
+        # the description answered at Stage 1 entry is what the tree receives
+        self.assertEqual(agent.dataset_description, "Panel of cigarette sales.")
+        self.assertEqual(mock_tree.call_args.kwargs["description"], "Panel of cigarette sales.")
+
+    @patch('cais.agent.run_decision_tree_v2')
+    def test_stage1_description_ask_respects_interactive_flag(self, mock_tree):
+        """Nobody to ask: interactive=False or no callback continues without a
+        description instead of prompting."""
+        mock_tree.return_value = TreeResult(method="difference_in_differences", implemented=True)
+        agent = self._make_agent()
+        agent.dataset_description = None
+        agent.analyse_dataset = MagicMock()
+        agent.select_controls = MagicMock()
+        agent.clean_dataset = MagicMock()
+        agent.execute_method = MagicMock(return_value={"results": {}, "explanation": "ok"})
+        callback = MagicMock(return_value="desc")
+
+        agent.run_analysis("q", prompt_callback=callback, interactive=False)
+
+        callback.assert_not_called()
+        self.assertIsNone(agent.dataset_description)
+
+    @patch('cais.agent.run_decision_tree_v2')
+    def test_stage1_description_skip_continues_without(self, mock_tree):
+        """Answering 'skip' leaves the description unset and the run proceeds."""
+        mock_tree.return_value = TreeResult(method="difference_in_differences", implemented=True)
+        agent = self._make_agent()
+        agent.dataset_description = None
+        agent.analyse_dataset = MagicMock()
+        agent.select_controls = MagicMock()
+        agent.clean_dataset = MagicMock()
+        agent.execute_method = MagicMock(return_value={"results": {}, "explanation": "ok"})
+        callback = MagicMock(return_value="skip")
+
+        agent.run_analysis("q", prompt_callback=callback)
+
+        callback.assert_called_once()
+        self.assertIsNone(agent.dataset_description)
+        self.assertIsNone(mock_tree.call_args.kwargs["description"])
+
+    @patch('cais.agent.run_decision_tree_v2')
     def test_run_analysis_continues_for_implemented_leaf(self, mock_tree):
         agent = self._make_agent()
         agent.analyse_dataset = MagicMock()

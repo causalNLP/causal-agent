@@ -92,13 +92,22 @@ class TestEntry(unittest.TestCase):
         self.assertEqual(res.method, M_DID)
         self.assertTrue(any("description" in w.lower() for w in res.warnings))
 
-    def test_description_via_prompt_callback(self):
+    def test_tree_no_longer_prompts_for_description(self):
+        # The description is requested before Stage 1 (agent-level); the tree
+        # itself never asks, even when a user is wired.
+        prompts = {"n": 0}
+
+        def prompt(_msg):
+            prompts["n"] += 1
+            return "Panel of cigarette sales."
+
         res = run(
             base_props(has_temporal_structure=True),
-            prompt_callback=lambda _msg: "Panel of cigarette sales.",
+            prompt_callback=prompt,
         )
-        self.assertEqual(res.description, "Panel of cigarette sales.")
-        self.assertTrue(any(s.node == "Prompt user for dataset description" for s in res.steps))
+        self.assertEqual(prompts["n"], 0)
+        self.assertIsNone(res.description)
+        self.assertTrue(any("description" in w.lower() for w in res.warnings))
 
     def test_sutva_false_warns_but_continues(self):
         res = run(base_props(has_temporal_structure=True), checks=stub_checks(sutva=False))
@@ -156,7 +165,7 @@ class TestEntry(unittest.TestCase):
             base_props(has_temporal_structure=True),
             checks=stub_checks(sutva=sutva, parallel_trends=True),
             prompt_callback=prompt,
-            description="Stub description to skip the description prompt.",
+            description="Stub description (the tree no longer asks for one).",
         )
         self.assertEqual(calls["n"], 4)  # initial + 3 retries
         self.assertEqual(calls["prompts"], 3)
@@ -169,7 +178,7 @@ class TestEntry(unittest.TestCase):
             base_props(has_temporal_structure=True),
             checks=stub_checks(sutva=None, parallel_trends=True),
             prompt_callback=lambda _msg: "anything",
-            description="Stub description to skip the description prompt.",
+            description="Stub description (the tree no longer asks for one).",
         )
         self.assertFalse(res.ended)
         self.assertEqual(res.asks_used, 0)

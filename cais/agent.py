@@ -48,6 +48,15 @@ INSTRUMENTAL_VARIABLE = "instrumental_variable"
 TRIMMED_IPW = "trimmed_ipw"
 FRONTDOOR = "frontdoor_adjustment"
 
+# Asked before Stage 1 when an interactive run starts without a dataset
+# description; the answer is stored as the dataset description (see
+# CausalAgent._ensure_dataset_description) so it informs dataset analysis and
+# query interpretation, not just the decision tree's assumption checks.
+DESCRIPTION_PROMPT = (
+    "Please provide a brief description of the dataset (columns, context, background). "
+    "Type 'skip' to continue without one."
+)
+
 # Temporary name conversion
 convert = {
     LINEAR_REGRESSION: LinearRegression.name,
@@ -574,6 +583,26 @@ class CausalAgent():
             "explanation": self.explanations
         }
     
+    def _ensure_dataset_description(self, prompt_callback: Optional[Any]) -> None:
+        """Ask the user for a dataset description before Stage 1, when none was given.
+
+        Only interactive runs with a reachable user prompt ask. The answer is
+        stored as the dataset description so dataset analysis, query
+        interpretation, and the decision tree all see it. 'skip'/'none' (or no
+        user reachable) continues without a description; LLM-argued checks
+        later report can't tell.
+        """
+        if self.dataset_description or prompt_callback is None:
+            return
+        try:
+            answer = prompt_callback(DESCRIPTION_PROMPT)
+        except Exception as exc:
+            logger.warning("Dataset description prompt_callback raised: %s", exc)
+            return
+        if answer and str(answer).strip().lower() not in {"skip", "none"}:
+            self.dataset_description = str(answer).strip()
+            logger.info("Dataset description provided interactively at Stage 1 entry.")
+
     def run_analysis(self, query, llm_method_selection: Optional[bool] = True,
                      method_selection: str = "tree_v2",
                      prompt_callback: Optional[Any] = None,
@@ -582,6 +611,13 @@ class CausalAgent():
         logger.info("[Causal AI Scientist Stage 1] - Dataset and Query analysis")
 
         self.query = query
+
+        # Interactive runs ask for a dataset description before Stage 1 so the
+        # description informs dataset analysis and query interpretation, not
+        # just the decision tree's assumption checks.
+        self._ensure_dataset_description(
+            prompt_callback if interactive else None
+        )
 
         self.analyse_dataset(
             query=query

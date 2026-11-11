@@ -94,11 +94,6 @@ ALL_CHECK_KEYS: tuple = (
     "gps_positivity",
 )
 
-DESCRIPTION_PROMPT = (
-    "Please provide a brief description of the dataset (columns, context, background). "
-    "Type 'skip' to continue without one."
-)
-
 MAX_PROMPTS = 3  # per-node cap on follow-up questions
 MAX_TOTAL_ASKS = 3  # global cap per run, shared by every asking node (SUTVA included)
 MAX_FRONTDOOR_LEVELS = 10  # discrete treatment/mediator cardinality the frontdoor sum supports
@@ -516,31 +511,22 @@ class _Traversal:
         return self.result
 
     def _entry(self) -> None:
-        # 1. dataset description (prompt loop in the draft; batch mode skips it)
-        if self.description:
-            self.step("Is there a dataset description provided?", "structural", "Yes")
-        else:
-            self.step("Is there a dataset description provided?", "structural", "No")
-            for _ in range(MAX_PROMPTS):
-                answer = self._prompt(DESCRIPTION_PROMPT)
-                if answer:
-                    self.description = answer
-                    self.checks = self.factory(self.description)
-                    self.step("Prompt user for dataset description", "process", "provided")
-                    break
-            if not self.description:
-                self.result.warnings.append(
-                    "No dataset description provided (batch mode); LLM-argued checks will report can't tell."
-                )
+        # The dataset description is requested before Stage 1 (see
+        # CausalAgent._ensure_dataset_description), so by the time the tree
+        # runs it is either present or there was nobody to ask.
+        if not self.description:
+            self.result.warnings.append(
+                "No dataset description provided; LLM-argued checks will report can't tell."
+            )
 
-        # 2. data structure supported
+        # 1. data structure supported
         supported = self.props.get("is_structure_supported", True)
         self.step("Is the data structure supported?", "structural", "Yes" if supported else "No")
         if not supported:
             self.end("Data structure not supported (e.g. survival data, competing risks).")
             return
 
-        # 3. global SUTVA advisory. Asking follows the same rule as gates:
+        # 2. global SUTVA advisory. Asking follows the same rule as gates:
         #    only when the check itself supplies a question (missing_info);
         #    without an LLM there is nothing that could use an answer.
         passed = self.checked("Advisory: SUTVA", "sutva", "advisory")
