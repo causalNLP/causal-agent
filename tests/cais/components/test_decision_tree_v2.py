@@ -472,6 +472,22 @@ class TestRCTBranch(unittest.TestCase):
         res = run(base_props(is_rct=True, covariates=["x1", "x2"]))
         self.assertEqual(res.method, M_OLS_PRE_TREATMENT)
 
+    def test_excluded_leaf_ends_with_no_alternative(self):
+        res = run(
+            base_props(is_rct=True, covariates=["x1", "x2"],
+                       excluded_methods=[M_OLS_PRE_TREATMENT])
+        )
+        self.assertTrue(res.ended)
+        self.assertIsNone(res.method)
+        self.assertIn("excluded", res.end_reason)
+
+    def test_excluded_other_method_leaves_path_unchanged(self):
+        res = run(
+            base_props(is_rct=True, covariates=["x1", "x2"], excluded_methods=[M_IV])
+        )
+        self.assertFalse(res.ended)
+        self.assertEqual(res.method, M_OLS_PRE_TREATMENT)
+
     def test_rct_without_pretreatment_vars_dim(self):
         res = run(base_props(is_rct=True, covariates=[], has_pre_treatment_variables=False))
         self.assertEqual(res.method, M_DIFF_IN_MEANS)

@@ -9,9 +9,11 @@ from typing import Dict, Any, Optional, List, Union
 from langchain.tools import tool
 import logging
 
+import pandas as pd
+
 from cais.components.method_validator import validate_method
 from cais.components.state_manager import create_workflow_state_update
-from cais.components.decision_tree import rule_based_select_method
+from cais.components.decision_tree_v2 import select_method_v2
 
 from cais.models import (
     Variables, 
@@ -103,9 +105,11 @@ def method_validator_tool(inputs: MethodValidatorInput) -> Dict[str, Any]: # Use
         logger.warning("Attempting to backtrack and select alternative method...")
         
         try:
-            # Extract properties for decision tree
+            # Re-run decision tree v2 with the failed method excluded
+            excluded_methods = [original_method]
             dataset_props = extract_properties_from_inputs(inputs)
-            
+            dataset_props["excluded_methods"] = excluded_methods
+
             # Get LLM instance (may be None)
             from cais.config import get_llm_client
             try:
@@ -113,22 +117,33 @@ def method_validator_tool(inputs: MethodValidatorInput) -> Dict[str, Any]: # Use
             except Exception as e:
                 logger.warning(f"Failed to get LLM instance: {e}")
                 llm_instance = None
-            
-            # Re-run decision tree with failed method excluded
-            excluded_methods = [original_method]
-            new_selection = rule_based_select_method(
-                dataset_analysis=inputs.dataset_analysis.model_dump(),
-                variables=inputs.variables.model_dump(),
-                is_rct=inputs.variables.is_rct or False,
-                llm=llm_instance,
-                dataset_description=inputs.dataset_description,
-                original_query=inputs.original_query,
-                excluded_methods=excluded_methods
-            )
-            
-            recommended_method = new_selection.get("selected_method", original_method)
-            logger.info(f"Backtracking selected new method: {recommended_method}")
-            
+
+            file_path = dataset_analysis_dict.get("dataset_info", {}).get("file_path")
+            try:
+                backtrack_df = pd.read_csv(file_path) if file_path else None
+            except Exception as df_err:
+                backtrack_df = None
+                logger.warning(f"Backtrack skipped (dataset unreadable): {df_err}")
+
+            if backtrack_df is None:
+                validation_results["backtrack_note"] = "dataset could not be reloaded; keeping original method"
+            else:
+                tree_result = select_method_v2(
+                    dataset_props,
+                    df=backtrack_df,
+                    description=inputs.dataset_description,
+                    llm=llm_instance,
+                    prompt_callback=None,
+                )
+                if tree_result.method and not tree_result.ended:
+                    recommended_method = tree_result.method
+                    logger.info(f"Backtracking selected new method: {recommended_method}")
+                else:
+                    validation_results["backtrack_note"] = (
+                        tree_result.end_reason or "tree v2 identified no alternative"
+                    )
+                    logger.info(f"Backtrack kept original method: {validation_results['backtrack_note']}")
+
             # Update validation results to include backtracking info
             validation_results["backtrack_attempted"] = True
             validation_results["backtrack_method"] = recommended_method

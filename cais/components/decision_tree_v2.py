@@ -302,6 +302,16 @@ class _Traversal:
         return self.result
 
     def leaf(self, method: str, variant: Optional[str] = None) -> TreeResult:
+        excluded = self.props.get("excluded_methods") or []
+        if method in excluded:
+            reason = (
+                f"{method} is excluded for this traversal (e.g. by the validation "
+                "backtrack); the tree identifies no alternative method."
+            )
+            self.result.method = None
+            self.result.implemented = False
+            self.step(method, "leaf", "excluded", reason)
+            return self.end(reason)
         implemented = LEAF_IMPLEMENTED.get(method, True)
         self.result.method = method
         self.result.variant = variant
