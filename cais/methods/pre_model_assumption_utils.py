@@ -172,16 +172,51 @@ def check_cond_ignorability(
             reasoning="No covariates or dataframe provided; balance check skipped.",
         )
     smds = calculate_standardized_differences(vars.df, vars.treatment, vars.covariates)
+    # A covariate with any missing value has no SMD. Never claim balance for
+    # a covariate that was not actually assessed: report partial coverage.
+    untestable = sorted(c for c, v in smds.items() if pd.isna(v))
     imbalanced = {c: v for c, v in smds.items() if pd.notna(v) and abs(v) > smd_threshold}
+    if untestable and len(untestable) == len(smds):
+        # No covariate could be assessed: a vacuous "all balanced" would be
+        # a false claim, so return the honest can't-tell verdict instead.
+        return AssumptionResult(
+            passed=None,
+            reasoning=(
+                "Balance cannot be assessed: no covariate has complete data. "
+                "Untestable due to missing data: " + ", ".join(untestable) + "."
+            ),
+            details={
+                "smds": smds,
+                "threshold": smd_threshold,
+                "imbalanced": {},
+                "untestable_covariates": untestable,
+            },
+        )
     passed = len(imbalanced) == 0
+    coverage = (
+        f"Randomization check on {len(smds) - len(untestable)} of {len(smds)} covariates "
+        if untestable
+        else f"Randomization check on {len(smds)} covariates "
+    )
+    missing_note = (
+        " Untestable due to missing data: " + ", ".join(untestable) + "."
+        if untestable
+        else ""
+    )
     return AssumptionResult(
         passed=passed,
         reasoning=(
-            f"Randomization check on {len(vars.covariates)} covariates "
-            f"(|SMD| < {smd_threshold}). "
-            f"{'All balanced.' if passed else f'Imbalanced: {list(imbalanced.keys())}.'}"
+            coverage
+            + f"(|SMD| < {smd_threshold}). "
+            + ("All balanced." if passed else f"Imbalanced: {list(imbalanced.keys())}.")
+            + missing_note
         ),
-        details={"smds": smds, "threshold": smd_threshold, "imbalanced": imbalanced},
+        details={
+            "smds": smds,
+            "threshold": smd_threshold,
+            "imbalanced": imbalanced,
+            "untestable_covariates": untestable,
+        },
     )
 
 

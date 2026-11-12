@@ -151,6 +151,54 @@ class TestCheckCondIgnorability(unittest.TestCase):
         self.assertFalse(r.passed)
         self.assertIn("x", r.details.get("imbalanced", {}))
 
+    def test_partial_missing_covariates_keeps_verdict_and_warns(self):
+        rng = np.random.default_rng(3)
+        n = 400
+        t = (rng.uniform(size=n) < 0.5).astype(int)
+        x_ok = rng.normal(0, 1, n)
+        x_bad = rng.normal(0, 1, n)
+        x_bad[:5] = np.nan  # any NaN makes the covariate's SMD uncomputable
+        df = pd.DataFrame({"t": t, "x_ok": x_ok, "x_bad": x_bad})
+        v = AssumptionVariables(df=df, treatment="t", outcome="y",
+                                covariates=["x_ok", "x_bad"])
+        r = check_cond_ignorability(v)
+        # Verdict is still computed over the testable covariate only.
+        self.assertTrue(r.passed)
+        self.assertEqual(r.details.get("untestable_covariates"), ["x_bad"])
+        self.assertIn("1 of 2 covariates", r.reasoning)
+        self.assertIn("Untestable due to missing data: x_bad", r.reasoning)
+
+    def test_partial_missing_imbalanced_still_fails(self):
+        rng = np.random.default_rng(4)
+        n = 400
+        x_ok = rng.normal(0, 1, n)
+        t = (x_ok > 0).astype(int)  # x_ok is imbalanced by construction
+        x_bad = rng.normal(0, 1, n)
+        x_bad[:5] = np.nan
+        df = pd.DataFrame({"t": t, "x_ok": x_ok, "x_bad": x_bad})
+        v = AssumptionVariables(df=df, treatment="t", outcome="y",
+                                covariates=["x_ok", "x_bad"])
+        r = check_cond_ignorability(v)
+        self.assertFalse(r.passed)
+        self.assertIn("x_ok", r.details.get("imbalanced", {}))
+        self.assertEqual(r.details.get("untestable_covariates"), ["x_bad"])
+
+    def test_all_covariates_untestable_returns_none(self):
+        rng = np.random.default_rng(5)
+        n = 200
+        t = (rng.uniform(size=n) < 0.5).astype(int)
+        df = pd.DataFrame({
+            "t": t,
+            "x1": np.where(np.arange(n) < 3, np.nan, rng.normal(size=n)),
+            "x2": np.where(np.arange(n) < 3, np.nan, rng.normal(size=n)),
+        })
+        v = AssumptionVariables(df=df, treatment="t", outcome="y",
+                                covariates=["x1", "x2"])
+        r = check_cond_ignorability(v)
+        self.assertIsNone(r.passed)
+        self.assertEqual(r.details.get("untestable_covariates"), ["x1", "x2"])
+        self.assertIn("Balance cannot be assessed", r.reasoning)
+
     def test_no_covariates_returns_none(self):
         df = _make_df()
         v = AssumptionVariables(df=df, treatment="treat", outcome="outcome", covariates=[])

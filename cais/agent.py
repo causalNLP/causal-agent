@@ -70,6 +70,8 @@ convert = {
     FRONTDOOR: FrontdoorAdjustment.name,
 }
 
+_DROPNA_WARN_SHARE = 0.10  # warn when the safety dropna removes more than this share of rows
+
 os.makedirs('./logs/', exist_ok=True)
 logging.basicConfig(
     filename='./logs/agent_debug.log',
@@ -527,18 +529,22 @@ class CausalAgent():
             )
             self.variables.treatment_variable = leaf_treatment
         logger.info(f"Executing '{execution_method}' with options {method_options}")
+        n_before_dropna = None
+        n_after_dropna = None
         try:
             estimator = self.estimators[
                 convert[execution_method]
             ]
 
             df = self.load_dataset(cleaned=True)
+            n_before_dropna = len(df)
             df.dropna(subset=[
                 self.variables.outcome_variable,
                 self.variables.treatment_variable
                 ] + self.variables.confounders,
                 inplace=True
             ) # safety
+            n_after_dropna = len(df)
             
             self.results = estimator(
                 df=df,
@@ -561,6 +567,23 @@ class CausalAgent():
                 method_executor_input,
                 original_query=query
             )
+
+        # Audit trail for the safety listwise dropna: the estimate may rest on
+        # fewer rows than the dataset holds, and that loss was previously
+        # silent. Counts are recorded whenever the primary path ran; a large
+        # loss also raises a warning. Observation only — the dropna itself is
+        # unchanged.
+        if isinstance(self.results, dict) and n_before_dropna is not None:
+            n_dropped = n_before_dropna - n_after_dropna
+            self.results["n_rows_before_dropna"] = n_before_dropna
+            self.results["n_rows_after_dropna"] = n_after_dropna
+            self.results["n_rows_dropped_missing"] = n_dropped
+            if n_before_dropna and n_dropped / n_before_dropna > _DROPNA_WARN_SHARE:
+                logger.warning(
+                    "Safety dropna removed %d of %d rows (%.1f%%) before estimating '%s'.",
+                    n_dropped, n_before_dropna, 100.0 * n_dropped / n_before_dropna,
+                    execution_method,
+                )
 
         self.explanations = explanation_generator_tool.func(
             method_info=self.method_info,

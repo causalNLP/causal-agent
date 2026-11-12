@@ -343,6 +343,16 @@ class _Traversal:
         self.result.assumptions[check_name] = res
         outcome = {True: "pass", False: "fail", None: "can't tell"}[res.passed]
         self.step(node, kind, outcome, res.reasoning)
+        # Surface partial coverage explicitly: a check that could not assess
+        # some covariates (e.g. balance SMDs on columns with missing data)
+        # must not leave that fact only inside its reasoning text.
+        untestable = (res.details or {}).get("untestable_covariates")
+        if untestable:
+            self.result.warnings.append(
+                f"{node}: covariate balance not assessable for "
+                f"{len(untestable)} covariate(s) (missing data): "
+                f"{', '.join(map(str, untestable))}."
+            )
         return res.passed
 
     def advisory(self, node: str, check_name: str) -> Optional[bool]:

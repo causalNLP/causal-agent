@@ -1,5 +1,6 @@
 import unittest
 import os
+import numpy as np
 import pandas as pd
 from unittest.mock import patch, MagicMock
 
@@ -473,6 +474,59 @@ class TestDecisionTreeV2Wiring(unittest.TestCase):
         self.assertEqual(captured["variables"].treatment_variable, "covariate1")
         self.assertNotIn("treatment_variable", captured)
         self.assertEqual(agent.results["effect_estimate"], 0.5)
+
+    def test_execute_method_records_dropna_accounting(self):
+        """The safety listwise dropna was previously silent; execute_method
+        must record how many rows it removed (and warn on a large loss)
+        without changing which rows are removed."""
+        drop_csv = 'dummy_dropna_test_data.csv'
+        try:
+            pd.DataFrame({
+                'treatment': [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+                'outcome': [10, 12, 11, 13, 9, 14, 10, 15, 11, 16, 12, 13],
+                'covariate1': [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, np.nan, np.nan],
+                'covariate2': [5.5, 6.5, 5.8, 6.2, 5.1, 6.8, 5.3, 6.1, 5.9, 6.3, 6.0, 6.4],
+            }).to_csv(drop_csv, index=False)
+
+            with patch('cais.agent.get_llm_client', return_value=MagicMock()):
+                agent = CausalAgent(dataset_path=drop_csv,
+                                    dataset_description="dropna accounting test")
+            agent.dataset_analysis = None
+            agent.variables = Variables(
+                treatment_variable="treatment",
+                outcome_variable="outcome",
+                treatment_variable_type="binary",
+                covariates=["covariate1", "covariate2"],
+                is_rct=False,
+            )
+            # The safety dropna subsets on the confounder list; mirror the
+            # covariates so the NaN column is actually part of the subset.
+            agent.variables.confounders = ["covariate1", "covariate2"]
+
+            class FakeEstimator:
+                def __call__(self, df=None, variables=None, query=None, **options):
+                    self.captured_rows = len(df)
+                    return {"effect_estimate": 0.5}
+
+            estimator = FakeEstimator()
+            agent.estimators.estimators[TrimmedIPW.name] = estimator
+            agent.selected_method = "trimmed_ipw"
+            agent.method_info = MagicMock()
+            agent.tree_result = TreeResult(method="trimmed_ipw", implemented=True)
+
+            with patch('cais.agent.explanation_generator_tool') as mock_explain:
+                mock_explain.func.return_value = {"explanation": "ok"}
+                agent.execute_method()
+
+            # 12 rows in, 2 rows missing covariate1 -> the estimator still
+            # receives the same 10 rows it always did, and the record shows it.
+            self.assertEqual(estimator.captured_rows, 10)
+            self.assertEqual(agent.results["n_rows_before_dropna"], 12)
+            self.assertEqual(agent.results["n_rows_after_dropna"], 10)
+            self.assertEqual(agent.results["n_rows_dropped_missing"], 2)
+        finally:
+            if os.path.exists(drop_csv):
+                os.remove(drop_csv)
 
     def test_trimmed_ipw_is_registered_for_execution(self):
         from cais.agent import convert
