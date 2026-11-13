@@ -94,6 +94,7 @@ class TestAssumptionModels(unittest.TestCase):
     def test_assumption_variables_defaults(self):
         v = AssumptionVariables()
         self.assertIsNone(v.df)
+        self.assertIsNone(v.unit_var)
         self.assertEqual(v.covariates, [])
         self.assertEqual(v.instruments, [])
 
@@ -149,6 +150,54 @@ class TestCheckCondIgnorability(unittest.TestCase):
         self.assertIsInstance(r, AssumptionResult)
         self.assertFalse(r.passed)
         self.assertIn("x", r.details.get("imbalanced", {}))
+
+    def test_partial_missing_covariates_keeps_verdict_and_warns(self):
+        rng = np.random.default_rng(3)
+        n = 400
+        t = (rng.uniform(size=n) < 0.5).astype(int)
+        x_ok = rng.normal(0, 1, n)
+        x_bad = rng.normal(0, 1, n)
+        x_bad[:5] = np.nan  # any NaN makes the covariate's SMD uncomputable
+        df = pd.DataFrame({"t": t, "x_ok": x_ok, "x_bad": x_bad})
+        v = AssumptionVariables(df=df, treatment="t", outcome="y",
+                                covariates=["x_ok", "x_bad"])
+        r = check_cond_ignorability(v)
+        # Verdict is still computed over the testable covariate only.
+        self.assertTrue(r.passed)
+        self.assertEqual(r.details.get("untestable_covariates"), ["x_bad"])
+        self.assertIn("1 of 2 covariates", r.reasoning)
+        self.assertIn("Untestable due to missing data: x_bad", r.reasoning)
+
+    def test_partial_missing_imbalanced_still_fails(self):
+        rng = np.random.default_rng(4)
+        n = 400
+        x_ok = rng.normal(0, 1, n)
+        t = (x_ok > 0).astype(int)  # x_ok is imbalanced by construction
+        x_bad = rng.normal(0, 1, n)
+        x_bad[:5] = np.nan
+        df = pd.DataFrame({"t": t, "x_ok": x_ok, "x_bad": x_bad})
+        v = AssumptionVariables(df=df, treatment="t", outcome="y",
+                                covariates=["x_ok", "x_bad"])
+        r = check_cond_ignorability(v)
+        self.assertFalse(r.passed)
+        self.assertIn("x_ok", r.details.get("imbalanced", {}))
+        self.assertEqual(r.details.get("untestable_covariates"), ["x_bad"])
+
+    def test_all_covariates_untestable_returns_none(self):
+        rng = np.random.default_rng(5)
+        n = 200
+        t = (rng.uniform(size=n) < 0.5).astype(int)
+        df = pd.DataFrame({
+            "t": t,
+            "x1": np.where(np.arange(n) < 3, np.nan, rng.normal(size=n)),
+            "x2": np.where(np.arange(n) < 3, np.nan, rng.normal(size=n)),
+        })
+        v = AssumptionVariables(df=df, treatment="t", outcome="y",
+                                covariates=["x1", "x2"])
+        r = check_cond_ignorability(v)
+        self.assertIsNone(r.passed)
+        self.assertEqual(r.details.get("untestable_covariates"), ["x1", "x2"])
+        self.assertIn("Balance cannot be assessed", r.reasoning)
 
     def test_no_covariates_returns_none(self):
         df = _make_df()
@@ -258,6 +307,9 @@ class TestCheckNoAnticipation(unittest.TestCase):
         r = check_no_anticipation(v)
         self.assertIsInstance(r, AssumptionResult)
         self.assertIsNone(r.passed)
+        # the check must state its question so an interactive run can ask the user
+        self.assertIn("missing_info", r.details)
+        self.assertIn("placebo", r.details["missing_info"].lower())
 
     def test_placebo_period_after_treatment_returns_false(self):
         df = _make_did_df()
@@ -280,6 +332,52 @@ class TestCheckNoAnticipation(unittest.TestCase):
         self.assertIsInstance(r, AssumptionResult)
 
 
+    def test_bounded_window_without_early_divergence_is_assessed(self):
+        df = _make_did_df()
+        v = AssumptionVariables(
+            df=df, treatment="group", outcome="y",
+            time_var="time", group_var="unit", unit_var="unit",
+            treatment_period_start=4, anticipation_window_start=3,
+        )
+        r = check_no_anticipation(v)
+        self.assertIsNotNone(r.passed)
+        self.assertIn("anticipation", r.reasoning.lower())
+
+    def test_bounded_window_with_early_divergence_fails(self):
+        df = _make_did_df()
+        df["y"] = df["y"] + df["group"] * df["time"] * 2.0
+        v = AssumptionVariables(
+            df=df, treatment="group", outcome="y",
+            time_var="time", group_var="unit", unit_var="unit",
+            treatment_period_start=4, anticipation_window_start=3,
+        )
+        r = check_no_anticipation(v)
+        self.assertFalse(r.passed)
+        self.assertIn("differ before", r.reasoning.lower())
+
+    def test_bounded_window_after_treatment_returns_none(self):
+        df = _make_did_df()
+        v = AssumptionVariables(
+            df=df, treatment="group", outcome="y",
+            time_var="time", group_var="unit", unit_var="unit",
+            treatment_period_start=4, anticipation_window_start=4,
+        )
+        r = check_no_anticipation(v)
+        self.assertIsNone(r.passed)
+        self.assertIn("before the treatment", r.reasoning)
+
+    def test_bounded_window_without_pre_periods_returns_none(self):
+        df = _make_did_df()
+        v = AssumptionVariables(
+            df=df, treatment="group", outcome="y",
+            time_var="time", group_var="unit", unit_var="unit",
+            treatment_period_start=4, anticipation_window_start=0,
+        )
+        r = check_no_anticipation(v)
+        self.assertIsNone(r.passed)
+        self.assertIn("before the stated anticipation window", r.reasoning)
+
+
 class TestCheckBaselineOutcomeBalance(unittest.TestCase):
 
     def test_balanced_baseline(self):
@@ -299,17 +397,92 @@ class TestCheckBaselineOutcomeBalance(unittest.TestCase):
 
 class TestCheckStableGroupComposition(unittest.TestCase):
 
-    def test_no_llm_returns_none(self):
+    def _vars(self, df, **overrides):
+        params = dict(
+            df=df, treatment="group", outcome="y",
+            time_var="time", unit_var="unit",
+        )
+        params.update(overrides)
+        return AssumptionVariables(**params)
+
+    def test_balanced_panel_passes(self):
+        df = _make_did_df(n_units=60)
+        r = check_stable_group_composition(self._vars(df), llm=None)
+        self.assertIsInstance(r, AssumptionResult)
+        self.assertTrue(r.passed)
+        self.assertEqual(r.details["n_units"], 60)
+        self.assertIn("p_dropout", r.details)
+
+    def test_missing_unit_identifier_returns_none(self):
         df = _make_did_df()
         v = AssumptionVariables(
-            df=df, treatment="group", outcome="y",
-            time_var="time", group_var="unit", treatment_period_start=4,
-            dataset_description="Panel of states, no attrition.",
-            variables_summary={"treatment": "group", "time": "time"},
+            df=df, treatment="group", outcome="y", time_var="time",
         )
         r = check_stable_group_composition(v, llm=None)
         self.assertIsInstance(r, AssumptionResult)
         self.assertIsNone(r.passed)
+        self.assertIn("unit identifier", r.reasoning)
+
+    def test_falls_back_to_group_variable(self):
+        df = _make_did_df(n_units=60)
+        v = AssumptionVariables(
+            df=df, treatment="group", outcome="y",
+            time_var="time", group_var="unit",
+        )
+        r = check_stable_group_composition(v, llm=None)
+        self.assertTrue(r.passed)
+        self.assertEqual(r.details["unit_source"], "group_var (fallback)")
+
+    def test_differential_dropout_fails(self):
+        df = _make_did_df(n_units=60, n_periods=4)
+        last_period = df["time"].max()
+        treated_units = df.loc[df["group"] == 1, "unit"].unique()
+        dropped = treated_units[:20]
+        df = df[~((df["unit"].isin(dropped)) & (df["time"] == last_period))]
+
+        r = check_stable_group_composition(self._vars(df), llm=None)
+        self.assertFalse(r.passed)
+        self.assertLess(r.details["p_dropout"], 0.05)
+        self.assertIn("differential dropout", r.reasoning)
+
+    def test_differential_entry_fails(self):
+        df = _make_did_df(n_units=60, n_periods=4)
+        last_period = df["time"].max()
+        entrants = pd.DataFrame({
+            "unit": range(1000, 1020),
+            "time": last_period,
+            "group": 1,
+            "y": 0.0,
+        })
+        df = pd.concat([df, entrants], ignore_index=True)
+
+        r = check_stable_group_composition(self._vars(df), llm=None)
+        self.assertFalse(r.passed)
+        self.assertLess(r.details["p_entry"], 0.05)
+        self.assertIn("differential entry", r.reasoning)
+
+    def test_too_few_units_per_group_returns_none(self):
+        df = _make_did_df(n_units=10)  # 5 units per group
+        r = check_stable_group_composition(self._vars(df), llm=None)
+        self.assertIsNone(r.passed)
+        self.assertIn("too few units", r.reasoning)
+
+    def test_non_binary_group_returns_none(self):
+        df = _make_did_df(n_units=60)
+        df.loc[df["unit"] == 0, "group"] = 2
+        r = check_stable_group_composition(self._vars(df), llm=None)
+        self.assertIsNone(r.passed)
+        self.assertIn("binary group indicator", r.reasoning)
+
+    def test_time_varying_group_returns_none(self):
+        df = _make_did_df(n_units=60)
+        last_period = df["time"].max()
+        mask = (df["unit"] == 0) & (df["time"] == last_period)
+        df.loc[mask, "group"] = 1 - df.loc[mask, "group"]
+
+        r = check_stable_group_composition(self._vars(df), llm=None)
+        self.assertIsNone(r.passed)
+        self.assertIn("varies within", r.reasoning)
 
 
 # ---------------------------------------------------------------------------
@@ -384,7 +557,7 @@ class TestCheckRDDNoManipulation(unittest.TestCase):
         rv = rng.uniform(0, 10, 500)
         df = pd.DataFrame({"rv": rv, "y": rv + rng.normal(0, 1, 500)})
         v = AssumptionVariables(df=df, running_variable="rv", cutoff=5.0)
-        r = check_rdd_no_manipulation(v, bandwidth=2.0)
+        r = check_rdd_no_manipulation(v)
         self.assertIsInstance(r, AssumptionResult)
         self.assertIn("p_value", r.details)
         self.assertTrue(r.passed)
@@ -396,7 +569,7 @@ class TestCheckRDDNoManipulation(unittest.TestCase):
         rv = np.concatenate([below, above])
         df = pd.DataFrame({"rv": rv, "y": rv + rng.normal(0, 1, len(rv))})
         v = AssumptionVariables(df=df, running_variable="rv", cutoff=5.0)
-        r = check_rdd_no_manipulation(v, bandwidth=1.5)
+        r = check_rdd_no_manipulation(v)
         self.assertIsInstance(r, AssumptionResult)
         self.assertFalse(r.passed)
 
@@ -419,6 +592,54 @@ class TestCheckRDDCovariateContinuity(unittest.TestCase):
         v = AssumptionVariables(df=df, running_variable="rv", cutoff=5.0, covariates=[])
         r = check_rdd_covariate_continuity(v)
         self.assertIsNone(r.passed)
+
+    def test_running_variable_in_covariates_is_ignored(self):
+        # The design rule itself (the running variable) must never be treated
+        # as a background covariate: across the cutoff its values differ by
+        # construction, so including it reports a manufactured violation.
+        rng = np.random.default_rng(21)
+        n = 400
+        rv = rng.uniform(0, 10, n)
+        age = rng.normal(40, 5, n)
+        df = pd.DataFrame({"rv": rv, "age": age})
+        v = AssumptionVariables(
+            df=df, running_variable="rv", cutoff=5.0, covariates=["age", "rv"]
+        )
+        r = check_rdd_covariate_continuity(v, bandwidth=2.0)
+        self.assertTrue(r.passed)
+        self.assertNotIn("rv", (r.details or {}).get("covariate_tests", {}))
+
+    def test_only_running_variable_left_returns_none(self):
+        df = pd.DataFrame({"rv": np.linspace(0, 10, 100)})
+        v = AssumptionVariables(df=df, running_variable="rv", cutoff=5.0, covariates=["rv"])
+        r = check_rdd_covariate_continuity(v)
+        self.assertIsNone(r.passed)
+        self.assertIn("no covariates remain", r.reasoning)
+
+    def test_single_borderline_flag_does_not_fail_family(self):
+        # One covariate with 0.0125 < p < 0.05 among four tests is a chance
+        # imbalance at the family level; the Bonferroni-corrected verdict
+        # must pass while raw p-values stay visible.
+        rng = np.random.default_rng(31)
+        n = 300
+        rv = rng.uniform(0, 10, n)
+        below_idx, above_idx = 0, 0
+        diffs = {c: 0.0 for c in ["a", "b", "c", "d"]}
+        diffs["d"] = 0.45  # tuned so its t-test lands between alpha/4 and alpha
+        data = {"rv": rv}
+        for c, d in diffs.items():
+            data[c] = rng.normal(0, 1, n) + d * (rv > 5.0)
+        df = pd.DataFrame(data)
+        v = AssumptionVariables(
+            df=df, running_variable="rv", cutoff=5.0,
+            covariates=["a", "b", "c", "d"],
+        )
+        r = check_rdd_covariate_continuity(v, bandwidth=2.0)
+        p_d = (r.details or {})["covariate_tests"]["d"]["p_value"]
+        self.assertGreater(p_d, 0.0125)
+        self.assertLess(p_d, 0.05)
+        self.assertTrue(r.passed)
+        self.assertEqual((r.details or {}).get("per_test_alpha"), 0.0125)
 
 
 class TestCheckRDDContinuityPotentialOutcomes(unittest.TestCase):

@@ -1,0 +1,37 @@
+{
+  "parallel_trends": {
+    "alpha": 0.05
+  },
+  "no_anticipation": {
+    "alpha": 0.1
+  },
+  "iv_relevance": {
+    "f_threshold": 10.0
+  },
+  "positivity": {
+    "overlap_threshold": 0.5,
+    "extreme_ps_bounds": [
+      0.1,
+      0.9
+    ],
+    "max_extreme_pct": 0.05
+  },
+  "rdd_no_manipulation": {
+    "alpha": 0.05
+  },
+  "rdd_covariate_continuity": {
+    "alpha": 0.05
+  },
+  "frontdoor_positivity": {
+    "min_count": 5
+  },
+  "baseline_outcome_balance": {
+    "smd_threshold": 0.1
+  },
+  "cond_ignorability": {
+    "smd_threshold": 0.1
+  },
+  "_note": {
+    "text": "Copy this file to thresholds.json (repo root, or point CAIS_THRESHOLDS_PATH at it) and adjust the values you want to change. Only the listed check names and only the listed parameter keys are accepted; unknown names or keys raise a ValueError at startup. Any key you omit uses the built-in default shown here. Note: positivity.extreme_ps_bounds is also the overlap band used by the trimmed-IPW leaf when the positivity gate fails."
+  }
+}

@@ -15,7 +15,8 @@ logger = logging.getLogger(__name__)
 def validate_parallel_trends(df: pd.DataFrame, time_var: str, outcome: str,
                              group_indicator_col: str, treatment_period_start: Any,
                              dataset_description: Optional[str] = None,
-                             time_varying_covariates: Optional[List[str]] = None) -> Dict[str, Any]:
+                             time_varying_covariates: Optional[List[str]] = None,
+                             alpha: float = 0.05) -> Dict[str, Any]:
     """Validates the parallel trends assumption using pre-treatment data.
 
     Regresses the outcome on group-specific time trends before the treatment period.
@@ -41,11 +42,12 @@ def validate_parallel_trends(df: pd.DataFrame, time_var: str, outcome: str,
         pre_df = df[df[time_var] < treatment_period_start].copy()
 
         if len(pre_df) < 20 or pre_df[group_indicator_col].nunique() < 2 or pre_df[time_var].nunique() < 2:
-            validation_result["details"] = "Insufficient pre-treatment data or variation to perform test."
+            validation_result["details"] = (
+                "Insufficient pre-treatment data or variation to perform test; "
+                "parallel trends left untested (inconclusive)."
+            )
             logger.warning(validation_result["details"])
-            # Assume valid if cannot test? Or invalid? Let's default to True if we can't test
-            validation_result["valid"] = True
-            validation_result["details"] += " Defaulting to assuming parallel trends (unable to test)."
+            validation_result["valid"] = None
             return validation_result
 
         # Check if group indicator is binary
@@ -55,7 +57,7 @@ def validate_parallel_trends(df: pd.DataFrame, time_var: str, outcome: str,
             # Use visual assessment method instead (check if trends look roughly parallel)
             validation_result = assess_trends_visually(pre_df, time_var, outcome, group_indicator_col)
             # Ensure p_value is set
-            if validation_result["p_value"] is None:
+            if validation_result["p_value"] is None and validation_result["valid"] is not None:
                 validation_result["p_value"] = 1.0 if validation_result["valid"] else 0.04
             return validation_result
 
@@ -76,9 +78,9 @@ def validate_parallel_trends(df: pd.DataFrame, time_var: str, outcome: str,
             group_trend_pvalue = simple_results.pvalues['group_trend']
 
             # If p > 0.05, trends are not significantly different
-            validation_result["valid"] = group_trend_pvalue > 0.05
+            validation_result["valid"] = group_trend_pvalue > alpha
             validation_result["p_value"] = group_trend_pvalue
-            validation_result["details"] = f"Simple linear trend test: p-value for group-trend interaction: {group_trend_pvalue:.4f}. Parallel trends: {validation_result['valid']}."
+            validation_result["details"] = f"Simple linear trend test: p-value for group-trend interaction: {group_trend_pvalue:.4f} (alpha={alpha:g}). Parallel trends: {validation_result['valid']}."
             logger.info(validation_result["details"])
 
             # If we've successfully validated with the simple approach, return
@@ -147,9 +149,9 @@ def validate_parallel_trends(df: pd.DataFrame, time_var: str, outcome: str,
                     f_value = ((model_without.ssr - model_with.ssr) / df_model) / (model_with.ssr / df_residual)
                     p_value = 1 - stats.f.cdf(f_value, df_model, df_residual)
 
-                    validation_result["valid"] = p_value > 0.05
+                    validation_result["valid"] = p_value > alpha
                     validation_result["p_value"] = p_value
-                    validation_result["details"] = f"Manual F-test for pre-treatment interactions: F({df_model}, {df_residual})={f_value:.4f}, p={p_value:.4f}. Parallel trends: {validation_result['valid']}."
+                    validation_result["details"] = f"Manual F-test for pre-treatment interactions: F({df_model}, {df_residual})={f_value:.4f}, p={p_value:.4f} (alpha={alpha:g}). Parallel trends: {validation_result['valid']}."
                     logger.info(validation_result["details"])
 
                 except Exception as e:
@@ -158,7 +160,7 @@ def validate_parallel_trends(df: pd.DataFrame, time_var: str, outcome: str,
                     # If F-test fails, check individual coefficients
                     significant_interactions = 0
                     for term in interaction_terms:
-                        if term in complex_results.pvalues and complex_results.pvalues[term] < 0.05:
+                        if term in complex_results.pvalues and complex_results.pvalues[term] < alpha:
                             significant_interactions += 1
 
                     validation_result["valid"] = significant_interactions == 0
@@ -167,12 +169,12 @@ def validate_parallel_trends(df: pd.DataFrame, time_var: str, outcome: str,
                         validation_result["p_value"] = 1.0 - (significant_interactions / len(interaction_terms))
                     else:
                         validation_result["p_value"] = 1.0  # Default to 1.0 if no interaction terms
-                    validation_result["details"] = f"{significant_interactions} out of {len(interaction_terms)} pre-treatment interactions are significant at p<0.05. Parallel trends: {validation_result['valid']}."
+                    validation_result["details"] = f"{significant_interactions} out of {len(interaction_terms)} pre-treatment interactions are significant at p<{alpha:g}. Parallel trends: {validation_result['valid']}."
                     logger.info(validation_result["details"])
             else:
-                validation_result["valid"] = True
-                validation_result["p_value"] = 1.0  # Default to 1.0 if no interaction terms
-                validation_result["details"] = "No pre-treatment interaction terms could be tested. Defaulting to assuming parallel trends."
+                validation_result["valid"] = None
+                validation_result["p_value"] = None
+                validation_result["details"] = "No pre-treatment interaction terms could be tested; parallel trends left untested (inconclusive)."
                 logger.warning(validation_result["details"])
 
         except Exception as e:
@@ -180,8 +182,8 @@ def validate_parallel_trends(df: pd.DataFrame, time_var: str, outcome: str,
             tmp_result = assess_trends_visually(pre_df, time_var, outcome, group_indicator_col)
             # Copy over values from visual assessment ensuring p_value is set
             validation_result.update(tmp_result)
-            # Ensure p_value is set
-            if validation_result["p_value"] is None:
+            # Ensure p_value is set only when a verdict exists
+            if validation_result["p_value"] is None and validation_result["valid"] is not None:
                 validation_result["p_value"] = 1.0 if validation_result["valid"] else 0.04
 
     except Exception as e:
@@ -189,10 +191,10 @@ def validate_parallel_trends(df: pd.DataFrame, time_var: str, outcome: str,
         logger.error(error_msg, exc_info=True)
         validation_result["details"] = error_msg
         validation_result["error"] = str(e)
-        # Default to assuming valid if test fails completely
-        validation_result["valid"] = True
-        validation_result["p_value"] = 1.0  # Default to 1.0 if test fails
-        validation_result["details"] += " Defaulting to assuming parallel trends (test failed)."
+        # Could not test; leave inconclusive instead of silently passing
+        validation_result["valid"] = None
+        validation_result["p_value"] = None
+        validation_result["details"] += " Parallel trends left untested (test failed)."
 
     return validation_result
 
@@ -245,23 +247,23 @@ def assess_trends_visually(df: pd.DataFrame, time_var: str, outcome: str,
                     result["p_value"] = 1.0 - (relative_diff * 5) if relative_diff < 0.2 else 0.04
                     result["details"] = f"Visual assessment: relative slope difference = {relative_diff:.4f}. Parallel trends: {result['valid']}."
                 else:
-                    result["valid"] = True
-                    result["p_value"] = 1.0
-                    result["details"] = "Visual assessment: insufficient group data for comparison. Defaulting to assuming parallel trends."
+                    result["valid"] = None
+                    result["p_value"] = None
+                    result["details"] = "Visual assessment: insufficient group data for comparison; parallel trends left untested (inconclusive)."
             else:
-                result["valid"] = True
-                result["p_value"] = 1.0
-                result["details"] = "Visual assessment: insufficient time periods for comparison. Defaulting to assuming parallel trends."
+                result["valid"] = None
+                result["p_value"] = None
+                result["details"] = "Visual assessment: insufficient time periods for comparison; parallel trends left untested (inconclusive)."
         else:
-            result["valid"] = True
-            result["p_value"] = 1.0
-            result["details"] = f"Visual assessment: too many groups ({df[group_indicator_col].nunique()}) for visual comparison. Defaulting to assuming parallel trends."
+            result["valid"] = None
+            result["p_value"] = None
+            result["details"] = f"Visual assessment: too many groups ({df[group_indicator_col].nunique()}) for comparison; parallel trends left untested (inconclusive)."
 
     except Exception as e:
         result["error"] = str(e)
-        result["valid"] = True
-        result["p_value"] = 1.0
-        result["details"] = f"Visual assessment failed: {e}. Defaulting to assuming parallel trends."
+        result["valid"] = None
+        result["p_value"] = None
+        result["details"] = f"Visual assessment failed: {e}; parallel trends left untested (inconclusive)."
 
     logger.info(result["details"])
     return result

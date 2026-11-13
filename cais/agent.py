@@ -18,11 +18,16 @@ from cais.tools.output_formatter_tool import output_formatter_tool
 
 from cais.methods.linear_regression.estimator import LinearRegression
 from cais.methods.regression_discontinuity.estimator import RDDRegression
+from cais.methods.regression_discontinuity.donut_estimator import DonutRDD
 from cais.methods.difference_in_differences.estimator import DiDRegression
+from cais.methods.difference_in_differences.time_window import DiDTimeWindow
 from cais.methods.instrumental_variable.estimator import IVRegression
 from cais.methods.propensity_score.matching import PropensityScoreMatching
+from cais.methods.propensity_score.weighting import TrimmedIPW
+from cais.methods.frontdoor_adjustment.estimator import FrontdoorAdjustment
 from cais.models import Variables, MethodInfo
 from cais.components.assumption_checks import IVTest, ObervationalTest, DiDTest, RDDTest
+from cais.components.decision_tree_v2 import select_method_v2 as run_decision_tree_v2
 
 from .config import get_llm_client 
 #from .prompts import SYSTEM_PROMPT 
@@ -35,18 +40,37 @@ import json
 
 LINEAR_REGRESSION = "linear_regression"
 DIFF_IN_DIFF = "difference_in_differences"
+DID_TIME_WINDOW = "difference_in_differences_time_window"
 REGRESSION_DISCONTINUITY = "regression_discontinuity_design"
+DONUT_RDD = "donut_rdd"
 PROPENSITY_SCORE_MATCHING = "propensity_score_matching"
 INSTRUMENTAL_VARIABLE = "instrumental_variable"
+TRIMMED_IPW = "trimmed_ipw"
+FRONTDOOR = "frontdoor_adjustment"
+
+# Asked before Stage 1 when an interactive run starts without a dataset
+# description; the answer is stored as the dataset description (see
+# CausalAgent._ensure_dataset_description) so it informs dataset analysis and
+# query interpretation, not just the decision tree's assumption checks.
+DESCRIPTION_PROMPT = (
+    "Please provide a brief description of the dataset (columns, context, background). "
+    "Type 'skip' to continue without one."
+)
 
 # Temporary name conversion
 convert = {
     LINEAR_REGRESSION: LinearRegression.name,
     DIFF_IN_DIFF: DiDRegression.name,
+    DID_TIME_WINDOW: DiDTimeWindow.name,
     REGRESSION_DISCONTINUITY: RDDRegression.name,
+    DONUT_RDD: DonutRDD.name,
     INSTRUMENTAL_VARIABLE: IVRegression.name,
-    PROPENSITY_SCORE_MATCHING: PropensityScoreMatching.name
+    PROPENSITY_SCORE_MATCHING: PropensityScoreMatching.name,
+    TRIMMED_IPW: TrimmedIPW.name,
+    FRONTDOOR: FrontdoorAdjustment.name,
 }
+
+_DROPNA_WARN_SHARE = 0.10  # warn when the safety dropna removes more than this share of rows
 
 os.makedirs('./logs/', exist_ok=True)
 logging.basicConfig(
@@ -93,6 +117,7 @@ class CausalAgent():
         self.query_interpreter_output: Optional[QueryInterpreterOutput] = None # Unnecessary
         self.variables: Optional[Variables] = None
         self.selected_method: Optional[MethodInfo] = None
+        self.tree_result: Optional[Any] = None
 
         # Outputs
         self.results: Optional[Dict[str, Any]] = None
@@ -141,6 +166,7 @@ class CausalAgent():
         self.dataset_analysis = dataset_analysis
         #self.query_interpreter_output = query_interpreter_output
         self.variables = query_interpreter_output.variables
+        self._strip_design_columns_from_covariates()
 
     def select_method(self, query=None, llm_decision=True):
 
@@ -160,6 +186,223 @@ class CausalAgent():
         self.selected_method = self.method_info.selected_method
         return self.selected_method
 
+    # ------------------------------------------------------------------
+    # Decision tree v2 (revised tree with gates and advisories)
+    # ------------------------------------------------------------------
+
+    def _tree_properties(self) -> Dict[str, Any]:
+        """Translate interpreter output into decision_tree_v2 inputs.
+
+        Inputs the interpreter does not produce yet (mediator, placebo period,
+        bounded anticipation, local manipulation, donut width) are passed as
+        unavailable so the tree reports can't tell instead of guessing. The panel
+        unit identifier comes from the dataset analyzer's temporal structure when
+        available; the group-composition check falls back to group_variable.
+        """
+        variables = self.variables
+        analysis = self.dataset_analysis
+
+        covariates = list(variables.covariates or [])
+        for name in (variables.confounders or []):
+            if name not in covariates:
+                covariates.append(name)
+
+        has_temporal = bool(variables.time_variable)
+        if analysis is not None:
+            has_temporal = has_temporal or bool(getattr(analysis, "temporal_structure_detected", False))
+
+        # Panel unit identifier, used by the group-composition check. The
+        # dataset analyzer detects it while profiling temporal structure; the
+        # check falls back to group_variable if this is unavailable.
+        unit_variable = None
+        if analysis is not None:
+            temporal = getattr(analysis, "temporal_structure", None)
+            if temporal is not None:
+                unit_variable = getattr(temporal, "id_column", None)
+
+        return {
+            "treatment_variable": variables.treatment_variable,
+            "outcome_variable": variables.outcome_variable,
+            "treatment_variable_type": variables.treatment_variable_type,
+            "covariates": covariates,
+            "instrument_variable": variables.instrument_variable,
+            "mediator_variable": getattr(variables, "mediator_variable", None),
+            "running_variable": variables.running_variable,
+            "cutoff_value": variables.cutoff_value,
+            "time_variable": variables.time_variable,
+            "group_variable": variables.group_variable,
+            "unit_variable": unit_variable,
+            "donut_width": None,
+            "treatment_period_start": variables.treatment_time,
+            "placebo_period_start": getattr(variables, "placebo_period_start", None),
+            "anticipation_window_start": None,
+            "is_rct": bool(variables.is_rct),
+            "has_temporal_structure": has_temporal,
+            "is_encouragement_design": getattr(variables, "is_encouragement_design", None),
+            # None -> the tree infers it from an instrument being present
+            "has_pre_treatment_variables": bool(covariates),
+            "has_valid_instrument": bool(variables.instrument_variable),
+            "has_candidate_mediator": None,     # tree falls back to mediator_variable
+            "has_valid_backdoor_set": bool(covariates),
+            "is_structure_supported": True,
+            "anticipation_known_bounded": False,
+            "local_manipulation": False,
+            "treatment_reference_level": getattr(variables, "treatment_reference_level", None),
+        }
+
+    def select_method_v2(self, query=None, prompt_callback=None):
+        """Select a method with the revised decision tree (gates + advisories).
+
+        Unlike the legacy selector this can deliberately stop the pipeline:
+        check ``tree_result.ended`` (gate failure) and
+        ``tree_result.implemented`` (leaf not implemented yet) before executing.
+        """
+        query = self.checkq(query)
+
+        tree_result = run_decision_tree_v2(
+            self._tree_properties(),
+            df=self.load_dataset(),
+            description=self.dataset_description,
+            llm=self.llm,
+            prompt_callback=prompt_callback,
+        )
+        self.tree_result = tree_result
+        self.selected_method = tree_result.method
+
+        if tree_result.ended:
+            justification = f"Decision tree v2 stopped: {tree_result.end_reason}"
+        else:
+            justification = f"Decision tree v2 selected {tree_result.method} along: {tree_result.path}"
+            if tree_result.variant:
+                justification += f" (variant: {tree_result.variant})"
+        execution = dict(getattr(tree_result, "execution", {}) or {})
+        display_name = execution.get("display_name")
+        method_name = display_name or (
+            tree_result.method.replace("_", " ").title() if tree_result.method else None
+        )
+        self.method_info = MethodInfo(
+            selected_method=tree_result.method,
+            method_name=method_name,
+            method_justification=justification,
+            method_assumptions=list(tree_result.assumptions.keys()),
+            decision_tree=tree_result.to_dict(),
+        )
+        return tree_result
+
+    def _tree_validation_info(self) -> Optional[Dict[str, Any]]:
+        """Shape the tree result the way the explanation generator expects."""
+        if self.tree_result is None:
+            return None
+        result = self.tree_result
+        return {
+            "method": result.method,
+            "variant": result.variant,
+            "path": result.path,
+            "steps": [
+                {"node": s.node, "kind": s.kind, "outcome": s.outcome, "detail": s.detail}
+                for s in result.steps
+            ],
+            "assumptions": {name: verdict.model_dump() for name, verdict in result.assumptions.items()},
+            "concerns": list(result.warnings),
+            "planned_post_checks": list(result.planned_post_checks),
+            "post_checks": self._post_check_advisories(),
+        }
+
+    # ------------------------------------------------------------------
+    # Advisory post-modeling checks (output only, never blocking)
+    # ------------------------------------------------------------------
+
+    def _results_diagnostics(self) -> Dict[str, Any]:
+        """Diagnostics from the last execution, independent of result nesting."""
+        results = self.results if isinstance(self.results, dict) else {}
+        nested = results.get("results")
+        payload = nested if isinstance(nested, dict) else results
+        diagnostics = payload.get("diagnostics") if isinstance(payload, dict) else None
+        return diagnostics if isinstance(diagnostics, dict) else {}
+
+    def _reported_post_checks(self) -> Dict[str, Any]:
+        """Post-check verdicts the estimator reported in its diagnostics."""
+        reported = self._results_diagnostics().get("post_checks")
+        return dict(reported) if isinstance(reported, dict) else {}
+
+    def _gps_balance_verdict(self) -> Optional[Dict[str, Any]]:
+        """Normalize the GPS estimator's balance diagnostics into a verdict."""
+        balance = self._results_diagnostics().get("balance_check")
+        if not isinstance(balance, dict):
+            return None
+        summary = balance.get("summary_stats") or {}
+        n_imbalanced = summary.get("num_covariates_potentially_imbalanced_p005")
+        if n_imbalanced is None:
+            return {
+                "passed": None,
+                "reasoning": "the GPS diagnostics did not report an imbalance count",
+            }
+        n_imbalanced = int(n_imbalanced)
+        return {
+            "passed": n_imbalanced == 0,
+            "reasoning": (
+                f"{n_imbalanced} covariate(s) potentially imbalanced across GPS strata "
+                "(p < 0.05 heuristic)." if n_imbalanced else
+                "no covariate was flagged as imbalanced across GPS strata (p < 0.05 heuristic)."
+            ),
+        }
+
+    def _post_check_advisories(self) -> List[Dict[str, Any]]:
+        """Verdicts for the advisory post-modeling checks planned by the tree.
+
+        These are output-only: they never change the estimate or stop the run.
+        A planned check the estimator did not report is surfaced as
+        ``passed=None`` ("could not be evaluated") rather than silently dropped.
+        """
+        planned = list(getattr(self.tree_result, "planned_post_checks", []) or [])
+        reported = self._reported_post_checks()
+        advisories: List[Dict[str, Any]] = []
+        for name in planned:
+            verdict = reported.get(name)
+            if verdict is None and name == "balance_after_gps":
+                verdict = self._gps_balance_verdict()
+            if verdict is None and name == "gps_specification":
+                verdict = {
+                    "passed": None,
+                    "reasoning": (
+                        "the GPS model-specification check (residual normality) is not "
+                        "implemented in this version"
+                    ),
+                }
+            if not isinstance(verdict, dict):
+                verdict = {"passed": None, "reasoning": "the estimator did not report this check"}
+            advisories.append({
+                "name": name,
+                "passed": verdict.get("passed"),
+                "reasoning": verdict.get("reasoning") or "",
+            })
+        return advisories
+
+    def _tree_stop_output(self) -> Dict[str, Any]:
+        """Result for a study the tree refused to hand to an estimator."""
+        result = self.tree_result
+        reason = result.end_reason or f"{result.method} is not implemented yet."
+
+        lines = [f"No causal effect was estimated. The decision tree stopped: {reason}", "", "Decision path:"]
+        for step in result.steps:
+            detail = f" ({step.detail})" if step.detail else ""
+            lines.append(f"- {step.node}: {step.outcome}{detail}")
+        if result.assumptions:
+            lines.append("")
+            lines.append("Checks:")
+            for name, verdict in result.assumptions.items():
+                label = {True: "pass", False: "fail", None: "can't tell"}[verdict.passed]
+                lines.append(f"- {name}: {label} - {verdict.reasoning}")
+
+        self.results = {
+            "status": "not_estimated",
+            "method": result.method,
+            "end_reason": reason,
+            "tree": result.to_dict(),
+        }
+        self.explanations = "\n".join(lines)
+        return {"results": self.results, "explanation": self.explanations}
+
     def discover_instruments(self, query=None):
         query = self.checkq(query)
 
@@ -176,6 +419,7 @@ class CausalAgent():
             iv_discovery_output_dict = iv_discovery_output
             
         self.variables = Variables(**iv_discovery_output_dict["variables"])
+        self._strip_design_columns_from_covariates()
         return self.variables
 
     def validate_method(self, query=None):
@@ -209,6 +453,36 @@ class CausalAgent():
         )
       
         self.variables = Variables(**controls_selector_output['variables']) # refined controls; need to update after cleaning
+        self._strip_design_columns_from_covariates()
+
+    def _strip_design_columns_from_covariates(self) -> None:
+        """Remove design-role columns from the covariate/confounder lists.
+
+        Columns that define the identification design (treatment, outcome,
+        running variable, instrument, mediator) must never appear in the
+        covariate list: downstream consumers (e.g. the RDD covariate-continuity
+        check) would otherwise test a column against the rule that defines it
+        and read the rule itself as a violation.
+        """
+        variables = self.variables
+        design = {
+            variables.treatment_variable, variables.outcome_variable,
+            variables.running_variable, variables.instrument_variable,
+            getattr(variables, "mediator_variable", None),
+        }
+        design = {name for name in design if name}
+        if not design:
+            return
+        removed = [c for c in (variables.covariates or []) if c in design]
+        variables.covariates = [c for c in (variables.covariates or []) if c not in design]
+        if removed and hasattr(variables, "confounders"):
+            variables.confounders = [
+                c for c in (variables.confounders or []) if c not in design
+            ]
+        if removed:
+            logger.info(
+                "Removed design columns %s from covariate list", removed
+            )
 
     def clean_dataset(self, query=None):   
 
@@ -235,32 +509,58 @@ class CausalAgent():
         
         query = self.checkq(query)
         logger.info(f"Starting method execution. Trying to run {self.selected_method}")
+
+        # The tree may hand down leaf-specific execution settings (e.g. the
+        # propensity-score bounds for trimmed IPW). The leaf id stays in the
+        # trace, while ``execution.method`` names the estimator to run.
+        execution = dict(getattr(self.tree_result, "execution", {}) or {})
+        execution_method = execution.get("method") or self.selected_method
+        method_options = dict(execution.get("options") or {})
+        # Leaf-level variable remap: e.g. the ITT leaf runs diff-in-means with
+        # the assignment column as the grouping variable, not the received
+        # treatment. Applied before data prep so NaN handling keys on the
+        # right column on both primary and fallback execution paths.
+        leaf_treatment = method_options.pop("treatment_variable", None)
+        if leaf_treatment and self.variables is not None:
+            logger.info(
+                "Execution leaf overrides the treatment column: %s -> %s",
+                self.variables.treatment_variable,
+                leaf_treatment,
+            )
+            self.variables.treatment_variable = leaf_treatment
+        logger.info(f"Executing '{execution_method}' with options {method_options}")
+        n_before_dropna = None
+        n_after_dropna = None
         try:
             estimator = self.estimators[
-                convert[self.selected_method]
+                convert[execution_method]
             ]
 
             df = self.load_dataset(cleaned=True)
+            n_before_dropna = len(df)
             df.dropna(subset=[
                 self.variables.outcome_variable,
                 self.variables.treatment_variable
                 ] + self.variables.confounders,
                 inplace=True
             ) # safety
+            n_after_dropna = len(df)
             
             self.results = estimator(
                 df=df,
                 variables=self.variables,
-                query=query
+                query=query,
+                **method_options
             ) | self.llm_info # append llm info
         except:
             method_executor_input = MethodExecutorInput(
-                        method = self.selected_method,
+                        method = execution_method,
                         variables=self.variables,
                         dataset_path=self.cleaned_dataset_path,
                         dataset_analysis=self.dataset_analysis,
                         dataset_description=self.dataset_description,
-                        original_query = query
+                        original_query = query,
+                        method_options=method_options or None,
                     )
             logger.debug(method_executor_input)
             self.results = method_executor_tool.func(
@@ -268,12 +568,29 @@ class CausalAgent():
                 original_query=query
             )
 
+        # Audit trail for the safety listwise dropna: the estimate may rest on
+        # fewer rows than the dataset holds, and that loss was previously
+        # silent. Counts are recorded whenever the primary path ran; a large
+        # loss also raises a warning. Observation only — the dropna itself is
+        # unchanged.
+        if isinstance(self.results, dict) and n_before_dropna is not None:
+            n_dropped = n_before_dropna - n_after_dropna
+            self.results["n_rows_before_dropna"] = n_before_dropna
+            self.results["n_rows_after_dropna"] = n_after_dropna
+            self.results["n_rows_dropped_missing"] = n_dropped
+            if n_before_dropna and n_dropped / n_before_dropna > _DROPNA_WARN_SHARE:
+                logger.warning(
+                    "Safety dropna removed %d of %d rows (%.1f%%) before estimating '%s'.",
+                    n_dropped, n_before_dropna, 100.0 * n_dropped / n_before_dropna,
+                    execution_method,
+                )
+
         self.explanations = explanation_generator_tool.func(
             method_info=self.method_info,
             variables=self.variables,
             results=self.results,
             dataset_analysis=self.dataset_analysis,
-            validation_info=None,
+            validation_info=self._tree_validation_info(),
             dataset_description=self.dataset_description,
             original_query=query
         )['explanation']
@@ -289,19 +606,58 @@ class CausalAgent():
             "explanation": self.explanations
         }
     
-    def run_analysis(self, query, llm_method_selection: Optional[bool] = True):
+    def _ensure_dataset_description(self, prompt_callback: Optional[Any]) -> None:
+        """Ask the user for a dataset description before Stage 1, when none was given.
+
+        Only interactive runs with a reachable user prompt ask. The answer is
+        stored as the dataset description so dataset analysis, query
+        interpretation, and the decision tree all see it. 'skip'/'none' (or no
+        user reachable) continues without a description; LLM-argued checks
+        later report can't tell.
+        """
+        if self.dataset_description or prompt_callback is None:
+            return
+        try:
+            answer = prompt_callback(DESCRIPTION_PROMPT)
+        except Exception as exc:
+            logger.warning("Dataset description prompt_callback raised: %s", exc)
+            return
+        if answer and str(answer).strip().lower() not in {"skip", "none"}:
+            self.dataset_description = str(answer).strip()
+            logger.info("Dataset description provided interactively at Stage 1 entry.")
+
+    def run_analysis(self, query, llm_method_selection: Optional[bool] = True,
+                     method_selection: str = "tree_v2",
+                     prompt_callback: Optional[Any] = None,
+                     interactive: bool = True):
 
         logger.info("[Causal AI Scientist Stage 1] - Dataset and Query analysis")
 
         self.query = query
 
+        # Interactive runs ask for a dataset description before Stage 1 so the
+        # description informs dataset analysis and query interpretation, not
+        # just the decision tree's assumption checks.
+        self._ensure_dataset_description(
+            prompt_callback if interactive else None
+        )
+
         self.analyse_dataset(
             query=query
         )
-        self.select_method(
-            query=query,
-            llm_decision=llm_method_selection
-        )
+        if method_selection == "legacy":
+            self.select_method(
+                query=query,
+                llm_decision=llm_method_selection
+            )
+        else:
+            tree_result = self.select_method_v2(
+                query=query,
+                prompt_callback=prompt_callback if interactive else None,
+            )
+            if tree_result.ended or not tree_result.implemented:
+                logger.info("Decision tree v2 stopped: %s", tree_result.end_reason or tree_result.method)
+                return self._tree_stop_output()
         if self.selected_method == INSTRUMENTAL_VARIABLE and self.use_iv_pipeline:
             logger.info("Instrumental Variable method selected. Running IV Discovery...")
             self.discover_instruments(

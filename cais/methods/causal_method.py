@@ -92,7 +92,15 @@ class CausalMethod(ABC):
         """
         return desc
 
-    def __call__(self, df, variables, query = None):
+    def __call__(self, df, variables, query = None, **options):
+        """Run the estimator.
+
+        ``options`` carries leaf-specific settings resolved by the decision
+        tree (e.g. the propensity-score bounds for trimmed IPW). Subclasses
+        that do not accept options see the same call signature as before.
+        """
+        if options:
+            return self.estimate_effect(df, variables, query, **options)
         return self.estimate_effect(df, variables, query)
     
 

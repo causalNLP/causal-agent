@@ -117,6 +117,10 @@ def method_executor_tool(inputs: MethodExecutorInput, original_query: Optional[s
         # Add query if needed by llm_assist functions within the method
         kwargs_for_method['query'] = query_str
         kwargs_for_method['column_mappings'] = column_mappings
+        # Leaf-specific execution settings recorded by the decision tree
+        # (e.g. mediator_variable for frontdoor, ps_bounds for trimmed IPW).
+        if getattr(inputs, "method_options", None):
+            kwargs_for_method.update(inputs.method_options)
         
                  
         results_dict = estimate_func(

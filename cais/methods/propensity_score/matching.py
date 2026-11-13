@@ -369,6 +369,12 @@ def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str,
     diagnostics["bootstrap_iterations_for_se"] = actual_bootstrap_iterations
     diagnostics["final_caliper_used"] = caliper
 
+    # Advisory post-modeling check (surfaced in CAIS's output, never blocking):
+    # is the matched sample balanced on the observed covariates?
+    diagnostics["post_checks"] = _post_checks_after_matching(
+        df, treatment, outcome, covariates, locals().get("matched_df_diag")
+    )
+
     # --- Format and return results --- 
     logger.info(f"Formatting results. ATT Estimate: {att_estimate}, SE: {att_se}, Method: {method_used_for_att}")
     return format_ps_results(att_estimate, att_se, diagnostics,
@@ -377,3 +383,40 @@ def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str,
                                          "n_neighbors": n_neighbors, # n_neighbors used in fallback/bootstrap/diag
                                          "propensity_model": propensity_model_type,
                                          "n_bootstraps_config": n_bootstraps}) 
+
+
+def _post_checks_after_matching(df: pd.DataFrame, treatment: str, outcome: str,
+                                covariates: List[str],
+                                matched_df: Optional[pd.DataFrame]) -> Dict[str, Any]:
+    '''Advisory post-modeling check for PSM: covariate balance in the matched sample.
+
+    Runs after the estimate is produced, so it never changes the result. The
+    verdict is carried in ``diagnostics["post_checks"]`` and the agent turns it
+    into an affirming/warning sentence in CAIS's output.
+    '''
+    if matched_df is None or getattr(matched_df, "empty", True):
+        return {
+            "balance_after_matching": {
+                "passed": None,
+                "reasoning": "No matched sample was available for the balance post-check.",
+                "details": {},
+            }
+        }
+    try:
+        from cais.models import AssumptionVariables
+        from cais.methods.post_model_assumption_utils import check_balance_after_matching
+
+        variables = AssumptionVariables(
+            df=df, treatment=treatment, outcome=outcome, covariates=list(covariates)
+        )
+        verdict = check_balance_after_matching(variables, matched_df)
+        return {"balance_after_matching": verdict.model_dump()}
+    except Exception as exc:  # advisory checks must never break execution
+        logger.warning("Post-check balance_after_matching could not be evaluated: %s", exc)
+        return {
+            "balance_after_matching": {
+                "passed": None,
+                "reasoning": f"Post-check could not be evaluated: {exc}",
+                "details": {},
+            }
+        }

@@ -7,10 +7,16 @@ within the query_interpreter component.
 # query, description, column_info, treatment, outcome
 
 IV_IDENTIFICATION_PROMPT_TEMPLATE = """
-You are an expert in causal inference. 
-You need to assess whether a valid instrument exists in the dataset to apply Instrumental Variable (IV) methods for estimating causal effects to answer the user query.
-Use systematic reasoning to evaluate potential instruments against strict criteria. You need to be strict with the assessment.
-Do not suggest IV based on weak reasoning. 
+You are an expert in causal inference.
+Your task is to NOMINATE instrumental-variable candidates: columns that plausibly
+Determine who receives the treatment -- or how much treatment they receive -- based
+on the study design described in the text.
+
+This is a nomination task, not a validity verdict. Do NOT try to certify untestable
+conditions (exclusion restriction, independence): they are argued separately, and
+the program verifies instrument strength statistically from the data and discards
+weak candidates. Nominating a plausible design column is helpful; withholding it
+for untestable reasons is not.
 
 User Query: "{query}"
 Dataset Description: {description}
@@ -20,42 +26,62 @@ Available Columns: {column_info}
 
 Think through this step by step:
 
+Step 0: Classify the uptake regime FIRST -- this decides whether an instrument
+can exist at all.
+- DRIVEN: the description says some factor determined or drove who received
+  treatment -- an assignment or eligibility rule, an offer or invitation, a
+  provider or system decision, funding, a lottery -- OR receipt is described as
+  tied to a factor OUTSIDE the unit's own control: a provider attribute
+  (experience, staffing), a system or area condition (local unemployment or
+  prices, budgets, policies, exposure rules). Uptake need not be formally
+  assigned; what matters is an outside driver of who gets treated.
+- VOLUNTARY/SELF-SELECTED: units effectively chose their own uptake ('chose to
+  participate', 'opted in', 'enrolled themselves', uptake described as a personal
+  decision) and no outside driver is described. The unit's own characteristics
+  (its income, residence, health, history) are NOT outside drivers -- described
+  differences between participants and non-participants are exactly the
+  confounding that matching or regression adjusts for, not an instrument.
+- If VOLUNTARY/SELF-SELECTED, return null for ALL fields. An instrument requires
+  an outside driver of receipt; in a self-selected design there is none, and
+  adjustment methods (matching, regression) are the right tools. Abstaining here
+  is the correct answer, not a failure.
+
 Step 1: Understand the causal question
 - What causal effect is the user trying to estimate?
-- What potential unobserved confounders might affect treatment and outcome?
+- What might confound treatment and outcome? (Context only; not your job to fix here.)
 
-Step 2: Identify potential instrumental variables
-- Which columns could plausibly serve as instruments?
-- Exclude the treatment and outcome variables themselves
-- Look for variables that might influence treatment assignment and do not directly affect the outcome
-- Only consider variables that exist in the available columns list
+Step 2: Nominate candidates (only if the regime is ASSIGNED/ENCOURAGED)
+- Find columns that plausibly determine treatment assignment or uptake.
+- Patterns that suggest a candidate: assignment-like flags ('assigned', 'offered',
+  'invited', 'enrolled', 'push'); design determinants the description names
+  (eligibility rules, income thresholds, unemployment rates, program funding,
+  provider experience, lottery components).
+- NEVER nominate: the treatment or outcome columns themselves; time or period
+  flags (columns marking pre/post periods such as 'post_intervention',
+  'post_policy_period', year or wave dummies) -- they occur at or after treatment
+  time and cannot determine assignment.
+- Only nominate variables that exist in the available columns list.
 
-Step 3: Evaluate each potential IV against the four key conditions
+Step 3: Ground each candidate
+- Quote the sentence from the dataset description that led you to the candidate,
+  verbatim, or null if no sentence supports it.
+- Set 'basis' to 'design-stated' when the quoted sentence ties the candidate to
+  the treatment decision; otherwise 'name-only' (trusted for its meaning, to be
+  verified by the program from data).
 
-Condition 1 - Relevance:
-- Does this variable directly influence the treatment?
-
-Condition 2 - Exclusion restriction:
-- Does this variable affect the outcome only through the treatment? There should be no direct pathway from instrument to outcome bypassing treatment. 
-
-Condition 3 - Independence:
-- Is this variable as good as randomly assigned with respect to unobserved confounders? This means 
-    it should not be correlated with any factors that affect the outcome other than through treatment.
-
-Those are general IV assumptions. However, we also see if this is an encouragement design or encouragement-like setting.
-Condition 4 - Compliance:
-- Is there compliance variation, i.e., some units who weren't eligible to get the treatment got treatment or vice versa?
-- Do we have data showing some units didn't follow their assigned treatment? If there is no data on compliance, discard this condition.
-
-Step 4: Make final determination
-- Select the best candidate only if it satisfies all conditions
-- If no good candidates exist, return null
-- Only select variables from the available columns; do not create new variables
+Step 4: Decide 'instrument_variable'
+- Return the best candidate in 'instrument_variable'; list up to three in 'candidates'.
+- Only select variables from the available columns; do not create new variables.
+- If the regime is voluntary or nothing in the design plausibly determines
+  treatment, return null for all fields rather than guessing from unrelated columns.
 
 Important: Return only valid JSON. No explanations, reasoning, or markdown formatting.
 
 {{
-    "instrument_variable": "column_name_or_null"
+    "instrument_variable": "best_candidate_or_null",
+    "candidates": ["up_to_three_candidates_or_null"],
+    "basis": "design-stated_or_name-only_or_null",
+    "quote": "verbatim_sentence_or_null"
 }}
 """
 
@@ -400,5 +426,52 @@ Respond ONLY with a JSON object adhering to this Pydantic model:
 {{
     "reference_level": "string_representing_the_level_or_null",
     "reasoning": "string_or_null_brief_explanation"
+}}
+"""
+DESIGN_CONTEXT_IDENTIFICATION_PROMPT_TEMPLATE = """
+You are a causal inference expert.
+You need to extract study-design facts from the user query and dataset
+description. These facts are semantic (they depend on what the variables
+MEAN, not on their statistical properties), so only report what the query or
+description explicitly supports. Never guess: if the text does not settle a
+field, return null for it.
+
+User Query: "{query}"
+Dataset Description: {description}
+Treatment: {treatment}
+Outcome: {outcome}
+Available Columns: {column_info}
+
+Fields to extract:
+
+1. mediator_variable
+   A column that plausibly carries the treatment's effect to the outcome
+   (a causal pathway T -> M -> Y). It must be an available column and must
+   not be the treatment or the outcome itself. Only report it if the query
+   or description describes such a mechanism. Return null otherwise.
+   Example: "ad exposure" mediating the effect of a marketing campaign on sales.
+
+2. treatment_period_start
+   When the treatment/policy begins, in the same units as the time column
+   (e.g. a year like 1988). Only if stated or clearly implied by the text.
+
+3. placebo_period_start
+   The start of a pre-treatment period during which the outcome should not
+   yet respond to the treatment (an anticipation-free placebo window).
+   Only if the text states or clearly implies one.
+
+4. is_encouragement_design
+   true ONLY if units were randomized into an encouragement or nudge, while
+   the actual treatment uptake was left to the units (encouragement differs
+   from uptake). false if the design is plain randomization or clearly not
+   randomized. null otherwise. True encouragement designs are rare.
+
+Respond ONLY with a JSON object adhering to this Pydantic model:
+{{
+    "mediator_variable": "column_name_or_null",
+    "treatment_period_start": "number_or_null",
+    "placebo_period_start": "number_or_null",
+    "is_encouragement_design": true_or_false_or_null,
+    "reasoning": "brief_justification_or_why_nothing_was_extracted"
 }}
 """

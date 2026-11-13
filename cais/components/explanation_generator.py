@@ -58,6 +58,48 @@ def _extract_validation_summary(validation_result: Optional[Dict[str, Any]]) -> 
     return validation_result
 
 
+# Human-readable labels for advisory post-modeling checks (after estimation).
+POST_CHECK_LABELS = {
+    "balance_after_weighting": "covariate balance after weighting",
+    "balance_after_matching": "covariate balance after matching",
+    "balance_after_gps": "covariate balance after GPS adjustment",
+    "gps_specification": "GPS model specification (residual normality)",
+}
+
+
+def explain_post_checks(post_checks: Optional[List[Dict[str, Any]]]) -> List[str]:
+    """Turn advisory post-modeling-check verdicts into output sentences.
+
+    Each sentence either affirms that the check was valid, or warns the user
+    when it failed or could not be evaluated. The checks are advisory: they
+    never block the pipeline or change the estimate.
+    """
+    sentences: List[str] = []
+    for item in post_checks or []:
+        if not isinstance(item, dict):
+            continue
+        name = item.get("name") or "post-estimation check"
+        label = POST_CHECK_LABELS.get(name, name.replace("_", " "))
+        passed = item.get("passed")
+        reasoning = (item.get("reasoning") or "").strip()
+        detail = ""
+        if reasoning:
+            detail = f" {reasoning.rstrip('.')}."
+        if passed is True:
+            sentences.append(f"Post-estimation check (advisory): {label} was valid.{detail}")
+        elif passed is False:
+            sentences.append(
+                f"Post-estimation check (advisory): WARNING - {label} did not pass.{detail} "
+                "Interpret the estimate with caution."
+            )
+        else:
+            sentences.append(
+                f"Post-estimation check (advisory): WARNING - {label} could not be evaluated."
+                f"{detail} Interpret the estimate with caution."
+            )
+    return sentences
+
+
 def _call_llm_for_text(llm: Optional[BaseChatModel], prompt: str) -> str:
     if llm is None:
         return ""
@@ -204,6 +246,12 @@ def generate_explanation(
     for item in assumption_explanations:
         final_text += f"- {item['assumption']}: {item['explanation']}\n"
     final_text += "\n"
+    post_check_sentences = explain_post_checks(validation_summary.get("post_checks"))
+    if post_check_sentences:
+        final_text += "**Post-estimation checks (advisory):**\n"
+        for sentence in post_check_sentences:
+            final_text += f"- {sentence}\n"
+        final_text += "\n"
     final_text += f"**Limitations:**\n{limitations_explanation}\n\n"
 
     interpretation_text = _generate_llm_interpretation(

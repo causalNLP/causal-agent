@@ -28,9 +28,9 @@ def test_validate_parallel_trends_placeholder(sample_did_data_diag):
     )
     
     assert isinstance(results, dict)
-    # Check for specific placeholder values if they are defined
-    assert results.get('valid') is True # Function defaults to True when test cannot be run
-    # Check the actual detail message returned when test fails on this data
+    # Untestable must be inconclusive, never a silent pass (gate semantics)
+    assert results.get('valid') is None
+    # Check the actual detail message returned when the test cannot run on this data
     assert "Insufficient pre-treatment data or variation" in results.get('details', "")
 
 # Add tests here if/when parallel trends validation is implemented

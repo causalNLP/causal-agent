@@ -227,3 +227,8 @@ cais_demo.ipynb
 
 # Dataset for experiments (CauSciBench) 
 experiments/data/causcibench/
+# Local user-editable gate thresholds (template: thresholds.example.json)
+thresholds.json
+
+# the shipped threshold template stays tracked
+!thresholds.example.json

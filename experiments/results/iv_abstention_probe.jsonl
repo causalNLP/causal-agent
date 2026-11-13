@@ -1,0 +1,13 @@
+{"id": 76, "dataset": "iv_data_11.csv", "truth": "city_housing_budget", "trials": {"production": [null, null], "softened": ["city_housing_budget", "city_housing_budget"]}}
+{"id": 77, "dataset": "iv_data_46.csv", "truth": "public_defender_experience", "trials": {"production": [null, null], "softened": ["public_defender_assigned", "public_defender_assigned"]}}
+{"id": 78, "dataset": "iv_data_1.csv", "truth": "doctor_experience", "trials": {"production": [null, null], "softened": [null, null]}}
+{"id": 80, "dataset": "iv_data_15.csv", "truth": "regional_unemployment_rate", "trials": {"production": [null, null], "softened": ["regional_unemployment_rate", null]}}
+{"id": 83, "dataset": "iv_data_14.csv", "truth": "population_wealth", "trials": {"production": [null, null], "softened": ["population_wealth", null]}}
+{"id": 84, "dataset": "iv_data_45.csv", "truth": "therapist_experience", "trials": {"production": [null, null], "softened": ["therapist_experience", "therapist_experience"]}}
+{"id": 85, "dataset": "iv_data_2.csv", "truth": "region", "trials": {"production": [null, null], "softened": ["region", "region"]}}
+{"id": 86, "dataset": "iv_data_27.csv", "truth": "local_unemployment_rate", "trials": {"production": [null, null], "softened": [null, null]}}
+{"id": 87, "dataset": "iv_data_28.csv", "truth": "local_unemployment_rate", "trials": {"production": [null, null], "softened": ["local_unemployment_rate", null]}}
+{"id": 88, "dataset": "iv_data_56.csv", "truth": "presence_of_trade_agreement", "trials": {"production": [null, null], "softened": ["presence_of_trade_agreement", "presence_of_trade_agreement"]}}
+{"id": 90, "dataset": "iv_data_51.csv", "truth": "local_unemployment_rate", "trials": {"production": [null, null], "softened": ["local_unemployment_rate", "local_unemployment_rate"]}}
+{"id": 91, "dataset": "iv_data_57.csv", "truth": "local_unemployment_rate", "trials": {"production": [null, null], "softened": [null, null]}}
+{"id": 92, "dataset": "iv_data_34.csv", "truth": "surgeon_experience", "trials": {"production": [null, null], "softened": [null, "surgeon_experience"]}}

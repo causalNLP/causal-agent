@@ -100,3 +100,48 @@ def get_llm_client(provider: Optional[str] = None, model_name: Optional[str] = N
     except Exception as e:
         logger.error(f"Failed to initialize LLM (Provider: {provider}, Model: {model_name}): {e}")
         raise # Re-raise the exception 
+
+# _____________________________________________________________
+# Adjustable gate thresholds
+# _____________________________________________________________
+
+import json
+from pathlib import Path
+from typing import Any, Dict
+
+THRESHOLDS_FILE_ENV = "CAIS_THRESHOLDS_PATH"
+_DEFAULT_THRESHOLDS_FILE = Path(__file__).resolve().parent.parent / "thresholds.json"
+
+
+def load_thresholds() -> Dict[str, Dict[str, Any]]:
+    """Load user-configurable gate-threshold overrides from a JSON file.
+
+    Resolution order: ``$CAIS_THRESHOLDS_PATH`` if set, otherwise
+    ``thresholds.json`` in the repository root. A missing file yields ``{}``
+    (the check functions' keyword defaults apply). A malformed file raises a
+    clear ``ValueError`` — a broken policy must never silently become
+    "defaults".
+
+    The returned mapping is ``{check_name: {param: value}}`` and is validated
+    against each check's allowed parameter keys when it is applied
+    (see ``build_default_checks``).
+    """
+    path = os.getenv(THRESHOLDS_FILE_ENV) or _DEFAULT_THRESHOLDS_FILE
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid JSON in thresholds file '{path}': {exc}") from exc
+    if not isinstance(data, dict) or not all(isinstance(v, dict) for v in data.values()):
+        raise ValueError(
+            f"Thresholds file '{path}' must map check names to objects of "
+            "keyword arguments, e.g. {\"iv_relevance\": {\"f_threshold\": 15}}."
+        )
+    # Keys starting with '_' are documentation keys (e.g. _note); reserved.
+    return {
+        name: dict(kwargs)
+        for name, kwargs in data.items()
+        if not name.startswith("_")
+    }
