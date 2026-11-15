@@ -18,6 +18,9 @@ Principles:
 - STRICT: Only apply transformations explicitly requested in the causal_query or required to define treatment/outcome.
 - STRICT: If the query names a transformed outcome/treatment (e.g., log, diff, rate), apply exactly that transform.
 - Row filters/missing handling only when required to define treatment/outcome (e.g., drop missing y/t).
+- For right-censored survival, preserve duration and event columns; never mean-impute duration or event.
+- Missing treatment/event/duration rows are reported and excluded when required; covariate imputation must be fold-wise downstream.
+- Do not infer a competing-risk event as ordinary right censoring.
 - Minimal, method-aware edits only. Prefer light-touch transforms.
 - Idempotent: re-running produces no further net change.
 - No outcome-conditioned decisions. Never peek at y to pick transforms.
@@ -48,6 +51,8 @@ JSON schema to follow:
   "roles": {
     "treatment": "<col?>",
     "outcome": "<col?>",
+    "duration": "<follow-up time column for right-censored survival, or null>",
+    "event": "<event indicator 1=event/0=censored, or null>",
     "covariates": ["..."],
     "unit_id": "<col?>",
     "time_var": "<col?>",
@@ -348,5 +353,9 @@ def run_cleaning_stage(dataset_path: str,
         "cleaning_report_md": "\n".join(report),
         "generated_code": code,
         "stdout": stdout_all,
-        "stderr": stderr_all
+        "stderr": stderr_all,
+        "survival_roles": {
+            "duration_variable": (spec.get("roles") or {}).get("duration"),
+            "event_variable": (spec.get("roles") or {}).get("event"),
+        },
     }

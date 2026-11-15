@@ -34,6 +34,11 @@ from .registry_adapters import (
     BackdoorAdjustmentEstimator,
     DifferenceInMeansEstimator,
 )
+from .survival_meta_learners import (
+    estimate_s_learner_rmst,
+    estimate_t_learner_rmst,
+    estimate_x_learner_rmst,
+)
 
 # Mapping of method names to their implementation functions
 METHOD_MAPPING = {
@@ -56,6 +61,9 @@ METHOD_MAPPING = {
     "t_learner": estimate_t_learner,
     "x_learner": estimate_x_learner,
     "r_learner": estimate_r_learner,
+    "s_learner_rmst": estimate_s_learner_rmst,
+    "t_learner_rmst": estimate_t_learner_rmst,
+    "x_learner_rmst": estimate_x_learner_rmst,
 }
 
 # Stable route inventory used by validation and registry-alignment tests.
@@ -89,4 +97,7 @@ __all__ = [
     "BackdoorAdjustmentEstimator",
     "DifferenceInMeansEstimator",
     "EXECUTABLE_METHOD_IDS",
+    "estimate_s_learner_rmst",
+    "estimate_t_learner_rmst",
+    "estimate_x_learner_rmst",
 ]

@@ -537,6 +537,11 @@ class CausalAgent():
             causal_method=self.selected_method
         )
         self.cleaned_dataset_path = cleaning_output.get("cleaned_dataset_path")
+        survival_roles = cleaning_output.get("survival_roles") or {}
+        if self.variables is not None:
+            for field, value in survival_roles.items():
+                if value and hasattr(self.variables, field):
+                    setattr(self.variables, field, value)
         
         # Check if file was actually created/returned
         if not self.cleaned_dataset_path or not os.path.exists(self.cleaned_dataset_path):
