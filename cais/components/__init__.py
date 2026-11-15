@@ -18,6 +18,11 @@ from cais.components.conditional_preference_graph import (
     GraphDecision,
     PreferenceEdge,
 )
+from cais.components.conditional_strategy_router import (
+    ConditionalRoutingResult,
+    ConditionalStrategyRouter,
+    EstimatorRoute,
+)
 
 __all__ = [
     "parse_input",
@@ -31,6 +36,9 @@ __all__ = [
     "ConditionalPreferenceGraph",
     "GraphDecision",
     "PreferenceEdge",
+    "ConditionalRoutingResult",
+    "ConditionalStrategyRouter",
+    "EstimatorRoute",
 ]
 
 # This file makes Python treat the directory as a package.
