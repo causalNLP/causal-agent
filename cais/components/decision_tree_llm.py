@@ -25,7 +25,8 @@ from .decision_tree import (
     INSTRUMENTAL_VARIABLE,
     CORRELATION_ANALYSIS,
     PROPENSITY_SCORE_WEIGHTING,
-    GENERALIZED_PROPENSITY_SCORE
+    GENERALIZED_PROPENSITY_SCORE,
+    FRONTDOOR_ADJUSTMENT,
 )
 
 # Configure logging
@@ -41,7 +42,8 @@ ALL_METHODS = [
     PROPENSITY_SCORE_MATCHING,
     PROPENSITY_SCORE_WEIGHTING,
     GENERALIZED_PROPENSITY_SCORE,
-    BACKDOOR_ADJUSTMENT, # Often a general approach rather than a specific model.
+    FRONTDOOR_ADJUSTMENT,
+    BACKDOOR_ADJUSTMENT,
     CORRELATION_ANALYSIS,
 ]
 
@@ -54,6 +56,7 @@ METHOD_DESCRIPTIONS_FOR_LLM = {
     PROPENSITY_SCORE_MATCHING: "For observational data with covariates. Estimates the probability of receiving treatment (propensity score) for each unit and then matches treated and control units with similar scores. Aims to create balanced groups.",
     PROPENSITY_SCORE_WEIGHTING: "Similar to PSM, for observational data with covariates. Uses propensity scores to weight units to create a pseudo-population where confounders are balanced. Can estimate ATE, ATT, or ATC.",
     GENERALIZED_PROPENSITY_SCORE: "An extension of propensity scores for continuous treatment variables. Aims to estimate the dose-response function, assuming unconfoundedness given covariates.",
+    FRONTDOOR_ADJUSTMENT: "For an observed mediator that fully transmits the treatment effect when treatment-outcome confounding is unobserved. Requires no unblocked treatment-mediator confounding and treatment to block all mediator-outcome back-door paths.",
     BACKDOOR_ADJUSTMENT: "A general strategy for causal inference in observational studies that involves statistically controlling for all common causes (confounders) of the treatment and outcome. Specific methods like regression or matching implement this.",
     CORRELATION_ANALYSIS: "A fallback method when causal inference is not feasible due to data limitations (e.g., no clear design, no covariates for adjustment). Measures the statistical association between variables, but does not imply causation."
 }
@@ -215,4 +218,4 @@ Please provide only the JSON object in your response.
             "method_justification": justification,
             "method_assumptions": METHOD_ASSUMPTIONS.get(selected_method, []),
             "alternative_methods": alternatives
-        } 
+        }

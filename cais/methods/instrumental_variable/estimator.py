@@ -4,6 +4,7 @@ from statsmodels.sandbox.regression.gmm import IV2SLS
 from dowhy import CausalModel
 from typing import Dict, Any, List, Union, Optional
 import logging
+import networkx as nx
 from langchain.chat_models.base import BaseChatModel
 from cais.config import get_llm_client
 from .diagnostics import run_iv_diagnostics
@@ -12,6 +13,13 @@ from cais.methods.causal_method import CausalMethod
 
 
 logger = logging.getLogger(__name__)
+
+
+def _ensure_dowhy_networkx_compatibility() -> None:
+    """Provide the NetworkX 3.6 name expected by the installed DoWhy version."""
+    if not hasattr(nx.algorithms, "d_separated"):
+        from networkx.algorithms.d_separation import is_d_separator
+        nx.algorithms.d_separated = is_d_separator
 
 class IVRegression(CausalMethod):
 
@@ -276,6 +284,7 @@ def estimate_effect(
         if not graph:
             raise ValueError("Failed to build GML graph for DoWhy.")
         
+        _ensure_dowhy_networkx_compatibility()
         model = CausalModel(data=df, treatment=treatment, outcome=outcome, graph=graph)
         
         # Identify Effect (essential for refutation later)
@@ -362,6 +371,23 @@ def estimate_effect(
     # --- Diagnostics --- 
     logger.info("\nRunning diagnostics...")
     diagnostics = run_iv_diagnostics(df, treatment, outcome, valid_instruments, clean_covariates, sm_results_obj, dw_results_obj)
+    diagnostics["causal_assumptions_advisory"] = {
+        "exclusion": "Argued substantively/with LLM; not established by the estimator.",
+        "exogeneity": "Argued substantively/with LLM; not established by the estimator.",
+        "monotonicity": "Required for a binary-IV LATE interpretation; advisory and coding-dependent.",
+    }
+    if len(valid_instruments) == 1:
+        instrument_values = set(df[valid_instruments[0]].dropna().unique())
+        treatment_values = set(df[treatment].dropna().unique())
+        diagnostics["binary_late_compatible"] = bool(
+            instrument_values.issubset({0, 1, False, True})
+            and treatment_values.issubset({0, 1, False, True})
+        )
+        if not diagnostics["binary_late_compatible"]:
+            diagnostics["late_interpretation_warning"] = (
+                "Instrument or treatment is not binary; the coefficient must not be "
+                "automatically labeled as the binary-complier LATE contract."
+            )
     results['diagnostics'] = diagnostics
 
     # --- Refutation Step --- 
@@ -426,4 +452,4 @@ def estimate_effect(
     )
 
     logger.info("--- Instrumental Variable Estimation Complete ---\n")
-    return formatted_results 
+    return formatted_results

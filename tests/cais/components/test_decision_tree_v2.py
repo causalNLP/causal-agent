@@ -20,6 +20,7 @@ from cais.components.decision_tree_v2 import (
     M_DIFF_IN_MEANS,
     M_DONUT_RDD,
     M_FRONTDOOR,
+    M_FUZZY_RDD,
     M_GPS,
     M_IPW,
     M_IV,
@@ -686,10 +687,11 @@ class TestDIDPath(unittest.TestCase):
         self.assertTrue(res.ended)
         self.assertIn("composition", res.end_reason.lower())
 
-    def test_parallel_trends_fail_ends(self):
+    def test_parallel_trends_fail_warns_and_continues(self):
         res = run(base_props(**DID_PROPS), checks=stub_checks(parallel_trends=False))
-        self.assertTrue(res.ended)
-        self.assertIn("Parallel trends", res.end_reason)
+        self.assertFalse(res.ended)
+        self.assertEqual(res.method, M_DID)
+        self.assertTrue(any("Parallel-trends" in warning for warning in res.warnings))
 
     def test_baseline_balance_fail_is_advisory(self):
         res = run(base_props(**DID_PROPS), checks=stub_checks(baseline_outcome_balance=False))
@@ -697,10 +699,16 @@ class TestDIDPath(unittest.TestCase):
         self.assertEqual(res.method, M_DID)
         self.assertTrue(any("Baseline outcome balance" in w for w in res.warnings))
 
-    def test_no_anticipation_fail_unbounded_ends(self):
+    def test_no_anticipation_fail_unbounded_warns_and_continues(self):
         res = run(base_props(**DID_PROPS), checks=stub_checks(no_anticipation=False))
+        self.assertFalse(res.ended)
+        self.assertEqual(res.method, M_DID)
+        self.assertTrue(any("anticipation" in warning.lower() for warning in res.warnings))
+
+    def test_staggered_adoption_is_structurally_blocked(self):
+        res = run(base_props(**DID_PROPS, staggered_adoption=True))
         self.assertTrue(res.ended)
-        self.assertIn("Anticipation", res.end_reason)
+        self.assertIn("Staggered adoption", res.end_reason)
 
     def test_no_anticipation_fail_bounded_goes_time_window(self):
         res = run(
@@ -773,18 +781,26 @@ class TestRDDPath(unittest.TestCase):
         self.assertEqual(res.execution["method"], M_DONUT_RDD)
         self.assertEqual(res.execution["options"]["donut_width"], 0.5)
 
-    def test_manipulation_fail_local_without_width_ends(self):
+    def test_manipulation_fail_local_without_width_warns(self):
         res = run(
             base_props(**RDD_PROPS, local_manipulation=True),
             checks=stub_checks(rdd_no_manipulation=False),
         )
-        self.assertTrue(res.ended)
-        self.assertIn("no donut width", res.end_reason)
+        self.assertFalse(res.ended)
+        self.assertEqual(res.method, M_RDD)
+        self.assertTrue(any("no donut width" in warning for warning in res.warnings))
 
-    def test_manipulation_fail_no_local_ends(self):
+    def test_manipulation_fail_no_local_warns(self):
         res = run(base_props(**RDD_PROPS), checks=stub_checks(rdd_no_manipulation=False))
-        self.assertTrue(res.ended)
-        self.assertIn("manipulation", res.end_reason)
+        self.assertFalse(res.ended)
+        self.assertEqual(res.method, M_RDD)
+        self.assertTrue(any("causal interpretation" in warning for warning in res.warnings))
+
+    def test_nonsharp_assignment_selects_fuzzy_rdd(self):
+        res = run(base_props(**RDD_PROPS, is_sharp_rdd=False))
+        self.assertFalse(res.ended)
+        self.assertEqual(res.method, M_FUZZY_RDD)
+        self.assertTrue(res.implemented)
 
     def test_covariate_continuity_fail_local_goes_donut(self):
         res = run(

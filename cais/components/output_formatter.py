@@ -139,6 +139,9 @@ def _format_method_name(method: str) -> str:
         "instrumental_variable": "Instrumental Variable Analysis",
         "difference_in_differences": "Difference-in-Differences",
         "regression_discontinuity": "Regression Discontinuity Design",
+        "regression_discontinuity_design": "Regression Discontinuity Design",
+        "fuzzy_regression_discontinuity_design": "Fuzzy Regression Discontinuity Design",
+        "donut_regression_discontinuity_design": "Donut Regression Discontinuity Design",
         "backdoor_adjustment": "Backdoor Adjustment",
         "propensity_score_weighting": "Propensity Score Weighting"
     }

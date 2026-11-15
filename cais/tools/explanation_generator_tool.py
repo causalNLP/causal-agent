@@ -33,7 +33,8 @@ def explanation_generator_tool(
     dataset_analysis: DatasetAnalysis,
     validation_info: Optional[Dict[str, Any]] = None,
     dataset_description: Optional[str] = None,
-    original_query: Optional[str] = None # Get original query if passed
+    original_query: Optional[str] = None, # Get original query if passed
+    llm: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """
     Generate a single comprehensive explanation string using structured Pydantic input.
@@ -65,11 +66,12 @@ def explanation_generator_tool(
         variables_dict['original_query'] = original_query
 
     # Get LLM instance if needed by generate_explanation
-    llm_instance = None
-    try:
-        llm_instance = get_llm_client() 
-    except Exception as e:
-        logger.error(f"Could not get LLM client for explainer: {e}")
+    llm_instance = llm
+    if llm_instance is None:
+        try:
+            llm_instance = get_llm_client()
+        except Exception as e:
+            logger.error(f"Could not get LLM client for explainer: {e}")
 
     method_used = method_info_dict.get("selected_method")
     validation_summary = None

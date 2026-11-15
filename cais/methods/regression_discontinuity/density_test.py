@@ -229,10 +229,13 @@ def mccrary_density_test(
                 "(possibly too little local variation or a discrete running variable)."
             ),
             details={
+                "test_type": "rddensity_cjm",
                 "cutoff": cutoff,
                 "n_left": n_left,
                 "n_right": n_right,
                 "bwselect": bwselect,
+                "p_value": None,
+                "status": "could_not_test",
             },
         )
 

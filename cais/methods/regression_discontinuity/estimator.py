@@ -438,6 +438,33 @@ def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str, running_vari
     except Exception as diag_e:
         logger.error(f"RDD Diagnostics failed: {diag_e}")
         results['diagnostics'] = {"status": "Failed", "error": str(diag_e)}
+
+    # Assignment compliance is observable and determines whether the sharp or
+    # fuzzy estimand is appropriate. Direct calls remain non-blocking for
+    # backward compatibility, but clearly flag an estimand mismatch; the v2
+    # tree routes such data to Fuzzy RDD before execution.
+    assignment_warning = None
+    if treatment in df.columns:
+        observed = pd.to_numeric(df[treatment], errors="coerce")
+        running = pd.to_numeric(df[running_variable], errors="coerce")
+        valid = observed.notna() & running.notna()
+        if valid.any() and observed.loc[valid].isin([0, 1]).all():
+            assigned = running.loc[valid] >= float(cutoff_value)
+            if treat_above_cutoff is False:
+                assigned = ~assigned
+            compliance = float((observed.loc[valid].astype(bool) == assigned).mean())
+            results.setdefault('diagnostics', {})['sharp_assignment_compliance'] = compliance
+            if compliance < 1.0:
+                assignment_warning = (
+                    f"Observed cutoff compliance is {compliance:.1%}, not 100%; "
+                    "this estimate is a reduced-form cutoff discontinuity, not a "
+                    "sharp-RDD treatment effect. Use Fuzzy RDD for treatment receipt."
+                )
+                results.setdefault('diagnostics', {}).setdefault('warnings', []).append(
+                    assignment_warning
+                )
+    if assignment_warning:
+        results.setdefault('warnings', []).append(assignment_warning)
         
     # --- Interpretation --- 
     try:

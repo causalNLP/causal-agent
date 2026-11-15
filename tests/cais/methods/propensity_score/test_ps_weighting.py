@@ -13,6 +13,52 @@ from .test_ps_matching import generate_synthetic_psm_data
 # Test Class
 class TestPropensityScoreWeighting:
 
+    @pytest.mark.parametrize(
+        ("weight_type", "stabilized", "expected"),
+        [
+            ("ATE", False, [1.25, 2.0, 2.0, 1.25]),
+            ("ATE", True, [0.625, 1.0, 1.0, 0.625]),
+            ("ATT", False, [0.25, 1.0, 1.0, 1.0]),
+            ("ATT", True, [0.25, 1.0, 1.0, 1.0]),
+            ("ATC", False, [1.0, 1.0, 1.0, 0.25]),
+            ("ATC", True, [1.0, 1.0, 1.0, 0.25]),
+        ],
+    )
+    def test_binary_iptw_weight_formulas(self, weight_type, stabilized, expected):
+        treatment = pd.Series([0, 1, 0, 1])
+        propensity_scores = pd.Series([0.2, 0.5, 0.5, 0.8])
+
+        weights = ps_weighting.calculate_iptw_weights(
+            treatment,
+            propensity_scores,
+            weight_type=weight_type,
+            stabilized=stabilized,
+        )
+
+        np.testing.assert_allclose(weights, expected)
+
+    def test_stabilized_att_and_atc_with_unequal_treatment_prevalence(self):
+        treatment = pd.Series([0, 0, 0, 1])
+        propensity_scores = pd.Series([0.2, 0.4, 0.6, 0.8])
+
+        att = ps_weighting.calculate_iptw_weights(
+            treatment, propensity_scores, weight_type="ATT", stabilized=True
+        )
+        atc = ps_weighting.calculate_iptw_weights(
+            treatment, propensity_scores, weight_type="ATC", stabilized=True
+        )
+
+        np.testing.assert_allclose(att, [0.25, 2 / 3, 1.5, 1.0])
+        np.testing.assert_allclose(atc, [1.0, 1.0, 1.0, 0.25])
+
+    @pytest.mark.parametrize("invalid_treatment", [[0, 2], [1, 1]])
+    def test_iptw_rejects_invalid_treatment_support(self, invalid_treatment):
+        with pytest.raises(ValueError):
+            ps_weighting.calculate_iptw_weights(
+                pd.Series(invalid_treatment),
+                pd.Series([0.25, 0.75]),
+            )
+
     def test_estimate_effect_synthetic_data_ate(self):
         """Test the end-to-end estimate_effect with synthetic data for ATE."""
         df = generate_synthetic_psm_data(n_samples=2000, treatment_effect=5.0, seed=123)
@@ -61,6 +107,25 @@ class TestPropensityScoreWeighting:
         estimated_effect = results['effect_estimate']
         assert abs(estimated_effect - true_effect) < 1.0 # Adjust tolerance
 
+    def test_estimate_effect_synthetic_data_atc_stabilized(self):
+        """ATC and stabilized weighting are exposed through estimate_effect."""
+        df = generate_synthetic_psm_data(n_samples=2000, treatment_effect=5.0, seed=654)
+
+        results = ps_weighting.estimate_effect(
+            df,
+            'treatment',
+            'outcome',
+            ['X1', 'X2'],
+            weight_type='ATC',
+            stabilized=True,
+            trim_threshold=0,
+        )
+
+        assert abs(results['effect_estimate'] - 5.0) < 1.0
+        assert results['parameters']['weight_type'] == 'ATC'
+        assert results['parameters']['stabilized'] is True
+        assert results['diagnostics']['stabilized'] is True
+
     @patch('cais.methods.propensity_score.weighting.get_llm_parameters')
     @patch('cais.methods.propensity_score.weighting.determine_optimal_weight_type')
     @patch('cais.methods.propensity_score.weighting.determine_optimal_trim_threshold')
@@ -100,4 +165,4 @@ class TestPropensityScoreWeighting:
 
     # TODO: Add tests for weight trimming effects
     # TODO: Add tests for diagnostic outputs (e.g., checking weight distribution stats)
-    # TODO: Add tests for edge cases (e.g., extreme weights) 
+    # TODO: Add tests for edge cases (e.g., extreme weights)

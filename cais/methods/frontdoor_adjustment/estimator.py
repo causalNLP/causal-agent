@@ -68,7 +68,8 @@ def _prepare_data(df: pd.DataFrame, treatment: str, outcome: str, mediator: str,
     data = df[[treatment, mediator, outcome]].dropna()
     if len(data) < 20:
         raise FrontdoorNotSupported(
-            f"Frontdoor adjustment needs at least 20 complete observations; got {len(data)}."
+            "Frontdoor adjustment cannot establish positivity/support with fewer "
+            f"than 20 complete observations; got {len(data)}."
         )
     if not pd.api.types.is_numeric_dtype(data[outcome]):
         raise FrontdoorNotSupported("Frontdoor adjustment requires a numeric outcome.")
@@ -100,7 +101,7 @@ def _prepare_data(df: pd.DataFrame, treatment: str, outcome: str, mediator: str,
                 sparse.append((treatment_level, mediator_level, n_cell))
     if sparse:
         raise FrontdoorNotSupported(
-            "Frontdoor adjustment needs non-empty (treatment, mediator) cells with at "
+            "Frontdoor positivity requires non-empty (treatment, mediator) cells with at "
             f"least {min_cell_count} observations; sparse cells: {sparse[:5]}"
             + (" ..." if len(sparse) > 5 else "")
             + "."
@@ -291,6 +292,7 @@ def estimate_frontdoor_effect(
         },
         "n_bootstraps": n_bootstraps,
         "n_bootstrap_success": len(bootstrap_effects),
+        "bootstrap_successful": len(bootstrap_effects),
         "seed": int(seed),
         "frontdoor_assumptions": [
             "M intercepts every directed path from T to Y (full mediation; advisory)",
@@ -326,7 +328,8 @@ def estimate_frontdoor_effect(
 
 
 def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str,
-                    covariates: List[str], dataset_description: Optional[str] = None,
+                    covariates: Optional[List[str]] = None,
+                    dataset_description: Optional[str] = None,
                     **kwargs) -> Dict[str, Any]:
     """METHOD_MAPPING entry point used by the method executor."""
     mediator = kwargs.get("mediator_variable") or kwargs.get("mediator")
@@ -340,8 +343,8 @@ def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str,
         outcome=outcome,
         mediator=mediator,
         treatment_reference_level=kwargs.get("treatment_reference_level"),
-        n_bootstraps=kwargs.get("n_bootstraps", DEFAULT_N_BOOTSTRAPS),
-        seed=kwargs.get("seed", DEFAULT_SEED),
+        n_bootstraps=kwargs.get("n_bootstraps", kwargs.get("n_bootstrap", DEFAULT_N_BOOTSTRAPS)),
+        seed=kwargs.get("seed", kwargs.get("random_state", DEFAULT_SEED)),
         min_cell_count=kwargs.get("min_cell_count", DEFAULT_MIN_CELL_COUNT),
     )
 

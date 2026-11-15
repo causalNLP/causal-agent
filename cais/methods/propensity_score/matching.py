@@ -382,7 +382,7 @@ def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str,
                            parameters={"caliper": caliper, 
                                          "n_neighbors": n_neighbors, # n_neighbors used in fallback/bootstrap/diag
                                          "propensity_model": propensity_model_type,
-                                         "n_bootstraps_config": n_bootstraps}) 
+                                         "n_bootstraps_config": n_bootstraps})
 
 
 def _post_checks_after_matching(df: pd.DataFrame, treatment: str, outcome: str,

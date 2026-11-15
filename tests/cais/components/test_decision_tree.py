@@ -9,6 +9,7 @@ from cais.components.decision_tree import (
     REGRESSION_DISCONTINUITY,
     PROPENSITY_SCORE_MATCHING,
     INSTRUMENTAL_VARIABLE,
+    SYNTHETIC_CONTROL,
 )
 
 
@@ -68,6 +69,17 @@ def test_observational_temporal():
     assert result["selected_method"] == DIFF_IN_DIFF
     assert "temporal" in result["method_justification"].lower()
     assert result["method_assumptions"] == METHOD_ASSUMPTIONS[DIFF_IN_DIFF]
+
+
+def test_few_treated_panel_selects_synthetic_control():
+    props = _make_props(
+        has_temporal_structure=True,
+        time_variable="year",
+        few_treated_units=True,
+    )
+    result = select_method(props)
+    assert result["selected_method"] == SYNTHETIC_CONTROL
+    assert result["method_assumptions"] == METHOD_ASSUMPTIONS[SYNTHETIC_CONTROL]
 
 
 def test_observational_rdd():

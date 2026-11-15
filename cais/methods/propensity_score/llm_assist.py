@@ -40,6 +40,13 @@ def get_llm_parameters(df: pd.DataFrame, query: str, method: str) -> Dict[str, A
     if method == "PS.Matching":
         return {"parameters": {"caliper": 0.15}, "validation": {"check_balance": True}}
     elif method == "PS.Weighting":
-        return {"parameters": {"weight_type": "ATE", "trim_threshold": 0.05}, "validation": {"check_weights": True}}
+        return {
+            "parameters": {
+                "weight_type": "ATE",
+                "stabilized": False,
+                "trim_threshold": 0.05,
+            },
+            "validation": {"check_weights": True},
+        }
     else:
-        return {"parameters": {}, "validation": {}} 
+        return {"parameters": {}, "validation": {}}

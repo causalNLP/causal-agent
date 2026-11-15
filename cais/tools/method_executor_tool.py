@@ -68,11 +68,27 @@ def method_executor_tool(inputs: MethodExecutorInput, original_query: Optional[s
         treatment = variables_dict.get("treatment_variable")
         outcome = variables_dict.get("outcome_variable")
         covariates = variables_dict.get("covariates", [])
-        if method in ["propensity_score_matching", "propensity_score_weighting", "generalized_propensity_score"]:
+        if method in [
+            "propensity_score_matching",
+            "propensity_score_weighting",
+            "generalized_propensity_score",
+            "s_learner",
+            "t_learner",
+            "x_learner",
+            "r_learner",
+        ]:
             covariates = variables_dict.get("confounders", [])
         query_str = original_query if original_query is not None else inputs.original_query
         
-        if not all([treatment, outcome]):
+        survival_method = method in ["s_learner_rmst", "t_learner_rmst", "x_learner_rmst"]
+        if survival_method and not outcome:
+            # Survival routes use duration/event roles rather than a single
+            # fully observed outcome column.  Duration is retained as the
+            # compatibility outcome field when the interpreter left it empty.
+            outcome = variables_dict.get("duration_variable")
+        if (not treatment) or (survival_method and not all([
+            treatment, variables_dict.get("duration_variable"), variables_dict.get("event_variable")
+        ])) or ((not survival_method) and not outcome):
             raise ValueError("Treatment or Outcome variable not found in 'variables' dict.")
             
         # 3. Preprocess Data 
@@ -80,15 +96,32 @@ def method_executor_tool(inputs: MethodExecutorInput, original_query: Optional[s
         # Add method-specific required vars from the variables_dict
         if method == "instrumental_variable" and variables_dict.get("instrument_variable"):
             required_cols_for_method.append(variables_dict["instrument_variable"])
-        elif method == "regression_discontinuity" and variables_dict.get("running_variable"):
+        elif method in ["regression_discontinuity", "regression_discontinuity_design", "fuzzy_regression_discontinuity_design", "donut_rdd"] and variables_dict.get("running_variable"):
              required_cols_for_method.append(variables_dict["running_variable"])
+        elif method == "frontdoor_adjustment" and variables_dict.get("mediator_variable"):
+             required_cols_for_method.append(variables_dict["mediator_variable"])
+        elif method == "synthetic_control":
+             required_cols_for_method.extend(filter(None, [variables_dict.get("time_variable"), variables_dict.get("group_variable")]))
+        elif method in ["s_learner_rmst", "t_learner_rmst", "x_learner_rmst"]:
+             required_cols_for_method.extend(filter(None, [
+                 variables_dict.get("duration_variable"),
+                 variables_dict.get("event_variable"),
+             ]))
         
         missing_df_cols = [col for col in required_cols_for_method if col not in df.columns]
         if missing_df_cols:
              raise ValueError(f"Dataset at {dataset_path} is missing required columns for method '{method}': {missing_df_cols}")
              
-        df_processed, updated_treatment, updated_outcome, updated_covariates, column_mappings = \
-            preprocess_data(df, treatment, outcome, covariates, verbose=False)
+        if survival_method:
+            # Do not apply the legacy mean/mode imputation to durations or
+            # event indicators. The survival estimator handles complete-case
+            # filtering and fits censoring adjustments inside each fold.
+            df_processed = df.copy()
+            updated_treatment, updated_outcome = treatment, outcome
+            updated_covariates, column_mappings = covariates, {}
+        else:
+            df_processed, updated_treatment, updated_outcome, updated_covariates, column_mappings = \
+                preprocess_data(df, treatment, outcome, covariates, verbose=False)
 
         # 4. Get the correct method execution function
         if method not in METHOD_MAPPING:
@@ -100,10 +133,13 @@ def method_executor_tool(inputs: MethodExecutorInput, original_query: Optional[s
         # (e.g., instrument_variable, running_variable, cutoff_value, etc.)
         # Avoid passing the entire variables_dict as estimate_func expects specific args
         kwargs_for_method = {}
-        for key in ["instrument_variable", "time_variable", "group_variable", 
-                    "running_variable", "cutoff_value", "treat_above_cutoff", "did_term", "did_canonical", "treatment_time", "treatment_state"]:
+        for key in ["instrument_variable", "time_variable", "group_variable",
+                    "running_variable", "cutoff_value", "treat_above_cutoff", "did_term", "did_canonical", "treatment_time", "treatment_state", "mediator_variable"]:
             if key in variables_dict and variables_dict[key] is not None:
                  kwargs_for_method[key] = variables_dict[key]
+        for key in ["duration_variable", "event_variable", "rmst_horizon"]:
+            if variables_dict.get(key) is not None:
+                kwargs_for_method[key] = variables_dict[key]
         
         # Add new fields from the Variables model (which is inputs.variables)
         if hasattr(inputs, 'variables'): # ensure variables object exists on inputs
@@ -160,6 +196,8 @@ def method_executor_tool(inputs: MethodExecutorInput, original_query: Optional[s
                 "raw_results": results_dict.get("raw_results"),
                 # Diagnostics and Refutation results
                 "diagnostics": results_dict.get("diagnostics"),
+                "individual_effect_predictions": results_dict.get("individual_effect_predictions"),
+                "parameters": results_dict.get("parameters"),
                 "refutation_results": results_dict.get("refutation_results")
             },
             # Top-level context to be passed along
@@ -210,4 +248,4 @@ def method_executor_tool(inputs: MethodExecutorInput, original_query: Optional[s
                         "column_mappings": column_mappings if 'column_mappings' in locals() else {} # Also add to error output
                         }
         error_result.update(workflow_update.get('workflow_state', {}))
-        return error_result 
+        return error_result

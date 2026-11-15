@@ -19,6 +19,41 @@ logger = logging.getLogger(__name__)
 # Minimum observations required in each treatment group after trimming.
 # Below this the weighted contrast is too fragile to report.
 MIN_TRIMMED_GROUP_SIZE = 5
+SUPPORTED_WEIGHT_TYPES = {"ATE", "ATT", "ATC"}
+
+
+def calculate_iptw_weights(treatment, propensity_scores, weight_type="ATE", stabilized=False):
+    """Calculate binary-treatment IPW weights for ATE, ATT, or ATC.
+
+    Stabilization is meaningful for the ATE: the marginal treatment probability
+    is used in the numerator. ATT/ATC weights are already normalized to one in
+    their target group, so ``stabilized`` does not alter their formulas.
+    """
+    z = np.asarray(treatment, dtype=float)
+    ps = np.asarray(propensity_scores, dtype=float)
+    kind = str(weight_type).upper()
+    if kind not in SUPPORTED_WEIGHT_TYPES:
+        raise ValueError(
+            f"Unsupported weight type: {weight_type}. Expected one of "
+            f"{sorted(SUPPORTED_WEIGHT_TYPES)}."
+        )
+    if z.shape != ps.shape:
+        raise ValueError("Treatment and propensity scores must have the same shape.")
+    if not np.isin(z, [0.0, 1.0]).all():
+        raise ValueError("IPTW requires a binary treatment coded 0/1.")
+    if np.unique(z).size != 2:
+        raise ValueError("IPTW requires observations in both treatment groups.")
+    if not np.isfinite(ps).all() or np.any((ps <= 0) | (ps >= 1)):
+        raise ValueError("Propensity scores must be finite and strictly between 0 and 1.")
+
+    if kind == "ATE":
+        if stabilized:
+            prevalence = float(z.mean())
+            return np.where(z == 1, prevalence / ps, (1 - prevalence) / (1 - ps))
+        return np.where(z == 1, 1 / ps, 1 / (1 - ps))
+    if kind == "ATT":
+        return np.where(z == 1, 1.0, ps / (1 - ps))
+    return np.where(z == 0, 1.0, (1 - ps) / ps)
 
 
 def _validate_ps_bounds(bounds: Sequence[float]) -> tuple:
@@ -122,7 +157,8 @@ def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str,
     # Explicitly check LLM suggestion before falling back to default helper
     llm_weight_type = llm_suggested_params.get('weight_type')
     default_weight_type = determine_optimal_weight_type(df, treatment, query) if llm_weight_type is None else llm_weight_type
-    weight_type = kwargs.get('weight_type', default_weight_type)
+    weight_type = str(kwargs.get('weight_type', default_weight_type)).upper()
+    stabilized = bool(kwargs.get('stabilized', False))
     
     # Similar explicit check for trim_threshold
     llm_trim_thresh = llm_suggested_params.get('trim_threshold')
@@ -141,18 +177,13 @@ def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str,
     df_ps = df.copy()
     df_ps['propensity_score'] = propensity_scores
 
-    # --- Step 2: Calculate weights --- 
-    if weight_type.upper() == 'ATE':
-        weights = np.where(df_ps[treatment] == 1, 
-                           1 / df_ps['propensity_score'], 
-                           1 / (1 - df_ps['propensity_score']))
-    elif weight_type.upper() == 'ATT':
-        weights = np.where(df_ps[treatment] == 1, 
-                           1, 
-                           df_ps['propensity_score'] / (1 - df_ps['propensity_score']))
-    # TODO: Add other weight types like ATC if needed
-    else:
-        raise ValueError(f"Unsupported weight type: {weight_type}")
+    # --- Step 2: Calculate weights ---
+    weights = calculate_iptw_weights(
+        df_ps[treatment].to_numpy(),
+        df_ps['propensity_score'].to_numpy(),
+        weight_type=weight_type,
+        stabilized=stabilized,
+    )
         
     df_ps['ipw'] = weights
     n_before = int(len(df_ps))
@@ -231,7 +262,7 @@ def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str,
 
     # --- Step 4: Normalize weights (optional but common) --- 
     # Normalize weights to sum to sample size within treated/control groups if ATT
-    if weight_type.upper() == 'ATT':
+    if weight_type in {'ATT', 'ATC'}:
         sum_weights_treated = df_analysis.loc[df_analysis[treatment] == 1, 'ipw'].sum()
         sum_weights_control = df_analysis.loc[df_analysis[treatment] == 0, 'ipw'].sum()
         n_treated = (df_analysis[treatment] == 1).sum()
@@ -258,6 +289,9 @@ def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str,
     # weighted_diagnostics = assess_balance(df, df_analysis, treatment, covariates, method="PSW", weights=df_analysis['ipw'])
     # diagnostics.update(weighted_diagnostics)
     diagnostics["propensity_score_model"] = propensity_model_type
+    diagnostics["weight_type"] = weight_type
+    diagnostics["stabilized"] = stabilized
+    diagnostics["treated_prevalence"] = float(df_analysis[treatment].mean())
     diagnostics["trimming"] = dict(trim_info)
     # Advisory post-modeling check (surfaced in CAIS's output, never blocking):
     # did the weights actually balance the observed covariates?
@@ -268,7 +302,8 @@ def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str,
     # --- Step 7: Format and return results --- 
     return format_ps_results(effect, effect_se, diagnostics,
                            method_details="PS.Weighting",
-                           parameters={"weight_type": weight_type, 
+                           parameters={"weight_type": weight_type,
+                                         "stabilized": stabilized,
                                          "trim_threshold": trim_threshold,
                                          "trim_rule": trim_info["trim_rule"],
                                          "ps_bounds": trim_info.get("ps_bounds"),

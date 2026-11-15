@@ -33,7 +33,8 @@ def method_selector_tool(
     dataset_description: Optional[str] = None, 
     original_query: Optional[str] = None,
     excluded_methods: Optional[List[str]] = None,
-    use_decision_tree: Optional[bool] = True
+    use_decision_tree: Optional[bool] = True,
+    llm: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """
     Select the most appropriate causal inference method based on structured input.
@@ -79,11 +80,12 @@ def method_selector_tool(
                  **workflow_update.get('workflow_state', {})}
         
     # Get LLM instance (optional for component)
-    try:
-        llm_instance = get_llm_client()
-    except Exception as e:
-        logger.warning(f"Failed to initialize LLM for method_selector_tool: {e}. Proceeding without LLM features.")
-        llm_instance = None
+    llm_instance = llm
+    if llm_instance is None:
+        try:
+            llm_instance = get_llm_client()
+        except Exception as e:
+            logger.warning(f"Failed to initialize LLM for method_selector_tool: {e}. Proceeding without LLM features.")
         
 
     # Call the component function

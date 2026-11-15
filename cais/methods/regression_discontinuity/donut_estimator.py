@@ -2,9 +2,10 @@
 
 Donut RDD is the standard remedy for *local* sorting/bunching at an RDD cutoff:
 drop units with ``|running_variable - cutoff| < donut_width`` and estimate RDD
-on the remaining units. It does not "fix" manipulation in general; it changes
-the estimand to units outside the donut and is only credible when the sorting
-is confined to that band.
+on the remaining units. It does not "fix" manipulation in general. It
+extrapolates the two retained regression functions to the cutoff and is only
+credible when sorting is confined to the omitted band and those functions are
+well specified.
 
 Standalone for now: this is registered as a method (``donut_rdd``) but the
 decision tree does not route to it yet.
@@ -85,7 +86,8 @@ def _finalize_donut_result(
     result["donut_width"] = donut_width
     result["n_dropped"] = n_dropped
     result["share_dropped"] = (n_dropped / n_total) if n_total else 0.0
-    result["estimand_population"] = (
+    result["estimand_population"] = "local discontinuity at the cutoff"
+    result["estimation_sample"] = (
         f"units with |running variable - {result.get('cutoff_value', 'cutoff')}| "
         f">= {donut_width:g}"
     )
@@ -93,7 +95,7 @@ def _finalize_donut_result(
     base_details = result.get("method_details")
     prefix = (
         f"Donut RDD (donut width {donut_width:g}; {n_dropped}/{n_total} observations "
-        "dropped near the cutoff); the estimate refers to units outside the donut"
+        "dropped near the cutoff); retained regressions are extrapolated to the cutoff"
     )
     result["method_details"] = (
         f"{prefix}. {base_details}" if base_details else prefix
@@ -108,6 +110,7 @@ def _finalize_donut_result(
             "n_dropped": n_dropped,
             "share_dropped": result["share_dropped"],
             "estimand": result["estimand_population"],
+            "estimation_sample": result["estimation_sample"],
         }
     )
     result["diagnostics"] = diagnostics
@@ -127,6 +130,7 @@ def estimate_effect(
     query: Optional[str] = None,
     llm: Any = None,
     min_retained_per_side: int = DEFAULT_MIN_RETAINED_PER_SIDE,
+    verify_sharp_assignment: bool = True,
     **kwargs,
 ) -> Dict[str, Any]:
     """Estimate RDD after dropping observations within ``donut_width`` of the cutoff.
@@ -162,6 +166,15 @@ def estimate_effect(
         raise ValueError(
             "Donut RDD cutoff is outside the observed running-variable support."
         )
+    if bandwidth is not None:
+        try:
+            bandwidth = float(bandwidth)
+        except (TypeError, ValueError):
+            raise ValueError(f"bandwidth {bandwidth!r} is not numeric.")
+        if not np.isfinite(bandwidth) or bandwidth <= 0:
+            raise ValueError("bandwidth must be a positive finite number.")
+        if width >= bandwidth:
+            raise ValueError("donut_width must be smaller than bandwidth.")
 
     keep = (numeric - cutoff).abs() >= width
     filtered = df.loc[keep].copy()
@@ -187,6 +200,22 @@ def estimate_effect(
             f"{min_retained_per_side} per side)."
         )
 
+    if verify_sharp_assignment:
+        if not treatment or treatment not in filtered.columns:
+            raise ValueError("Sharp Donut RDD requires a treatment indicator column.")
+        observed = pd.to_numeric(filtered[treatment], errors="coerce")
+        if observed.isna().any() or not observed.isin([0, 1]).all():
+            raise ValueError("Sharp Donut RDD requires treatment coded as binary 0/1.")
+        assigned = (pd.to_numeric(filtered[running_variable], errors="coerce") >= cutoff)
+        if treat_above_cutoff is False:
+            assigned = ~assigned
+        compliance = float((observed.astype(bool) == assigned).mean())
+        if compliance < 1.0:
+            raise ValueError(
+                "Treatment is not deterministically assigned by the cutoff outside the "
+                f"donut (sharp compliance={compliance:.3f}); use Fuzzy RDD instead."
+            )
+
     try:
         result = rdd_estimate_effect(
             df=filtered,
@@ -205,23 +234,24 @@ def estimate_effect(
         raise ValueError(f"Donut RDD base estimation failed: {exc}") from exc
 
     result.setdefault("cutoff_value", cutoff)
+    result.setdefault("diagnostics", {})["sharp_assignment_compliance"] = 1.0
     return _finalize_donut_result(result, width, n_total, n_dropped)
 
 
 class DonutRDD(CausalMethod):
     """RDD estimated after dropping observations close to the cutoff.
 
-    The reported effect refers to units outside the donut, not to the immediate
-    cutoff limit. It is appropriate only when sorting/manipulation is believed
-    to be local to the dropped band.
+    The effect remains a cutoff discontinuity, estimated by extrapolating from
+    observations outside the donut. It is appropriate only when manipulation is
+    local and the retained regression functions extrapolate credibly.
     """
 
     name = "Donut Regression Discontinuity Design"
     description = (
         "Regression discontinuity design estimated after dropping observations "
         "within a donut around the cutoff. This is a robustness/identification "
-        "adjustment for local sorting or bunching; the estimand changes to units "
-        "outside the donut."
+        "adjustment for local sorting or bunching; retained regressions are "
+        "extrapolated to the cutoff."
     )
     assumptions = [
         "Manipulation/sorting is local to the dropped band around the cutoff",
@@ -237,9 +267,9 @@ class DonutRDD(CausalMethod):
             "assumptions_valid": True,
             "failed_assumptions": [],
             "warnings": [
-                "Donut RDD drops units near the cutoff; the estimate refers to "
-                "the population outside the donut and is only credible if sorting "
-                "is local to that band."
+                "Donut RDD drops units near the cutoff and extrapolates back to it; "
+                "it is credible only if sorting is local and results are robust to "
+                "reasonable donut widths."
             ],
             "suggestions": [],
         }

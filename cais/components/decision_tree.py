@@ -15,12 +15,15 @@ LINEAR_REGRESSION = "linear_regression"
 DIFF_IN_MEANS = "diff_in_means"
 DIFF_IN_DIFF = "difference_in_differences"
 REGRESSION_DISCONTINUITY = "regression_discontinuity_design"
+FUZZY_REGRESSION_DISCONTINUITY = "fuzzy_regression_discontinuity_design"
+DONUT_REGRESSION_DISCONTINUITY = "donut_regression_discontinuity_design"
 PROPENSITY_SCORE_MATCHING = "propensity_score_matching"
 INSTRUMENTAL_VARIABLE = "instrumental_variable"
 CORRELATION_ANALYSIS = "correlation_analysis"
 PROPENSITY_SCORE_WEIGHTING = "propensity_score_weighting"
 GENERALIZED_PROPENSITY_SCORE = "generalized_propensity_score"
 FRONTDOOR_ADJUSTMENT = "frontdoor_adjustment"
+SYNTHETIC_CONTROL = "synthetic_control"
 
 
 logger = logging.getLogger(__name__)
@@ -85,9 +88,31 @@ METHOD_ASSUMPTIONS = {
         "treatment variable is continuous"
     ],
     FRONTDOOR_ADJUSTMENT: [
-        "mediator is affected by treatment and affects outcome",
-        "mediator is not affected by any confounders of the treatment-outcome relationship"
-    ]
+        "all directed treatment-outcome paths pass through the mediator (full mediation)",
+        "there is no unblocked back-door path from treatment to mediator",
+        "treatment blocks every back-door path from mediator to outcome",
+        "positivity holds for the required treatment-mediator combinations"
+    ],
+    FUZZY_REGRESSION_DISCONTINUITY: [
+        "eligibility changes discontinuously at the cutoff and is relevant for treatment receipt",
+        "potential outcomes and potential treatment receipt are continuous at the cutoff",
+        "cutoff eligibility affects the outcome only through treatment receipt",
+        "treatment receipt is monotone in eligibility near the cutoff",
+        "units cannot precisely manipulate the running variable around the cutoff",
+    ],
+    DONUT_REGRESSION_DISCONTINUITY: [
+        "contamination or manipulation is confined to a prespecified neighborhood of the cutoff",
+        "treatment assignment remains sharp outside the excluded neighborhood",
+        "potential-outcome regressions are smooth enough to extrapolate across the excluded region",
+        "no other intervention changes at the cutoff",
+        "the donut radius is selected independently of the estimated treatment effect",
+    ],
+    SYNTHETIC_CONTROL: [
+        "no interference between treated and donor units",
+        "no anticipation before treatment",
+        "never-treated donor units are available",
+        "the treated predictors are close to the donor-pool convex hull",
+    ],
 }
 
 
@@ -139,6 +164,24 @@ def _get_decision_path(method: str) -> List[str]:
             "Check front-door criterion",
             "Front-door path identified",
         ],
+        "fuzzy_regression_discontinuity_design": [
+            "Check if randomized experiment",
+            "Data is observational",
+            "Check for a treatment-eligibility discontinuity",
+            "Treatment receipt is not deterministic at the cutoff",
+            "Estimate the local Wald complier effect",
+        ],
+        "donut_regression_discontinuity_design": [
+            "Check for localized cutoff contamination",
+            "Require a prespecified exclusion radius",
+            "Retain observations outside the donut and inside the outer bandwidth",
+            "Estimate an extrapolated local sharp-RD jump",
+        ],
+        "synthetic_control": [
+            "Check for panel data",
+            "Check that few units are treated",
+            "Construct a convex combination of never-treated donors",
+        ],
         "diff_in_means": [
             "Check if randomized experiment",
             "Pure RCT without covariates",
@@ -166,6 +209,7 @@ def select_method(dataset_properties: Dict[str, Any], excluded_methods: Optional
     covariate_overlap_result = dataset_properties.get("covariate_overlap_score")
     covariates = dataset_properties.get("covariates", [])
     treatment_variable_type = dataset_properties.get("treatment_variable_type", "binary")
+    few_treated_units = dataset_properties.get("few_treated_units", False)
 
     # Helpers to collect candidates
     candidates = []  # list of (method, priority_index)
@@ -221,9 +265,13 @@ def select_method(dataset_properties: Dict[str, Any], excluded_methods: Optional
 
     # Common early structural signals first (still only add as candidates)
     if has_temporal and time_var:
+        if few_treated_units:
+            add(SYNTHETIC_CONTROL,
+                "Panel data with few treated units; construct a convex donor combination.",
+                [SYNTHETIC_CONTROL, DIFF_IN_DIFF])
         add(DIFF_IN_DIFF,
             f"Temporal structure via '{time_var}'—consider Difference-in-Differences (assumes parallel trends).",
-            [DIFF_IN_DIFF])  # highest among itself
+            [SYNTHETIC_CONTROL, DIFF_IN_DIFF] if few_treated_units else [DIFF_IN_DIFF])
 
     if running_var and cutoff_val is not None:
         add(REGRESSION_DISCONTINUITY,
@@ -288,6 +336,7 @@ def select_method(dataset_properties: Dict[str, Any], excluded_methods: Optional
             REGRESSION_DISCONTINUITY,
             INSTRUMENTAL_VARIABLE,
             FRONTDOOR_ADJUSTMENT,
+            SYNTHETIC_CONTROL,
         ]
         fallback = next((m for m in fallback_order if m in justifications and m not in excluded_methods), None)
         if not fallback:
@@ -362,12 +411,28 @@ def rule_based_select_method(dataset_analysis, variables, is_rct, llm, dataset_d
     properties = {"treatment_variable": variables.get("treatment_variable"), "instrument_variable":variables.get("instrument_variable"),
                   "covariates": variables.get("covariates", []), "outcome_variable": variables.get("outcome_variable"),
                   "time_variable": variables.get("time_variable"), "running_variable": variables.get("running_variable"),
+                  "group_variable": variables.get("group_variable"),
                   "treatment_variable_type": variables.get("treatment_variable_type", "binary"),
                   "has_temporal_structure": dataset_analysis.get("temporal_structure", False).get("has_temporal_structure", False),
                   "frontdoor_criterion": variables.get("frontdoor_criterion", False),
                   "cutoff_value": variables.get("cutoff_value"),
                   "treat_above_cutoff": variables.get("treat_above_cutoff"),
                   "covariate_overlap_score": variables.get("covariate_overlap_result", 0)}
+
+    file_path = dataset_analysis.get("dataset_info", {}).get("file_path")
+    group = properties.get("group_variable")
+    treatment = properties.get("treatment_variable")
+    if file_path and group and treatment:
+        try:
+            selection_df = pd.read_csv(file_path, usecols=[group, treatment])
+            exposure_by_unit = selection_df.groupby(group, observed=False)[treatment].max()
+            n_treated = int((exposure_by_unit == 1).sum())
+            properties["few_treated_units"] = (
+                0 < n_treated <= 5 and n_treated < len(exposure_by_unit) / 2
+            )
+            properties["n_treated_units"] = n_treated
+        except (OSError, ValueError, TypeError):
+            properties["few_treated_units"] = False
     
     properties["is_rct"] = is_rct
     logger.info(f"Dataset properties for method selection: {properties}")

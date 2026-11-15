@@ -666,6 +666,113 @@ def validate_backdoor_adjustment(validation_result: Dict[str, Any],
         validation_result["alternative_suggestions"].append("regression_adjustment")
 
 
+def validate_frontdoor_adjustment(validation_result: Dict[str, Any],
+                                  dataset_analysis: Dict[str, Any],
+                                  variables: Dict[str, Any]) -> None:
+    """Validate observable front-door requirements.
+
+    The graphical assumptions themselves require substantive knowledge and are therefore surfaced as limitations rather than claimed to be data-tested.
+    """
+    mediator = variables.get("mediator_variable")
+    treatment = variables.get("treatment_variable")
+    outcome = variables.get("outcome_variable")
+    if not mediator:
+        validation_result["valid"] = False
+        validation_result["concerns"].append(
+            "No mediator was identified for front-door adjustment."
+        )
+        return
+
+    file_path = dataset_analysis.get("dataset_info", {}).get("file_path")
+    if not file_path:
+        validation_result["valid"] = False
+        validation_result["concerns"].append(
+            "The dataset is unavailable for front-door support checks."
+        )
+        return
+
+    try:
+        df = pd.read_csv(file_path)
+        missing = [name for name in [treatment, mediator, outcome] if name not in df.columns]
+        if missing:
+            validation_result["valid"] = False
+            validation_result["concerns"].append(
+                f"Missing front-door variables in the dataset: {missing}."
+            )
+            return
+        counts = df.groupby([treatment, mediator], observed=False).size()
+        treatment_levels = df[treatment].dropna().unique()
+        mediator_levels = df[mediator].dropna().unique()
+        empty_cells = [
+            {"treatment": x, "mediator": m}
+            for x in treatment_levels
+            for m in mediator_levels
+            if int(counts.get((x, m), 0)) == 0
+        ]
+        validation_result.setdefault("evidence", {})["frontdoor_support"] = {
+            "cell_counts": {str(key): int(value) for key, value in counts.items()},
+            "empty_cells": empty_cells,
+        }
+        if empty_cells:
+            validation_result["valid"] = False
+            validation_result["concerns"].append(
+                "Front-door positivity failed: some treatment-mediator cells are empty."
+            )
+    except Exception as exc:
+        validation_result["valid"] = False
+        validation_result["concerns"].append(
+            f"Front-door support checks could not be completed: {exc}"
+        )
+
+    validation_result.setdefault("evidence", {})["frontdoor_identification"] = {
+        "status": "requires_substantive_justification",
+        "assumptions": [
+            "full mediation of the treatment-outcome effect",
+            "no unblocked treatment-mediator confounding",
+            "all mediator-outcome back-door paths blocked by treatment",
+        ],
+    }
+
+
+def validate_synthetic_control(validation_result: Dict[str, Any],
+                               dataset_analysis: Dict[str, Any],
+                               variables: Dict[str, Any]) -> None:
+    """Validate the observable panel and donor-pool requirements."""
+    treatment = variables.get("treatment_variable")
+    outcome = variables.get("outcome_variable")
+    time = variables.get("time_variable")
+    group = variables.get("group_variable")
+    unnamed = [label for label, value in {
+        "treatment": treatment, "outcome": outcome, "time": time, "group": group
+    }.items() if not value]
+    if unnamed:
+        validation_result["valid"] = False
+        validation_result["concerns"].append(
+            f"Synthetic control requires identified variables for: {unnamed}."
+        )
+        return
+    try:
+        path = dataset_analysis["dataset_info"]["file_path"]
+        df = pd.read_csv(path, usecols=[group, time, treatment, outcome])
+        if df.duplicated([group, time]).any():
+            raise ValueError("duplicate unit-time observations")
+        exposure = df.groupby(group, observed=False)[treatment].max()
+        n_treated = int((exposure == 1).sum())
+        n_donors = int((exposure == 0).sum())
+        validation_result.setdefault("evidence", {})["synthetic_control_design"] = {
+            "treated_units": n_treated,
+            "donor_units": n_donors,
+        }
+        if n_treated == 0 or n_donors < 2:
+            validation_result["valid"] = False
+            validation_result["concerns"].append(
+                "Synthetic control requires at least one treated and two never-treated donor units."
+            )
+    except (KeyError, OSError, ValueError) as exc:
+        validation_result["valid"] = False
+        validation_result["concerns"].append(f"Synthetic-control design checks failed: {exc}")
+
+
 def recommend_alternative(method: str, concerns: List[str], alternatives: List[str]) -> str:
     """
     Recommend an alternative method if the current one has issues.
@@ -746,11 +853,17 @@ def validate_method(method_info: Dict[str, Any], dataset_analysis: Dict[str, Any
     elif method == "difference_in_differences":
         validate_difference_in_differences(validation_result, dataset_analysis, variables)
     
-    elif method == "regression_discontinuity_design":
+    elif method in ["regression_discontinuity_design", "fuzzy_regression_discontinuity_design", "donut_regression_discontinuity_design"]:
         validate_regression_discontinuity(validation_result, dataset_analysis, variables)
     
     elif method == "backdoor_adjustment":
         validate_backdoor_adjustment(validation_result, dataset_analysis, variables)
+
+    elif method == "frontdoor_adjustment":
+        validate_frontdoor_adjustment(validation_result, dataset_analysis, variables)
+
+    elif method == "synthetic_control":
+        validate_synthetic_control(validation_result, dataset_analysis, variables)
     
     # If there are serious concerns, recommend alternatives
     if not validation_result["valid"]:

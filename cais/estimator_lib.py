@@ -14,6 +14,18 @@ from cais.methods.instrumental_variable.estimator import IVRegression
 from cais.methods.propensity_score.matching import PropensityScoreMatching
 from cais.methods.propensity_score.weighting import TrimmedIPW
 from cais.methods.frontdoor_adjustment.estimator import FrontdoorAdjustment
+from cais.methods.synthetic_control.estimator import SyntheticControl
+from cais.methods.fuzzy_regression_discontinuity.estimator import FuzzyRDD
+from cais.methods.meta_learners.estimator import SLearner, TLearner, XLearner, RLearner
+from cais.methods.registry_adapters import (
+    IPWEstimator,
+    GeneralizedPropensityScoreEstimator,
+    BackdoorAdjustmentEstimator,
+    DifferenceInMeansEstimator,
+    TMLEEstimator,
+)
+from cais.methods.survival_meta_learners import SurvivalSLearner, SurvivalTLearner, SurvivalXLearner
+from cais.methods.doubly_robust.estimator import AIPWEstimator, DMLEstimator
 logger = logging.getLogger(__name__)
 
 class Estimators:
@@ -47,6 +59,22 @@ class Estimators:
             PropensityScoreMatching.name : PropensityScoreMatching(),
             TrimmedIPW.name : TrimmedIPW(),
             FrontdoorAdjustment.name : FrontdoorAdjustment(),
+            SyntheticControl.name : SyntheticControl(),
+            FuzzyRDD.name : FuzzyRDD(),
+            SLearner.name : SLearner(),
+            TLearner.name : TLearner(),
+            XLearner.name : XLearner(),
+            RLearner.name : RLearner(),
+            IPWEstimator.name : IPWEstimator(),
+            GeneralizedPropensityScoreEstimator.name : GeneralizedPropensityScoreEstimator(),
+            BackdoorAdjustmentEstimator.name : BackdoorAdjustmentEstimator(),
+            DifferenceInMeansEstimator.name : DifferenceInMeansEstimator(),
+            TMLEEstimator.name : TMLEEstimator(),
+            SurvivalSLearner.name : SurvivalSLearner(),
+            SurvivalTLearner.name : SurvivalTLearner(),
+            SurvivalXLearner.name : SurvivalXLearner(),
+            AIPWEstimator.name : AIPWEstimator(),
+            DMLEstimator.name : DMLEstimator(),
         }
 
         self.estimators = default_estimators

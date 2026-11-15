@@ -8,7 +8,8 @@ from cais.methods.generalized_propensity_score.estimator import (
     _estimate_gps_values, 
     _estimate_outcome_model, 
     _generate_dose_response_function,
-    estimate_effect_gps
+    estimate_effect_gps,
+    _gps_at_dose,
 )
 from cais.methods.generalized_propensity_score.diagnostics import assess_gps_balance
 
@@ -152,6 +153,42 @@ class TestGeneralizedPropensityScore(unittest.TestCase):
         self.assertEqual(len(adrf_estimates), len(t_values))
         self.assertFalse(np.isnan(adrf_estimates).any(), "ADRF estimates should not be NaN for valid inputs")
 
+    def test_counterfactual_gps_is_recomputed_at_each_dose(self):
+        df = self._generate_synthetic_data(n=250)
+        fitted, diagnostics = _estimate_gps_values(
+            df.copy(), 'T', ['X1', 'X2'], {"type": "linear"}
+        )
+        low = _gps_at_dose(fitted, -2.0, diagnostics)
+        high = _gps_at_dose(fitted, 2.0, diagnostics)
+
+        self.assertFalse(np.allclose(low, high))
+        self.assertFalse(np.allclose(low, fitted['gps_score']))
+
+    def test_public_adrf_reports_dose_specific_support(self):
+        df = self._generate_synthetic_data(n=300)
+        doses = [-8.0, 0.0, 8.0]
+        result = estimate_effect_gps(
+            df, 'T', 'Y', ['X1', 'X2'], t_values_for_adrf=doses
+        )
+
+        support = result['diagnostics']['dose_support']['by_dose']
+        self.assertEqual([row['dose'] for row in support], doses)
+        self.assertLess(support[0]['supported_fraction'], support[1]['supported_fraction'])
+        self.assertTrue(result['diagnostics']['warnings'])
+
+    def test_gps_bootstrap_returns_curve_uncertainty(self):
+        df = self._generate_synthetic_data(n=180, seed=17)
+        result = estimate_effect_gps(
+            df, 'T', 'Y', ['X1', 'X2'],
+            t_values_for_adrf=[-1.0, 0.0, 1.0],
+            n_bootstraps=20,
+            random_state=9,
+        )
+
+        self.assertNotIn('error', result)
+        self.assertEqual(len(result['standard_error']), 3)
+        self.assertEqual(result['confidence_interval']['successful_replications'], 20)
+
     def test_generate_dose_response_empty_t_values(self):
         df = self._generate_synthetic_data(n=50) # Dummy data
         df_with_gps, _ = _estimate_gps_values(df.copy(), 'T', ['X1', 'X2'], {"type": "linear"})
@@ -255,4 +292,4 @@ class TestGeneralizedPropensityScore(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main(argv=['first-arg-is-ignored'], exit=False) 
+    unittest.main(argv=['first-arg-is-ignored'], exit=False)

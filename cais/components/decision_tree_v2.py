@@ -46,7 +46,7 @@ M_DID = "difference_in_differences"
 M_DID_TIME_WINDOW = "difference_in_differences_time_window"
 M_RDD = "regression_discontinuity_design"
 M_DONUT_RDD = "donut_rdd"
-M_FUZZY_RDD = "fuzzy_rdd"  # reserved: draft variant of RDD, not traversed yet
+M_FUZZY_RDD = "fuzzy_regression_discontinuity_design"
 M_IPW = "propensity_score_weighting"
 M_PSM = "propensity_score_matching"
 M_TRIMMED_IPW = "trimmed_ipw"
@@ -62,7 +62,7 @@ LEAF_IMPLEMENTED: Dict[str, bool] = {
     M_DID_TIME_WINDOW: True,
     M_RDD: True,
     M_DONUT_RDD: True,
-    M_FUZZY_RDD: False,
+    M_FUZZY_RDD: True,
     M_IPW: True,
     M_PSM: True,
     M_TRIMMED_IPW: True,  # positivity-failure remedy: IPW trimmed to the overlap band
@@ -696,6 +696,12 @@ class _Traversal:
             self._running_variable_path()
 
     def _did_path(self) -> None:
+        if self.props.get("staggered_adoption") is True:
+            self.end(
+                "Staggered adoption was detected. CAIS does not yet implement a "
+                "heterogeneity-robust group-time ATT estimator, so generic TWFE is refused."
+            )
+            return
         if not self.gate(
             "Is the group composition stable?",
             "stable_group_composition",
@@ -703,24 +709,36 @@ class _Traversal:
         ):
             return
         self.advisory("Advisory: Baseline outcome balance", "baseline_outcome_balance")
-        if not self.gate("Gate: parallel trends", "parallel_trends", "Parallel trends violated."):
-            return
+        parallel = self.checked("Gate: parallel trends", "parallel_trends", "advisory")
+        parallel = self._maybe_reask_gate(
+            "Gate: parallel trends", "parallel_trends", "advisory", parallel
+        )
+        if parallel is False:
+            self.result.warnings.append(
+                "Parallel-trends diagnostic failed (advisory); continuing while "
+                "weakening the causal interpretation."
+            )
+        elif parallel is None:
+            self.result.warnings.append(
+                "Gate: parallel trends could not be tested; continuing with warning."
+            )
 
-        anticipation = self.checked("Gate: no anticipation (placebo)", "no_anticipation", "gate")
+        anticipation = self.checked(
+            "Gate: no anticipation (placebo)", "no_anticipation", "advisory"
+        )
         anticipation = self._maybe_reask_gate(
-            "Gate: no anticipation (placebo)", "no_anticipation", "gate", anticipation
+            "Gate: no anticipation (placebo)", "no_anticipation", "advisory", anticipation
         )
         window_start = self.props.get("anticipation_window_start")
         if anticipation is False:
             if window_start is not None or self.props.get("anticipation_known_bounded", False):
                 self._select_did_time_window()
-            elif self._consult_override(
-                "Gate: no anticipation (placebo)", "no_anticipation",
-                "Anticipation effects present and not bounded.",
-            ):
-                self.leaf(M_DID)
             else:
-                self.end("Anticipation effects present and not bounded; no-anticipation gate failed.")
+                self.result.warnings.append(
+                    "Possible unbounded anticipation was detected. This is advisory; "
+                    "continuing with DiD while weakening its causal interpretation."
+                )
+                self.leaf(M_DID)
             return
         if anticipation is None:
             self.result.warnings.append("No-anticipation could not be tested; continuing with warning.")
@@ -777,36 +795,47 @@ class _Traversal:
             "Advisory: Continuity of potential outcomes at the cutoff",
             "rdd_continuity_potential_outcomes",
         )
-        no_manipulation = self.checked(
-            "Gates: No manipulation / Covariate continuity (McCrary test)",
-            "rdd_no_manipulation",
-            "gate",
-        )
-        continuity = self.checked(
-            "Gates: No manipulation / Covariate continuity (McCrary test)",
-            "rdd_covariate_continuity",
-            "gate",
-        )
+        rdd_node = "Gates: No manipulation / Covariate continuity (McCrary test)"
+        no_manipulation = self.checked(rdd_node, "rdd_no_manipulation", "advisory")
+        continuity = self.checked(rdd_node, "rdd_covariate_continuity", "advisory")
         if no_manipulation is False or continuity is False:
             donut_width = self.props.get("donut_width")
-            if donut_width is not None:
+            if donut_width is not None and self.props.get("is_sharp_rdd") is not False:
                 self._select_donut_rdd(donut_width)
-            elif self.props.get("local_manipulation", False):
-                self.end(
-                    "Local manipulation was indicated but no donut width was supplied."
+                return
+            if self.props.get("local_manipulation", False) and donut_width is None:
+                self.result.warnings.append(
+                    "Local manipulation was indicated but no donut width was supplied; "
+                    "continuing with the selected RDD and reporting the warning."
                 )
-            elif self._consult_override(
-                "Gates: No manipulation / Covariate continuity (McCrary test)",
-                "rdd_no_manipulation",
-                "Manipulation at the cutoff (density or covariate continuity).",
-            ):
-                self.leaf(M_RDD)
-            else:
-                self.end("McCrary/density gate failed: manipulation at the cutoff.")
-            return
+            self.result.warnings.append(
+                "Density or covariate continuity was not supported. This is advisory: "
+                "the RDD estimate will run, but its causal interpretation is weakened."
+            )
         if no_manipulation is None or continuity is None:
             self.result.warnings.append(
-                "RDD gate: at least one component could not be tested; continuing with warning."
+                "RDD gate is advisory: at least one component could not be tested; continuing."
+            )
+        self._select_rdd_variant()
+
+    def _select_rdd_variant(self) -> None:
+        """Choose sharp versus fuzzy RDD from observable assignment compliance."""
+        is_sharp = self.props.get("is_sharp_rdd")
+        if is_sharp is False:
+            self.leaf(M_FUZZY_RDD)
+            self.result.warnings.append(
+                "Treatment receipt is not deterministic at the cutoff; routing to "
+                "Fuzzy RDD. Exclusion and monotonicity remain advisory assumptions."
+            )
+            self.step(
+                "Sharp cutoff compliance", "structural", "No — fuzzy assignment",
+                "select local Wald fuzzy RDD",
+            )
+            return
+        if is_sharp is None:
+            self.result.warnings.append(
+                "Sharp cutoff compliance could not be established; proceeding with "
+                "Sharp RDD provisionally and reporting the uncertainty."
             )
         self.leaf(M_RDD)
 
@@ -823,8 +852,8 @@ class _Traversal:
         }
         self.result.warnings.append(
             f"Density/covariate-continuity gate failed; using donut RDD with a "
-            f"{width:g}-unit band around the cutoff. The estimate refers to units "
-            "outside that band, not to the cutoff limit."
+            f"{width:g}-unit band around the cutoff. Retained side-specific "
+            "regressions are extrapolated back to the cutoff."
         )
         self.step(
             "Donut RDD",
@@ -1239,6 +1268,7 @@ def build_default_checks(properties: Dict[str, Any], df, description, llm, thres
         "iv_exclusion": lambda: pm.check_iv_exclusion(vars, llm=llm),
         "iv_exogeneity": lambda: pm.check_iv_exogeneity(vars, llm=llm),
         "iv_monotonicity": lambda: pm.check_iv_monotonicity(vars, llm=llm),
+        "iv_homogeneity": lambda: pm.check_iv_homogeneity(vars, llm=llm),
         "cond_ignorability": lambda: pm.check_cond_ignorability(
             vars, **_clean(thresholds.get("cond_ignorability"))
         ),

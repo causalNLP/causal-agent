@@ -253,7 +253,29 @@ def estimate_effect(df: pd.DataFrame, treatment: str, outcome: str,
         logger.info("Using TWFE DiD (time or treatment not binary)")
         
         if not did_term:
-            did_term = treatment  
+            varies_within_unit = bool(
+                df.groupby(group_var)[treatment].nunique(dropna=True).gt(1).any()
+            )
+            if not varies_within_unit:
+                raise ValueError(
+                    "TWFE DiD requires an explicit did_term representing treatment "
+                    "exposure by unit and time; a time-invariant group indicator is insufficient."
+                )
+            did_term = treatment
+        did_values = set(df[did_term].dropna().unique()) if did_term in df.columns else set()
+        if not did_values.issubset({0, 1, False, True}):
+            raise ValueError("TWFE did_term must be a binary unit-time exposure indicator.")
+
+        starts = []
+        for _, group in df.sort_values(time_var).groupby(group_var):
+            exposed = group.loc[group[did_term].astype(bool), time_var]
+            if not exposed.empty and group[did_term].nunique() > 1:
+                starts.append(exposed.iloc[0])
+        if len(set(starts)) > 1:
+            raise ValueError(
+                "Staggered adoption is not supported by this TWFE route; use a "
+                "heterogeneity-robust group-time ATT estimator."
+            )
         
         results = estimate_twfe_did(df, outcome, time_var, group_var, 
                                     did_term, covariates)

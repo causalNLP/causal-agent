@@ -80,7 +80,7 @@ class TestDonutRDD(unittest.TestCase):
         self.assertEqual(result["donut_width"], 5.0)
         self.assertEqual(result["n_dropped"], len(df) - len(filtered))
         self.assertAlmostEqual(result["share_dropped"], (len(df) - len(filtered)) / len(df))
-        self.assertIn("outside", result["method_details"].lower())
+        self.assertIn("extrapolated", result["method_details"].lower())
         self.assertIn("donut_width", result["diagnostics"])
         self.assertIn("estimand", result["diagnostics"])
 
@@ -130,6 +130,22 @@ class TestDonutRDD(unittest.TestCase):
                 donut_width=19.0,
             )
 
+    def test_donut_must_be_smaller_than_bandwidth(self):
+        with self.assertRaisesRegex(ValueError, "smaller than bandwidth"):
+            estimate_effect(
+                _rdd_df(), "treatment_indicator", "outcome", "running_var", 50.0,
+                donut_width=5.0, bandwidth=5.0,
+            )
+
+    def test_rejects_nonsharp_assignment(self):
+        df = _rdd_df()
+        df.loc[df.index[0], "treatment_indicator"] = 1 - df.loc[df.index[0], "treatment_indicator"]
+        with self.assertRaisesRegex(ValueError, "use Fuzzy RDD"):
+            estimate_effect(
+                df, "treatment_indicator", "outcome", "running_var", 50.0,
+                donut_width=5.0,
+            )
+
     @patch(BASE_RDD)
     def test_no_rows_dropped_is_allowed_with_warning(self, mock_rdd):
         mock_rdd.return_value = _base_result()
@@ -167,7 +183,7 @@ class TestDonutRDD(unittest.TestCase):
     def test_validate_assumptions_warns_about_estimand(self):
         response = DonutRDD().validate_assumptions(_rdd_df(), _variables())
         self.assertTrue(response["assumptions_valid"])
-        self.assertTrue(any("outside the donut" in w for w in response["warnings"]))
+        self.assertTrue(any("extrapolates" in w for w in response["warnings"]))
 
 
 if __name__ == "__main__":

@@ -99,7 +99,7 @@ def get_llm_client(provider: Optional[str] = None, model_name: Optional[str] = N
             
     except Exception as e:
         logger.error(f"Failed to initialize LLM (Provider: {provider}, Model: {model_name}): {e}")
-        raise # Re-raise the exception 
+        raise  # Re-raise the exception
 
 # _____________________________________________________________
 # Adjustable gate thresholds

@@ -33,6 +33,7 @@ def query_interpreter_tool(
     dataset_analysis: DatasetAnalysis, 
     dataset_description: str, 
     original_query: Optional[str] = None, # Keep optional original_query
+    llm: Optional[Any] = None,
 ) -> QueryInterpreterOutput:
     """
     Interpret a causal query in the context of a specific dataset.
@@ -64,7 +65,12 @@ def query_interpreter_tool(
     try:
         # Assume interpret_query returns a dictionary compatible with Variables model
         # AND that interpret_query now attempts to determine is_rct
-        interpretation_dict = interpret_query(query_info_dict, dataset_analysis_dict, dataset_description)
+        interpretation_dict = interpret_query(
+            query_info_dict,
+            dataset_analysis_dict,
+            dataset_description,
+            llm=llm,
+        )
         if not isinstance(interpretation_dict, dict):
              raise TypeError(f"interpret_query component did not return a dictionary. Got: {type(interpretation_dict)}")
              

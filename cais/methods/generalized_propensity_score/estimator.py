@@ -1,11 +1,12 @@
 """
 Core estimation logic for the Generalized Propensity Score (GPS) method.
 """
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional, Sequence, Tuple
 import pandas as pd
 import logging
 import numpy as np
 import statsmodels.api as sm
+from scipy.stats import norm
 
 from .diagnostics import assess_gps_balance # Import for balance check
 
@@ -103,21 +104,48 @@ def estimate_effect_gps(
         )
 
         # 5. Generate Dose-Response Function
-        adrf_results = _generate_dose_response_function(
-            df_with_gps, fitted_outcome_model, treatment, 'gps_score', outcome_model_spec, t_values_for_adrf
+        adrf_results, support_diagnostics = _generate_dose_response_function(
+            df_with_gps, fitted_outcome_model, treatment, 'gps_score', outcome_model_spec,
+            t_values_for_adrf, gps_model_diagnostics=gps_estimation_diagnostics,
+            return_support=True,
         )
         adrf_curve_data = {"t_levels": t_values_for_adrf, "expected_outcomes": adrf_results}
 
-        # 6. Calculate specific contrasts if requested (Placeholder)
-        specific_contrasts = {"info": "Specific contrasts not implemented in this version."}
+        requested_contrasts = kwargs.get("contrasts") or []
+        curve_lookup = {float(t): float(mu) for t, mu in zip(t_values_for_adrf, adrf_results)}
+        specific_contrasts = []
+        for pair in requested_contrasts:
+            if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+                raise ValueError("Each GPS contrast must be a pair (t1, t0).")
+            t1, t0 = float(pair[0]), float(pair[1])
+            if t1 not in curve_lookup or t0 not in curve_lookup:
+                raise ValueError("GPS contrasts must use doses present in t_values_for_adrf.")
+            specific_contrasts.append({
+                "t1": t1, "t0": t0,
+                "difference": curve_lookup[t1] - curve_lookup[t0],
+            })
 
-        # 7. Perform bootstrapping for SEs if requested (Placeholder for now)
-        standard_error_info = {"info": "Bootstrap SEs not implemented in this version."}
-        confidence_interval_info = {"info": "Bootstrap CIs not implemented in this version."}
+        standard_error_info = None
+        confidence_interval_info = None
         if n_bootstraps > 0:
-            logger.info(f"Bootstrapping with {n_bootstraps} replications (placeholder).")
-            # Actual bootstrapping logic would go here.
-            # For now, we'll just note that it's not implemented.
+            bootstrap_curves = _bootstrap_adrf(
+                df=df, treatment=treatment, outcome=outcome, covariates=covariates,
+                gps_model_spec=gps_model_spec, outcome_model_spec=outcome_model_spec,
+                t_values=t_values_for_adrf, n_bootstraps=int(n_bootstraps),
+                random_state=int(kwargs.get("random_state", 0)),
+            )
+            if len(bootstrap_curves) < max(20, int(n_bootstraps) // 2):
+                raise ValueError(
+                    f"Too few successful GPS bootstrap replications "
+                    f"({len(bootstrap_curves)}/{n_bootstraps})."
+                )
+            boot = np.asarray(bootstrap_curves, dtype=float)
+            standard_error_info = np.std(boot, axis=0, ddof=1).tolist()
+            confidence_interval_info = {
+                "lower": np.percentile(boot, 2.5, axis=0).tolist(),
+                "upper": np.percentile(boot, 97.5, axis=0).tolist(),
+                "successful_replications": int(len(boot)),
+            }
 
         logger.info("GPS estimation steps completed.")
 
@@ -125,15 +153,21 @@ def estimate_effect_gps(
         all_diagnostics = {
             "gps_estimation_diagnostics": gps_estimation_diagnostics,
             "balance_check": balance_diagnostics, # Now using the actual balance check results
+            "dose_support": support_diagnostics,
             "outcome_model_summary": str(fitted_outcome_model.summary()) if fitted_outcome_model else "Outcome model not fitted.",
-            "warnings": [], # Populate with any warnings during the process
+            "warnings": [
+                "Weak unconfoundedness and correct model specification are substantive "
+                "assumptions; diagnostics are advisory and do not prove them."
+            ] + support_diagnostics.get("warnings", []),
             "summary": "GPS estimation complete."
         }
 
         return {
             "effect_estimate": adrf_curve_data, # The ADRF is the primary "effect"
-            "standard_error_info": standard_error_info, # Placeholder
-            "confidence_interval_info": confidence_interval_info, # Placeholder
+            "standard_error": standard_error_info,
+            "confidence_interval": confidence_interval_info,
+            "standard_error_info": standard_error_info,
+            "confidence_interval_info": confidence_interval_info,
             "adrf_curve": adrf_curve_data,
             "specific_contrasts": specific_contrasts, # Placeholder
             "diagnostics": all_diagnostics,
@@ -234,6 +268,10 @@ def _estimate_gps_values(
             diagnostics["gps_model_rsquared"] = model.rsquared
             diagnostics["gps_residual_variance_mse"] = sigma_sq_hat
             diagnostics["num_observations_for_gps_model"] = len(T)
+            diagnostics["gps_model_columns"] = list(X_sm.columns)
+            diagnostics["gps_model_coefficients"] = {
+                str(name): float(value) for name, value in model.params.items()
+            }
 
         else:
             logger.error(f"GPS model type '{gps_model_spec.get('type')}' not implemented.")
@@ -324,8 +362,10 @@ def _generate_dose_response_function(
     treatment: str,
     gps_col_name: str, 
     outcome_model_spec: Dict, # To know how to construct X_pred features
-    t_values_to_evaluate: List[float]
-) -> List[float]:
+    t_values_to_evaluate: List[float],
+    gps_model_diagnostics: Optional[Dict[str, Any]] = None,
+    return_support: bool = False,
+) -> Any:
     """
     Calculates the Average Dose-Response Function (ADRF).
     E[Y(t)] = integral over E[Y | T=t, GPS=g] * f(g) dg
@@ -340,12 +380,34 @@ def _generate_dose_response_function(
 
     model_exog_names = fitted_outcome_model.model.exog_names
     
-    # Original GPS values from the dataframe
-    original_gps_values = pd.Series(df_with_gps[gps_col_name].values, index=df_with_gps.index)
+    support = {"by_dose": [], "warnings": []}
+    observed_gps = pd.Series(df_with_gps[gps_col_name].values, index=df_with_gps.index)
+    lower_density = float(observed_gps.quantile(0.01))
 
     for t_level in t_values_to_evaluate:
-        # Create a new DataFrame for prediction at this t_level
-        # Each row corresponds to an original observation's GPS, but with T set to t_level
+        # Hirano--Imbens requires r(t, X_i), not the GPS evaluated at each
+        # unit's observed dose r(T_i, X_i).
+        if gps_model_diagnostics and gps_model_diagnostics.get("gps_model_coefficients"):
+            counterfactual_gps = _gps_at_dose(
+                df_with_gps, float(t_level), gps_model_diagnostics
+            )
+        else:
+            # Backward-compatible helper use. The public estimator always passes
+            # model diagnostics; direct legacy calls retain their old behavior.
+            logger.warning("GPS model diagnostics absent; using observed GPS values.")
+            counterfactual_gps = observed_gps
+        supported = np.isfinite(counterfactual_gps) & (counterfactual_gps >= lower_density)
+        supported_fraction = float(np.mean(supported))
+        support["by_dose"].append({
+            "dose": float(t_level), "supported_fraction": supported_fraction,
+            "density_threshold": lower_density,
+        })
+        if supported_fraction < 0.8:
+            support["warnings"].append(
+                f"Dose {float(t_level):g} has weak conditional support "
+                f"({supported_fraction:.1%} of units above the observed 1% GPS-density threshold)."
+            )
+
         X_pred_dict = {'intercept': np.ones(len(df_with_gps))}
         
         # Reconstruct features based on outcome_model_spec and model_exog_names
@@ -354,20 +416,20 @@ def _generate_dose_response_function(
         interaction = outcome_model_spec.get("interaction", True)
 
         if 'T' in model_exog_names: X_pred_dict['T'] = t_level
-        if 'GPS' in model_exog_names: X_pred_dict['GPS'] = original_gps_values
+        if 'GPS' in model_exog_names: X_pred_dict['GPS'] = counterfactual_gps
         
         if 'T_sq' in model_exog_names: X_pred_dict['T_sq'] = t_level**2
-        if 'GPS_sq' in model_exog_names: X_pred_dict['GPS_sq'] = original_gps_values**2
+        if 'GPS_sq' in model_exog_names: X_pred_dict['GPS_sq'] = counterfactual_gps**2
             
         if 'T_cub' in model_exog_names: X_pred_dict['T_cub'] = t_level**3 # Example
-        if 'GPS_cub' in model_exog_names: X_pred_dict['GPS_cub'] = original_gps_values**3 # Example
+        if 'GPS_cub' in model_exog_names: X_pred_dict['GPS_cub'] = counterfactual_gps**3 # Example
             
         if 'T_x_GPS' in model_exog_names and interaction:
-            X_pred_dict['T_x_GPS'] = t_level * original_gps_values
+            X_pred_dict['T_x_GPS'] = t_level * counterfactual_gps
         if 'T_sq_x_GPS' in model_exog_names and interaction and degree >=2:
-            X_pred_dict['T_sq_x_GPS'] = (t_level**2) * original_gps_values
+            X_pred_dict['T_sq_x_GPS'] = (t_level**2) * counterfactual_gps
         if 'T_x_GPS_sq' in model_exog_names and interaction and degree >=2:
-            X_pred_dict['T_x_GPS_sq'] = t_level * (original_gps_values**2)
+            X_pred_dict['T_x_GPS_sq'] = t_level * (counterfactual_gps**2)
 
         X_pred_df = pd.DataFrame(X_pred_dict, index=df_with_gps.index)
         
@@ -383,4 +445,54 @@ def _generate_dose_response_function(
         predicted_outcomes_at_t = fitted_outcome_model.predict(X_pred_df_fit)
         adrf_estimates.append(np.mean(predicted_outcomes_at_t))
         
-    return adrf_estimates 
+    return (adrf_estimates, support) if return_support else adrf_estimates
+
+
+def _gps_at_dose(
+    df: pd.DataFrame, dose: float, gps_model_diagnostics: Dict[str, Any]
+) -> pd.Series:
+    """Evaluate the fitted conditional treatment density r(dose, X_i)."""
+    coefficients = gps_model_diagnostics.get("gps_model_coefficients") or {}
+    sigma_sq = float(gps_model_diagnostics.get("gps_residual_variance_mse", np.nan))
+    if not coefficients or not np.isfinite(sigma_sq) or sigma_sq <= 0:
+        raise ValueError("Fitted GPS model parameters are unavailable for ADRF prediction.")
+    mean = np.full(len(df), float(coefficients.get("const", 0.0)))
+    for name, coefficient in coefficients.items():
+        if name == "const":
+            continue
+        if name not in df.columns:
+            raise ValueError(f"GPS prediction covariate {name!r} is missing.")
+        mean += float(coefficient) * pd.to_numeric(df[name], errors="coerce").to_numpy()
+    values = norm.pdf(float(dose), loc=mean, scale=np.sqrt(sigma_sq))
+    return pd.Series(values, index=df.index, dtype=float)
+
+
+def _bootstrap_adrf(
+    df: pd.DataFrame, treatment: str, outcome: str, covariates: Sequence[str],
+    gps_model_spec: Dict[str, Any], outcome_model_spec: Dict[str, Any],
+    t_values: Sequence[float], n_bootstraps: int, random_state: int,
+) -> List[List[float]]:
+    """Row-bootstrap the complete GPS and outcome-model estimation procedure."""
+    rng = np.random.default_rng(random_state)
+    curves: List[List[float]] = []
+    for _ in range(n_bootstraps):
+        sample = df.iloc[rng.integers(0, len(df), len(df))].reset_index(drop=True)
+        fitted, diagnostics = _estimate_gps_values(
+            sample.copy(), treatment, list(covariates), gps_model_spec
+        )
+        fitted = fitted.dropna(subset=[treatment, outcome, "gps_score", *covariates])
+        if fitted.empty or diagnostics.get("error"):
+            continue
+        try:
+            outcome_fit = _estimate_outcome_model(
+                fitted, outcome, treatment, "gps_score", outcome_model_spec
+            )
+            curve = _generate_dose_response_function(
+                fitted, outcome_fit, treatment, "gps_score", outcome_model_spec,
+                list(t_values), gps_model_diagnostics=diagnostics,
+            )
+            if np.isfinite(curve).all():
+                curves.append([float(value) for value in curve])
+        except (ValueError, np.linalg.LinAlgError):
+            continue
+    return curves

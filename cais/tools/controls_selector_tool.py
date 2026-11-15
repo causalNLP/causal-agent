@@ -29,7 +29,8 @@ def controls_selector_tool(
     variables: Variables,
     dataset_analysis: DatasetAnalysis,
     dataset_description: Optional[str] = None,
-    original_query: Optional[str] = None
+    original_query: Optional[str] = None,
+    llm: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """
     Select control variables for causal estimation based on the chosen method.
@@ -63,11 +64,12 @@ def controls_selector_tool(
     column_categories = dataset_analysis_dict.get("column_categories", {})
 
     # Get LLM instance (optional for component)
-    try:
-        llm_instance = get_llm_client()
-    except Exception as e:
-        logger.warning(f"Failed to initialize LLM for controls_selector_tool: {e}. Using heuristic selection.")
-        llm_instance = None
+    llm_instance = llm
+    if llm_instance is None:
+        try:
+            llm_instance = get_llm_client()
+        except Exception as e:
+            logger.warning(f"Failed to initialize LLM for controls_selector_tool: {e}. Using heuristic selection.")
 
     # Call the component function to select controls
     try:

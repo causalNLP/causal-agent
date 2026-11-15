@@ -174,3 +174,29 @@ POST_ASSUMPTION_REGISTRY: Dict[str, List] = {
         check_gps_specification,
     ],
 }
+
+
+# Metadata mirrors the pre-model contracts.  These checks are diagnostics on
+# the fitted procedure; they do not turn an untestable causal assumption into
+# a certificate of identification.
+try:
+    from cais.methods.pre_model_assumption_utils import AssumptionSpec, _spec
+
+    POST_ASSUMPTION_SPECS = {
+        "propensity_score_matching": [
+            _spec("post_covariate_balance", "Balance after matching",
+                  check_balance_after_matching, "testable", "statistical_diagnostic", "warn")
+        ],
+        "instrumental_variable": [
+            _spec("iv_overidentification", "IV overidentification",
+                  check_iv_overidentification, "testable", "statistical_diagnostic", "warn")
+        ],
+        "generalized_propensity_score": [
+            _spec("gps_balance", "GPS balance", check_gps_balance,
+                  "testable", "statistical_diagnostic", "warn"),
+            _spec("gps_specification", "GPS specification", check_gps_specification,
+                  "testable", "statistical_diagnostic", "warn"),
+        ],
+    }
+except ImportError:  # pragma: no cover - protects lightweight imports
+    POST_ASSUMPTION_SPECS = {}
