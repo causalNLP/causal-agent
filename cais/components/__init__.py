@@ -23,6 +23,11 @@ from cais.components.conditional_strategy_router import (
     ConditionalStrategyRouter,
     EstimatorRoute,
 )
+from cais.components.registry_candidate_builder import RegistryCandidateBuilder
+from cais.components.reliability_diagnostics import (
+    assess_binary_treatment_reliability,
+    effective_sample_size,
+)
 
 __all__ = [
     "parse_input",
@@ -39,6 +44,9 @@ __all__ = [
     "ConditionalRoutingResult",
     "ConditionalStrategyRouter",
     "EstimatorRoute",
+    "RegistryCandidateBuilder",
+    "assess_binary_treatment_reliability",
+    "effective_sample_size",
 ]
 
 # This file makes Python treat the directory as a package.

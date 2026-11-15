@@ -39,6 +39,10 @@ import pandas as pd
 import os, logging
 import re
 import json
+from pathlib import Path
+
+from cais.components.conditional_strategy_router import ConditionalStrategyRouter
+from cais.components.registry_candidate_builder import RegistryCandidateBuilder
 
 LINEAR_REGRESSION = "linear_regression"
 DIFF_IN_DIFF = "difference_in_differences"
@@ -124,6 +128,7 @@ class CausalAgent():
         self.variables: Optional[Variables] = None
         self.selected_method: Optional[MethodInfo] = None
         self.tree_result: Optional[Any] = None
+        self.conditional_routing_result: Optional[Any] = None
 
         # Outputs
         self.results: Optional[Dict[str, Any]] = None
@@ -330,10 +335,106 @@ class CausalAgent():
         )
         return tree_result
 
+    def _conditional_candidates(self, registry_path=None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        """Build candidates from registry links and typed structural evidence."""
+        v = self.variables
+        candidates: list[dict[str, Any]] = []
+        context: dict[str, Any] = {}
+        if v is None:
+            return candidates, context
+        estimand_id = getattr(v, "estimand_id", None) or "E01"
+        registry_path = Path(registry_path or os.getenv("CAIS_REGISTRY_PATH", "CAIS_Registry_Code_Aligned.xlsx"))
+        builder = RegistryCandidateBuilder.from_registry(registry_path)
+        feature_evidence: dict[str, Any] = {
+            "observed_treatment": bool(v.treatment_variable),
+            "observed_outcome": bool(v.outcome_variable),
+            "candidate_covariates": bool(v.covariates),
+            "assigned_treatment": bool(v.is_rct),
+            "randomization_protocol": bool(v.is_rct),
+            "instrument": bool(v.instrument_variable),
+            "running_variable": bool(v.running_variable),
+            "cutoff": v.cutoff_value is not None,
+            "survival_followup": bool(v.duration_variable and v.event_variable),
+            "event_times": bool(v.duration_variable),
+            "censoring_metadata": bool(v.event_variable),
+            "time_variable": bool(v.time_variable),
+            "panel_identifier": bool(v.group_variable),
+        }
+        assumption_statuses: dict[str, dict[str, str]] = {}
+        if v.is_rct:
+            context["randomization_protocol"] = "supported"
+        if v.covariates:
+            assumption_statuses["S7"] = {"conditional_exchangeability": "insufficient_evidence", "positivity": "insufficient_evidence"}
+        if v.instrument_variable:
+            assumption_statuses["S16"] = {name: "insufficient_evidence" for name in ("iv_relevance", "iv_exclusion", "iv_independence", "iv_monotonicity")}
+        if v.running_variable and v.cutoff_value is not None:
+            props = self._tree_properties()
+            strategy_id = "S29" if props.get("is_sharp_rdd") is True else "S30"
+            assumption_statuses[strategy_id] = {"rdd_no_manipulation": "insufficient_evidence", "rdd_continuity": "insufficient_evidence"}
+            context["sharp_rdd_design"] = "supported" if strategy_id == "S29" else "unknown"
+            context["fuzzy_rdd_design"] = "supported" if strategy_id == "S30" else "unknown"
+        if v.time_variable and v.group_variable and v.treatment_time is not None:
+            assumption_statuses["S34"] = {"parallel_trends": "insufficient_evidence"}
+            context["did_2x2_design"] = "supported"
+        if v.duration_variable and v.event_variable:
+            assumption_statuses["S46"] = {"independent_censoring": "insufficient_evidence", "rmst_horizon_support": "supported" if v.rmst_horizon is not None else "insufficient_evidence"}
+            context["right_censored_survival"] = "supported"
+            context["rmst_horizon_support"] = "supported" if v.rmst_horizon is not None else "insufficient_evidence"
+        if v.time_variable and v.group_variable:
+            assumption_statuses["S41"] = {"pre_treatment_fit": "insufficient_evidence"}
+            context["synthetic_control_design"] = "supported"
+        candidates = builder.build(
+            estimand_id=estimand_id,
+            feature_evidence=feature_evidence,
+            assumption_statuses=assumption_statuses,
+            implemented_only=True,
+        )
+        # The registry rules do not infer design facts.  Add only facts that
+        # were explicitly established by the typed contract to the graph
+        # context; unknown conditions remain inactive.
+        return candidates, context
+
+    def select_method_conditional(self, query=None, registry_path=None):
+        """Select through the registry graph without invoking decision_tree_v2."""
+        query = self.checkq(query)
+        registry_path = registry_path or os.getenv("CAIS_REGISTRY_PATH", "CAIS_Registry_Code_Aligned.xlsx")
+        registry_path = Path(registry_path)
+        if not registry_path.exists():
+            raise FileNotFoundError(f"Conditional routing requires the aligned registry at {registry_path}.")
+        candidates, evidence = self._conditional_candidates(registry_path=registry_path)
+        estimand_id = getattr(self.variables, "estimand_id", None) or "E01"
+        router = ConditionalStrategyRouter.from_registry(registry_path)
+        result = router.route(candidates, estimand_id=estimand_id, evidence=evidence)
+        self.conditional_routing_result = result
+        if result.primary_estimator_id:
+            self.selected_method = result.primary_estimator_id
+        self.method_info = MethodInfo(
+            selected_method=self.selected_method,
+            method_name=self.selected_method,
+            method_justification=(
+                f"Conditional registry routing: {result.graph_decision.status}; "
+                f"candidates={result.graph_decision.maximal_strategy_ids}"
+            ),
+            method_assumptions=[
+                f"identification_status={result.identification_status}",
+                f"interpretation_status={result.interpretation_status}",
+            ],
+            decision_tree={"conditional_routing": result.__dict__},
+        )
+        return result
+
     def _tree_validation_info(self) -> Optional[Dict[str, Any]]:
         """Shape the tree result the way the explanation generator expects."""
         if self.tree_result is None:
-            return None
+            result = getattr(self, "conditional_routing_result", None)
+            if result is None:
+                return None
+            return {
+                "conditional_routing": result.__dict__,
+                "assumptions": {},
+                "concerns": list(result.warnings),
+                "post_checks": self._post_check_advisories(),
+            }
         result = self.tree_result
         return {
             "method": result.method,
@@ -696,6 +797,15 @@ class CausalAgent():
                 query=query,
                 llm_decision=llm_method_selection
             )
+        elif method_selection == "conditional_graph":
+            routing_result = self.select_method_conditional(query=query)
+            if routing_result.primary_estimator_id is None:
+                logger.info("Conditional router retained multiple candidates: %s", routing_result.graph_decision.maximal_strategy_ids)
+                return {
+                    "status": "indeterminate_identification_strategy",
+                    "identification": routing_result.__dict__,
+                    "message": "No unique registry preference was established; alternatives were retained.",
+                }
         else:
             tree_result = self.select_method_v2(
                 query=query,

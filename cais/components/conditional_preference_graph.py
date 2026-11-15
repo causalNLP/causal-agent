@@ -173,7 +173,37 @@ class ConditionalPreferenceGraph:
             else:
                 active.append(edge)
 
+        def _numeric(candidate: Mapping[str, Any], *names: str) -> Optional[float]:
+            for name in names:
+                value = candidate.get(name)
+                if value is not None:
+                    try:
+                        return float(value)
+                    except (TypeError, ValueError):
+                        continue
+            return None
+
+        def default_dominates(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
+            """Return whether the lexicographic reliability rule dominates."""
+            left_u = _numeric(left, "u_k", "unresolved_assumption_burden")
+            right_u = _numeric(right, "u_k", "unresolved_assumption_burden")
+            left_r = _numeric(left, "statistical_reliability", "reliability_score")
+            right_r = _numeric(right, "statistical_reliability", "reliability_score")
+            if left_u is None or right_u is None:
+                return False
+            # Missing reliability is tied; it cannot be used to manufacture a
+            # preference.  Lower unresolved burden remains the primary rule.
+            if left_u < right_u:
+                return True
+            if left_u > right_u:
+                return False
+            if left_r is None or right_r is None:
+                return False
+            return left_r > right_r
+
         dominated: set[str] = set()
+        active_fallbacks = {edge.fallback_strategy_id for edge in active}
+        active_preferred = {edge.preferred_strategy_id for edge in active}
         active_ids: list[str] = []
         active_override_ids: list[str] = []
         for edge in active:
@@ -181,6 +211,15 @@ class ConditionalPreferenceGraph:
             active_ids.append(edge.edge_id)
             if edge.edge_type == "override":
                 active_override_ids.append(edge.edge_id)
+        for left_id, left in candidate_map.items():
+            for right_id, right in candidate_map.items():
+                if left_id != right_id and default_dominates(left, right):
+                    dominated.add(right_id)
+        # An activated registry edge is an explicit design preference.  It
+        # overrides the burden/reliability comparison for its fallback pair;
+        # this is the formal role of an override edge in the manuscript.
+        dominated.difference_update(active_fallbacks | active_preferred)
+        dominated.update(active_fallbacks)
         maximal = sorted(set(candidate_map) - dominated)
         if len(maximal) == 1:
             status = "preferred" if active_ids else "single_candidate"

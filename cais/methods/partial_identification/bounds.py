@@ -65,3 +65,19 @@ def balke_pearl_bounds(df: pd.DataFrame, instrument: str, treatment: str,
             "method_used": "Balke--Pearl sharp IV bounds",
             "diagnostics": {"n_complete": len(dat), "estimand": "ATE", "monotonicity": bool(monotonicity),
                             "warnings": ["Exogeneity, exclusion and consistency are substantive assumptions; they are not tested by this LP."]}}
+
+
+def estimate_manski_route(df, treatment, outcome, covariates=None, **kwargs):
+    lower = kwargs.pop("outcome_lower", None)
+    upper = kwargs.pop("outcome_upper", None)
+    if lower is None or upper is None:
+        raise ValueError("Manski bounds require outcome_lower and outcome_upper.")
+    return manski_bounds(df, treatment, outcome, lower, upper)
+
+
+def estimate_balke_pearl_route(df, treatment, outcome, instrument_variable=None,
+                               covariates=None, **kwargs):
+    if not instrument_variable:
+        raise ValueError("Balke--Pearl bounds require instrument_variable.")
+    return balke_pearl_bounds(df, instrument_variable, treatment, outcome,
+                              monotonicity=bool(kwargs.pop("monotonicity", False)))

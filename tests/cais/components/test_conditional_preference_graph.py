@@ -91,3 +91,16 @@ def test_override_edges_are_reported_separately():
     )
     assert result.primary_strategy_id == "S16"
     assert result.active_override_edges == ["override"]
+
+
+def test_lexicographic_burden_prefers_lower_unresolved_assumption_burden():
+    graph = ConditionalPreferenceGraph()
+    result = graph.decide(
+        [
+            {"strategy_id": "S16", "u_k": 2.0, "statistical_reliability": 0.9},
+            {"strategy_id": "S7", "u_k": 1.0, "statistical_reliability": 0.8},
+        ],
+        estimand_id="E01",
+    )
+    assert result.primary_strategy_id == "S7"
+    assert result.maximal_strategy_ids == ["S7"]

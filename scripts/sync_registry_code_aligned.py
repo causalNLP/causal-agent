@@ -138,6 +138,73 @@ def main():
 
     new_routes = [
         {
+            "Route_ID": "R_S7_AIPW", "Strategy_ID": "S7", "Estimator_ID": "aipw",
+            "Estimator_Family": "Cross-fitted augmented inverse probability weighting",
+            "Target_Identified_Functional": "ATE, ATT or ATC under the declared binary-treatment backdoor contract.",
+            "Supported_Estimand_IDs": "E01,E02,E03", "Treatment_Type": "Binary 0/1", "Outcome_Type": "Numeric",
+            "Implemented_in_CAIS": "Yes — callable through METHOD_MAPPING; unit-tested",
+            "Test_Coverage": "tests/cais/methods/doubly_robust/test_estimator.py",
+            "Eligibility": "Binary treatment, numeric outcome, pre-treatment covariates and explicit target.",
+            "Relation_Status": "code_verified_restricted_mapping",
+            "Explanation": "Cross-fitted AIPW; clipping is reported and does not silently trim the target population.", "Safe_For_Auto_Routing": "No",
+        },
+        {
+            "Route_ID": "R_S7_DML", "Strategy_ID": "S7", "Estimator_ID": "dml",
+            "Estimator_Family": "Cross-fitted orthogonal-score DML",
+            "Target_Identified_Functional": "ATE under the binary-treatment orthogonal-score contract.",
+            "Supported_Estimand_IDs": "E01", "Treatment_Type": "Binary 0/1", "Outcome_Type": "Numeric",
+            "Implemented_in_CAIS": "Yes — callable through METHOD_MAPPING; unit-tested",
+            "Test_Coverage": "tests/cais/methods/doubly_robust/test_estimator.py",
+            "Eligibility": "Binary treatment, numeric outcome and pre-treatment covariates.",
+            "Relation_Status": "code_verified_restricted_mapping",
+            "Explanation": "ATT/ATC and longitudinal DML are outside this route.", "Safe_For_Auto_Routing": "No",
+        },
+        {
+            "Route_ID": "R_S7_TMLE", "Strategy_ID": "S7", "Estimator_ID": "tmle",
+            "Estimator_Family": "Canonical cross-fitted TMLE",
+            "Target_Identified_Functional": "ATE for a binary treatment and binary outcome.",
+            "Supported_Estimand_IDs": "E01", "Treatment_Type": "Binary 0/1", "Outcome_Type": "Binary 0/1",
+            "Implemented_in_CAIS": "Yes — callable through METHOD_MAPPING; unit-tested",
+            "Test_Coverage": "tests/cais/methods/test_tmle_and_bounds.py",
+            "Eligibility": "Binary treatment/outcome and pre-treatment covariates.",
+            "Relation_Status": "code_verified_restricted_mapping",
+            "Explanation": "Continuous, survival and longitudinal TMLE are not represented by this route.", "Safe_For_Auto_Routing": "No",
+        },
+        {
+            "Route_ID": "R_S45_MSM", "Strategy_ID": "S45", "Estimator_ID": "marginal_structural_model",
+            "Estimator_Family": "Stabilized-IPTW marginal structural model",
+            "Target_Identified_Functional": "Coefficient of the user-specified marginal structural model.",
+            "Supported_Estimand_IDs": "E24,E25,E38", "Treatment_Type": "Binary longitudinal", "Outcome_Type": "Final numeric outcome",
+            "Implemented_in_CAIS": "Yes — callable through METHOD_MAPPING; explicit longitudinal options required",
+            "Test_Coverage": "Paper-based implementation; route remains non-certified", "Eligibility": "Long format, id/time columns, treatment history, confounders and final outcome.",
+            "Relation_Status": "code_verified_restricted_mapping", "Explanation": "No automatic MSM specification; sequential assumptions remain advisory.", "Safe_For_Auto_Routing": "No",
+        },
+        {
+            "Route_ID": "R_S45_g_computation", "Strategy_ID": "S45", "Estimator_ID": "longitudinal_g_computation",
+            "Estimator_Family": "Two-time-point parametric g-formula",
+            "Target_Identified_Functional": "E[Y^{a0,a1}] minus E[Y^{a0*,a1*}] for two static regimes.",
+            "Supported_Estimand_IDs": "E24,E25", "Treatment_Type": "Binary longitudinal", "Outcome_Type": "Final numeric outcome",
+            "Implemented_in_CAIS": "Yes — callable through METHOD_MAPPING; explicit longitudinal options required",
+            "Test_Coverage": "Paper-based implementation; route remains non-certified", "Eligibility": "Exactly two time points, intermediate covariate, baseline covariates and final outcome.",
+            "Relation_Status": "code_verified_restricted_mapping", "Explanation": "General horizons and dynamic regimes are not claimed.", "Safe_For_Auto_Routing": "No",
+        },
+        {
+            "Route_ID": "R_S63_Manski_bounds", "Strategy_ID": "S63", "Estimator_ID": "manski_bounds",
+            "Estimator_Family": "Manski worst-case bounds", "Target_Identified_Functional": "Sharp ATE identified set under declared bounded outcome support.",
+            "Supported_Estimand_IDs": "E01", "Treatment_Type": "Binary 0/1", "Outcome_Type": "Numeric bounded",
+            "Implemented_in_CAIS": "Yes — callable through METHOD_MAPPING; identified set only", "Test_Coverage": "tests/cais/methods/test_tmle_and_bounds.py",
+            "Eligibility": "Binary treatment and explicit outcome lower/upper support bounds.", "Relation_Status": "code_verified_restricted_mapping",
+            "Explanation": "Returns an interval and never a point estimate.", "Safe_For_Auto_Routing": "No",
+        },
+        {
+            "Route_ID": "R_S64_Balke_Pearl_bounds", "Strategy_ID": "S64", "Estimator_ID": "balke_pearl_bounds",
+            "Estimator_Family": "Balke–Pearl sharp IV bounds", "Target_Identified_Functional": "Sharp ATE identified set under the binary IV model.",
+            "Supported_Estimand_IDs": "E01", "Treatment_Type": "Binary instrument/treatment", "Outcome_Type": "Binary 0/1",
+            "Implemented_in_CAIS": "Yes — callable through METHOD_MAPPING; identified set only", "Test_Coverage": "tests/cais/methods/test_tmle_and_bounds.py",
+            "Eligibility": "Binary instrument, treatment and outcome; optional explicit monotonicity.", "Relation_Status": "code_verified_restricted_mapping",
+            "Explanation": "Exogeneity, exclusion and consistency are not empirically certified by the LP.", "Safe_For_Auto_Routing": "No",
+        },
+        {
             "Route_ID": "R_S46_s_learner_RMST", "Strategy_ID": "S46",
             "Estimator_ID": "s_learner_rmst", "Estimator_Family": "S-Learner survival RMST CATE",
             "Target_Identified_Functional": "Conditional treatment effect on restricted mean survival time at a prespecified horizon.",
@@ -168,6 +235,30 @@ def main():
             "Relation_Status": "code_verified_conditional_mapping", "Explanation": "Survival X-learner with IPCW pseudo-outcomes; calibration and inference remain restricted.", "Safe_For_Auto_Routing": "No",
         },
     ]
+    # Replace legacy placeholder route metadata for the now implemented
+    # point-treatment contracts.  The historical route IDs are retained so
+    # workbook links remain stable.
+    upsert(routes, "Route_ID", "R_S7_AIPW", {
+        "Strategy_ID": "S7", "Estimator_ID": "aipw", "Estimator_Family": "Cross-fitted augmented inverse probability weighting",
+        "Target_Identified_Functional": "ATE, ATT or ATC under the declared binary-treatment backdoor contract.",
+        "Supported_Estimand_IDs": "E01,E02,E03", "Treatment_Type": "Binary 0/1", "Outcome_Type": "Numeric",
+        "Implemented_in_CAIS": "Yes — callable through METHOD_MAPPING; unit-tested", "Test_Coverage": "tests/cais/methods/doubly_robust/test_estimator.py",
+        "Eligibility": "Binary treatment, numeric outcome, pre-treatment covariates and explicit target.", "Relation_Status": "code_verified_restricted_mapping",
+        "Explanation": "Cross-fitted AIPW; clipping is reported and does not silently trim the target population.", "Safe_For_Auto_Routing": "No",
+    })
+    upsert(routes, "Route_ID", "R_S7_TMLE", {
+        "Strategy_ID": "S7", "Estimator_ID": "tmle", "Estimator_Family": "Canonical cross-fitted TMLE",
+        "Target_Identified_Functional": "ATE for a binary treatment and binary outcome.", "Supported_Estimand_IDs": "E01",
+        "Treatment_Type": "Binary 0/1", "Outcome_Type": "Binary 0/1", "Implemented_in_CAIS": "Yes — callable through METHOD_MAPPING; unit-tested",
+        "Test_Coverage": "tests/cais/methods/test_tmle_and_bounds.py", "Eligibility": "Binary treatment/outcome and pre-treatment covariates.",
+        "Relation_Status": "code_verified_restricted_mapping", "Explanation": "Continuous, survival and longitudinal TMLE are not represented by this route.", "Safe_For_Auto_Routing": "No",
+    })
+    upsert(routes, "Route_ID", "R_S45_marginal_structural_model", {
+        "Implemented_in_CAIS": "No — legacy placeholder superseded by R_S45_MSM",
+        "Relation_Status": "superseded_placeholder",
+        "Explanation": "Use R_S45_MSM for the restricted stabilized-IPTW MSM implementation.",
+        "Safe_For_Auto_Routing": "No",
+    })
     existing = {r[0].value for r in routes.iter_rows(min_row=2)}
     for route in new_routes:
         if route["Route_ID"] not in existing:

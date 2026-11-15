@@ -100,3 +100,27 @@ def estimate_gformula_two_time(df: pd.DataFrame, id_col: str, time_col: str,
             "diagnostics": {"n_subjects": int(len(wide)), "regime": [int(regime_a0), int(regime_a1)],
                             "comparison_regime": [int(compare_a0), int(compare_a1)],
                             "estimand": "E[Y^{a0,a1}] - E[Y^{a0*,a1*}]", "warnings": ["Sequential exchangeability, consistency, positivity and both parametric models are advisory assumptions."]}}
+
+
+def estimate_msm_route(df, treatment, outcome, covariates=None, group_variable=None,
+                       time_variable=None, **kwargs):
+    """METHOD_MAPPING adapter; longitudinal columns must be supplied explicitly."""
+    if not group_variable or not time_variable:
+        raise ValueError("MSM routing requires group_variable and time_variable.")
+    return estimate_msm(df, id_col=group_variable, time_col=time_variable,
+                        treatment_col=treatment, outcome_col=outcome,
+                        confounders=list(covariates or []), **kwargs)
+
+
+def estimate_gformula_route(df, treatment, outcome, covariates=None,
+                            group_variable=None, time_variable=None, **kwargs):
+    if not group_variable or not time_variable:
+        raise ValueError("Longitudinal g-computation requires group_variable and time_variable.")
+    intermediate = kwargs.pop("intermediate_covariate", None)
+    if not intermediate:
+        raise ValueError("Longitudinal g-computation requires intermediate_covariate.")
+    return estimate_gformula_two_time(
+        df, id_col=group_variable, time_col=time_variable,
+        treatment_col=treatment, outcome_col=outcome,
+        intermediate_covariate=intermediate,
+        baseline_covariates=list(kwargs.pop("baseline_covariates", covariates or [])), **kwargs)
