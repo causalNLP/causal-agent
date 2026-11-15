@@ -1268,6 +1268,7 @@ def build_default_checks(properties: Dict[str, Any], df, description, llm, thres
         "iv_exclusion": lambda: pm.check_iv_exclusion(vars, llm=llm),
         "iv_exogeneity": lambda: pm.check_iv_exogeneity(vars, llm=llm),
         "iv_monotonicity": lambda: pm.check_iv_monotonicity(vars, llm=llm),
+        "iv_homogeneity": lambda: pm.check_iv_homogeneity(vars, llm=llm),
         "cond_ignorability": lambda: pm.check_cond_ignorability(
             vars, **_clean(thresholds.get("cond_ignorability"))
         ),

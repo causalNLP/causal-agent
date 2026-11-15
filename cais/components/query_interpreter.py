@@ -458,8 +458,20 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
                                                                treatment=treatment_variable, outcome=outcome_variable)
 
             estimand_result = _call_llm_for_var(llm, estimand_prompt, LLMEstimand)
-            estimand = "ate" if "ate" in estimand_result.estimand.strip().lower() else "att"
-            logger.info(f"LLM identified estimand: {estimand}")
+            raw_estimand = (estimand_result.estimand or "").strip().lower()
+            if "late" in raw_estimand:
+                estimand_id, estimand_label = "E07", "Local Average Treatment Effect (LATE)"
+            elif "itt" in raw_estimand or "intention" in raw_estimand:
+                estimand_id, estimand_label = "E06", "Intention-to-Treat Effect (ITT)"
+            elif "cate" in raw_estimand or "conditional" in raw_estimand:
+                estimand_id, estimand_label = "E05", "Conditional Average Treatment Effect (CATE)"
+            elif "ite" in raw_estimand or "individual" in raw_estimand:
+                estimand_id, estimand_label = "E33", "Individual Treatment Effect (ITE)"
+            elif "att" in raw_estimand or "treated" in raw_estimand:
+                estimand_id, estimand_label = "E02", "Average Treatment Effect on the Treated (ATT)"
+            else:
+                estimand_id, estimand_label = "E01", "Average Treatment Effect (ATE)"
+            logger.info("LLM identified estimand: %s (%s)", estimand_id, estimand_label)
 
             # Semantic design facts (mediator, encouragement, periods); one-shot,
             # never guessed. Falls back to all-None on any problem.
@@ -503,6 +515,8 @@ def interpret_query(query_info: Dict[str, Any], dataset_analysis: Dict[str, Any]
         "treatment_variable": treatment_variable,
         "treatment_variable_type": treatment_variable_type,
         "outcome_variable": outcome_variable,
+        "estimand_id": locals().get("estimand_id", "E01"),
+        "estimand_label": locals().get("estimand_label", "Average Treatment Effect (ATE)"),
         "covariates": covariates,
         ## for difference in differences 
         "time_variable": time_variable,

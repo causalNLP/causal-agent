@@ -157,6 +157,11 @@ class Variables(BaseModel):
     treatment_variable: Optional[str] = None
     treatment_variable_type: Optional[str] = Field(None, description="Type of the treatment variable (e.g., 'binary', 'continuous', 'categorical_multi_value')")
     outcome_variable: Optional[str] = None
+    # Registry estimand contract.  ``estimand_id`` is intentionally separate
+    # from the outcome column: the same outcome can support ATE, ATT, ITT,
+    # LATE, CATE or RMST targets depending on the query and design.
+    estimand_id: Optional[str] = Field(None, description="Registry estimand identifier, e.g. E01 or E07.")
+    estimand_label: Optional[str] = Field(None, description="Human-readable requested estimand.")
     instrument_variable: Optional[str] = None
     covariates: Optional[List[str]] = Field(default_factory=list)
     time_variable: Optional[str] = None

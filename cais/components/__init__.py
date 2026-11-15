@@ -13,6 +13,21 @@ from cais.components.method_validator import validate_method
 from cais.components.explanation_generator import generate_explanation
 from cais.components.output_formatter import format_output
 from cais.components.state_manager import create_workflow_state_update
+from cais.components.conditional_preference_graph import (
+    ConditionalPreferenceGraph,
+    GraphDecision,
+    PreferenceEdge,
+)
+from cais.components.conditional_strategy_router import (
+    ConditionalRoutingResult,
+    ConditionalStrategyRouter,
+    EstimatorRoute,
+)
+from cais.components.registry_candidate_builder import RegistryCandidateBuilder
+from cais.components.reliability_diagnostics import (
+    assess_binary_treatment_reliability,
+    effective_sample_size,
+)
 
 __all__ = [
     "parse_input",
@@ -22,7 +37,16 @@ __all__ = [
     "validate_method",
     "generate_explanation",
     "format_output",
-    "create_workflow_state_update"
+    "create_workflow_state_update",
+    "ConditionalPreferenceGraph",
+    "GraphDecision",
+    "PreferenceEdge",
+    "ConditionalRoutingResult",
+    "ConditionalStrategyRouter",
+    "EstimatorRoute",
+    "RegistryCandidateBuilder",
+    "assess_binary_treatment_reliability",
+    "effective_sample_size",
 ]
 
 # This file makes Python treat the directory as a package.

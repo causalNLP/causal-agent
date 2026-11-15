@@ -41,6 +41,8 @@ from .survival_meta_learners import (
 )
 from .doubly_robust.estimator import estimate_aipw, estimate_dml
 from .tmle import estimate_tmle
+from .longitudinal_gmethods import estimate_msm_route, estimate_gformula_route
+from .partial_identification import estimate_manski_route, estimate_balke_pearl_route
 
 # Mapping of method names to their implementation functions
 METHOD_MAPPING = {
@@ -57,7 +59,6 @@ METHOD_MAPPING = {
     "linear_regression": lr_estimate_effect,
     "diff_in_means": dim_estimate_effect,
     "generalized_propensity_score": estimate_effect_gps,
-    "frontdoor_adjustment": frontdoor_estimate_effect,
     "synthetic_control": synthetic_control_estimate_effect,
     "fuzzy_regression_discontinuity_design": fuzzy_rdd_estimate_effect,
     "s_learner": estimate_s_learner,
@@ -70,7 +71,14 @@ METHOD_MAPPING = {
     "aipw": estimate_aipw,
     "dml": estimate_dml,
     "tmle": estimate_tmle,
+    "marginal_structural_model": estimate_msm_route,
+    "longitudinal_g_computation": estimate_gformula_route,
+    "manski_bounds": estimate_manski_route,
+    "balke_pearl_bounds": estimate_balke_pearl_route,
 }
+
+# Stable route inventory used by validation and registry-alignment tests.
+EXECUTABLE_METHOD_IDS = frozenset(METHOD_MAPPING)
 
 __all__ = [
     "CausalMethod",
@@ -106,4 +114,8 @@ __all__ = [
     "estimate_aipw",
     "estimate_dml",
     "estimate_tmle",
+    "estimate_msm_route",
+    "estimate_gformula_route",
+    "estimate_manski_route",
+    "estimate_balke_pearl_route",
 ]
