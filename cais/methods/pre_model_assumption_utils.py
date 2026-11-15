@@ -12,7 +12,9 @@ Each check returns an AssumptionResult with:
     details  : dict         (raw stats — F, p, SMDs, ...)
 """
 
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+import inspect
+from typing import Any, Callable, Dict, List, Optional
 import logging
 
 import numpy as np
@@ -217,6 +219,41 @@ def check_cond_ignorability(
             "imbalanced": imbalanced,
             "untestable_covariates": untestable,
         },
+    )
+
+
+def check_conditional_exchangeability(vars: AssumptionVariables, llm=None) -> AssumptionResult:
+    """Advisory assessment of the causal (unconfoundedness) part of ignorability.
+
+    Covariate balance is a useful diagnostic, but it cannot establish that all
+    common causes were observed.  This separate check prevents the balance
+    diagnostic from being reported as proof of exchangeability.
+    """
+    return _llm_argue_assumption(
+        "Conditional exchangeability / no unmeasured confounding",
+        "Given the measured covariates, treatment assignment is independent of the potential outcomes.",
+        vars,
+        llm,
+        extra_context=(
+            "Observed balance is only a diagnostic and must not be treated as a proof. "
+            "Use passed=null when the study description does not justify the causal assumption."
+        ),
+    )
+
+
+def check_treatment_support(vars: AssumptionVariables) -> AssumptionResult:
+    """Minimal, testable support check shared by continuous-treatment routes."""
+    if vars.df is None or not vars.treatment or vars.treatment not in vars.df:
+        return AssumptionResult(passed=None, reasoning="Treatment support cannot be checked: treatment column is missing.")
+    values = pd.to_numeric(vars.df[vars.treatment], errors="coerce").dropna()
+    if len(values) == 0:
+        return AssumptionResult(passed=False, reasoning="Treatment has no finite observations.")
+    unique = int(values.nunique())
+    passed = unique >= 2
+    return AssumptionResult(
+        passed=passed,
+        reasoning=f"Treatment has {unique} observed support value(s).",
+        details={"n_observed": int(len(values)), "n_unique": unique},
     )
 
 
@@ -1020,14 +1057,31 @@ def check_rdd_continuity_potential_outcomes(vars: AssumptionVariables, llm=None)
 # Registry: maps each method to its pre-model assumption checks
 # _____________________________________________________________________________
 
+def check_iv_homogeneity(vars: AssumptionVariables, llm=None) -> AssumptionResult:
+    """Advisory LLM assessment for interpreting IV as a population ATE."""
+    return _llm_argue_assumption(
+        "Homogeneous treatment effects for population-ATE interpretation of IV",
+        "The additive treatment effect Y(1)-Y(0) is constant across units (or a separate "
+        "substantive argument establishes that the IV estimand equals the population ATE).",
+        vars,
+        llm,
+        extra_context=(
+            "A strong first-stage F-statistic does not support homogeneity. "
+            "Return null unless the study design or domain description gives concrete evidence. "
+            "This is an advisory interpretation check, never a hard execution gate."
+        ),
+    )
+
 ASSUMPTION_REGISTRY: Dict[str, List] = {
     "linear_regression": [
         check_sutva,
         check_cond_ignorability,
+        check_conditional_exchangeability,
     ],
     "propensity_score_matching": [
         check_sutva,
         check_cond_ignorability,
+        check_conditional_exchangeability,
         check_positivity,
     ],
     "instrumental_variable": [
@@ -1036,6 +1090,7 @@ ASSUMPTION_REGISTRY: Dict[str, List] = {
         check_iv_exclusion,
         check_iv_exogeneity,
         check_iv_monotonicity,
+        check_iv_homogeneity,
     ],
     "difference_in_differences": [
         check_sutva,
@@ -1058,5 +1113,215 @@ ASSUMPTION_REGISTRY: Dict[str, List] = {
     "backdoor_adjustment": [
         check_sutva,
         check_cond_ignorability,
+        check_conditional_exchangeability,
     ],
 }
+
+
+# ---------------------------------------------------------------------------
+# Harmonised assumption contracts
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class AssumptionSpec:
+    """Machine-readable contract for one assumption check.
+
+    ``classification`` describes what can be learned from the available
+    evidence, not whether the underlying causal assumption is true.  In
+    particular, advisory checks never create a hard gate.  A statistical
+    diagnostic can falsify or raise concern about a design, but it cannot
+    prove an untestable causal assumption.
+    """
+
+    assumption_id: str
+    label: str
+    check: Callable[..., AssumptionResult]
+    classification: str  # testable | advisory | mixed
+    evidence_type: str  # statistical_diagnostic | llm_argument | mixed
+    failure_policy: str = "warn"  # block | warn | advisory
+    proves_assumption: bool = False
+
+
+def _spec(assumption_id, label, check, classification, evidence_type,
+          failure_policy="warn", proves_assumption=False):
+    return AssumptionSpec(
+        assumption_id=assumption_id,
+        label=label,
+        check=check,
+        classification=classification,
+        evidence_type=evidence_type,
+        failure_policy=failure_policy,
+        proves_assumption=proves_assumption,
+    )
+
+
+_COMMON = [
+    _spec("sutva", "SUTVA", check_sutva, "advisory", "llm_argument", "advisory"),
+    _spec("covariate_balance", "Observed covariate balance", check_cond_ignorability,
+          "testable", "statistical_diagnostic", "warn"),
+    _spec("conditional_exchangeability", "Conditional exchangeability",
+          check_conditional_exchangeability, "advisory", "llm_argument", "advisory"),
+]
+_PS = _COMMON + [
+    _spec("positivity", "Treatment positivity / overlap", check_positivity,
+          "testable", "statistical_diagnostic", "block"),
+]
+_GPS = [
+    _COMMON[0],
+    _spec("treatment_support", "Continuous treatment support", check_treatment_support,
+          "testable", "statistical_diagnostic", "block"),
+    _COMMON[2],
+]
+_IV = [
+    _COMMON[0],
+    _spec("iv_relevance", "Instrument relevance", check_iv_relevance,
+          "testable", "statistical_diagnostic", "block"),
+    _spec("iv_exclusion", "Exclusion restriction", check_iv_exclusion,
+          "advisory", "llm_argument", "advisory"),
+    _spec("iv_exogeneity", "Instrument exogeneity", check_iv_exogeneity,
+          "advisory", "llm_argument", "advisory"),
+    _spec("iv_monotonicity", "Monotonicity", check_iv_monotonicity,
+          "advisory", "llm_argument", "advisory"),
+]
+_IV_ATE = _IV + [
+    _spec("iv_homogeneity", "Homogeneous treatment effects for ATE interpretation",
+          check_iv_homogeneity, "advisory", "llm_argument", "advisory"),
+]
+_DID = [
+    _COMMON[0],
+    _spec("parallel_trends", "Parallel trends", check_parallel_trends,
+          "testable", "statistical_diagnostic", "block"),
+    _spec("no_anticipation", "No anticipation", check_no_anticipation,
+          "testable", "statistical_diagnostic", "warn"),
+    _spec("baseline_outcome_balance", "Baseline outcome balance", check_baseline_outcome_balance,
+          "testable", "statistical_diagnostic", "warn"),
+    _spec("stable_group_composition", "Stable group composition", check_stable_group_composition,
+          "mixed", "mixed", "warn"),
+]
+_RDD = [
+    _spec("rdd_no_manipulation", "No manipulation around cutoff", check_rdd_no_manipulation,
+          "testable", "statistical_diagnostic", "warn"),
+    _spec("rdd_covariate_continuity", "Covariate continuity", check_rdd_covariate_continuity,
+          "testable", "statistical_diagnostic", "warn"),
+    _spec("rdd_continuity_potential_outcomes", "Potential-outcome continuity",
+          check_rdd_continuity_potential_outcomes, "advisory", "llm_argument", "advisory"),
+]
+_FRONTDOOR = [
+    _COMMON[0],
+    _spec("frontdoor_full_mediation", "Full mediation", check_frontdoor_full_mediation,
+          "advisory", "llm_argument", "advisory"),
+    _spec("frontdoor_no_tm_confounding", "No treatment-mediator confounding",
+          check_frontdoor_no_TM_confounding, "advisory", "llm_argument", "advisory"),
+    _spec("frontdoor_t_blocks_my", "Mediator blocks treatment-outcome path",
+          check_frontdoor_T_blocks_MY, "advisory", "llm_argument", "advisory"),
+    _spec("frontdoor_positivity", "Frontdoor positivity", check_frontdoor_positivity,
+          "testable", "statistical_diagnostic", "block"),
+]
+
+
+# This is the authoritative metadata layer.  ASSUMPTION_REGISTRY above is
+# retained as a callable compatibility API for the legacy decision tree.
+ASSUMPTION_SPECS: Dict[str, List[AssumptionSpec]] = {
+    "linear_regression": _COMMON,
+    "backdoor_adjustment": _COMMON,
+    "propensity_score_matching": _PS,
+    "propensity_score_weighting": _PS,
+    "trimmed_ipw": _PS,
+    "instrumental_variable": _IV,
+    "instrumental_variable_ate": _IV_ATE,
+    "difference_in_differences": _DID,
+    "difference_in_differences_time_window": _DID,
+    "frontdoor_adjustment": _FRONTDOOR,
+    "regression_discontinuity_design": _RDD,
+    "donut_rdd": _RDD,
+    "fuzzy_regression_discontinuity_design": _RDD,
+    "generalized_propensity_score": _GPS,
+    "s_learner": _PS,
+    "t_learner": _PS,
+    "x_learner": _PS,
+    "r_learner": _PS,
+    # Synthetic control has design-specific checks in its estimator; its
+    # causal no-anticipation/no-interference claims remain advisory here.
+    "synthetic_control": [_COMMON[0]],
+    # Survival meta-learners run the richer survival validator separately.
+    "s_learner_rmst": _PS,
+    "t_learner_rmst": _PS,
+    "x_learner_rmst": _PS,
+    "diff_in_means": [_COMMON[0]],
+}
+
+
+def get_assumption_specs(method: str) -> List[AssumptionSpec]:
+    """Return harmonised specs, with an explicit empty list for unknown methods."""
+    return list(ASSUMPTION_SPECS.get(method, []))
+
+
+def _invoke_assumption(spec: AssumptionSpec, vars: AssumptionVariables, llm=None,
+                       check_kwargs: Optional[Dict[str, Any]] = None) -> AssumptionResult:
+    kwargs = dict(check_kwargs or {})
+    try:
+        params = inspect.signature(spec.check).parameters
+        if "llm" in params:
+            kwargs.setdefault("llm", llm)
+        # Positivity is a data diagnostic.  Make the harmonised API usable
+        # without forcing every caller to duplicate propensity-score fitting;
+        # callers may still provide a precomputed vector in check_kwargs.
+        if spec.assumption_id == "positivity" and "propensity_scores" not in kwargs:
+            if vars.df is not None and vars.treatment and vars.covariates:
+                from sklearn.linear_model import LogisticRegression
+
+                complete = vars.df[[vars.treatment, *vars.covariates]].dropna()
+                x = complete[vars.covariates].astype(float)
+                y = complete[vars.treatment].astype(int)
+                if y.nunique() >= 2:
+                    model = LogisticRegression(max_iter=1000).fit(x, y)
+                    kwargs["propensity_scores"] = model.predict_proba(x)[:, 1]
+        if "vars" in params:
+            result = spec.check(vars, **kwargs)
+        else:
+            result = spec.check(**kwargs)
+        if isinstance(result, AssumptionResult):
+            return result
+        return AssumptionResult(passed=None, reasoning="Check returned an invalid result type.")
+    except Exception as exc:
+        logger.warning("Assumption check '%s' failed: %s", spec.assumption_id, exc)
+        return AssumptionResult(passed=None, reasoning=f"Check could not be run: {exc}", details={"error": str(exc)})
+
+
+def evaluate_assumptions(method: str, vars: AssumptionVariables, llm=None,
+                         check_kwargs: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, Any]:
+    """Run a method's checks and return one uniform, non-overclaiming report.
+
+    ``False`` is evidence against a condition, ``None`` is insufficient
+    evidence, and only explicitly testable/blocking diagnostics can block.
+    Advisory failures are always retained as warnings.
+    """
+    checks = []
+    for spec in get_assumption_specs(method):
+        result = _invoke_assumption(spec, vars, llm, (check_kwargs or {}).get(spec.assumption_id))
+        status = "supported" if result.passed is True else (
+            "evidence_against" if result.passed is False else "insufficient_evidence"
+        )
+        checks.append({
+            "assumption_id": spec.assumption_id,
+            "label": spec.label,
+            "classification": spec.classification,
+            "evidence_type": spec.evidence_type,
+            "failure_policy": spec.failure_policy,
+            "passed": result.passed,
+            "status": status,
+            "reasoning": result.reasoning,
+            "details": result.details,
+            "proves_assumption": spec.proves_assumption,
+            "blocking": bool(result.passed is False and spec.failure_policy == "block"),
+        })
+    blocking = [c["assumption_id"] for c in checks if c["blocking"]]
+    return {
+        "method": method,
+        "checks": checks,
+        "testable_diagnostics": [c for c in checks if c["classification"] in {"testable", "mixed"}],
+        "advisory_assessments": [c for c in checks if c["classification"] in {"advisory", "mixed"}],
+        "blocking_failures": blocking,
+        "advisory_only": True,
+        "execution_allowed": not blocking,
+    }
