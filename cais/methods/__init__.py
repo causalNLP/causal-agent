@@ -39,6 +39,8 @@ from .survival_meta_learners import (
     estimate_t_learner_rmst,
     estimate_x_learner_rmst,
 )
+from .doubly_robust.estimator import estimate_aipw, estimate_dml
+from .tmle import estimate_tmle
 
 # Mapping of method names to their implementation functions
 METHOD_MAPPING = {
@@ -64,6 +66,9 @@ METHOD_MAPPING = {
     "s_learner_rmst": estimate_s_learner_rmst,
     "t_learner_rmst": estimate_t_learner_rmst,
     "x_learner_rmst": estimate_x_learner_rmst,
+    "aipw": estimate_aipw,
+    "dml": estimate_dml,
+    "tmle": estimate_tmle,
 }
 
 # Stable route inventory used by validation and registry-alignment tests.
@@ -100,4 +105,7 @@ __all__ = [
     "estimate_s_learner_rmst",
     "estimate_t_learner_rmst",
     "estimate_x_learner_rmst",
+    "estimate_aipw",
+    "estimate_dml",
+    "estimate_tmle",
 ]

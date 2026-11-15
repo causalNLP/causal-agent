@@ -22,8 +22,10 @@ from cais.methods.registry_adapters import (
     GeneralizedPropensityScoreEstimator,
     BackdoorAdjustmentEstimator,
     DifferenceInMeansEstimator,
+    TMLEEstimator,
 )
 from cais.methods.survival_meta_learners import SurvivalSLearner, SurvivalTLearner, SurvivalXLearner
+from cais.methods.doubly_robust.estimator import AIPWEstimator, DMLEstimator
 logger = logging.getLogger(__name__)
 
 class Estimators:
@@ -67,9 +69,12 @@ class Estimators:
             GeneralizedPropensityScoreEstimator.name : GeneralizedPropensityScoreEstimator(),
             BackdoorAdjustmentEstimator.name : BackdoorAdjustmentEstimator(),
             DifferenceInMeansEstimator.name : DifferenceInMeansEstimator(),
+            TMLEEstimator.name : TMLEEstimator(),
             SurvivalSLearner.name : SurvivalSLearner(),
             SurvivalTLearner.name : SurvivalTLearner(),
             SurvivalXLearner.name : SurvivalXLearner(),
+            AIPWEstimator.name : AIPWEstimator(),
+            DMLEstimator.name : DMLEstimator(),
         }
 
         self.estimators = default_estimators
