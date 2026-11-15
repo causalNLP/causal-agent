@@ -28,6 +28,17 @@ from .meta_learners.estimator import (
     estimate_x_learner,
     estimate_r_learner,
 )
+from .registry_adapters import (
+    IPWEstimator,
+    GeneralizedPropensityScoreEstimator,
+    BackdoorAdjustmentEstimator,
+    DifferenceInMeansEstimator,
+)
+from .survival_meta_learners import (
+    estimate_s_learner_rmst,
+    estimate_t_learner_rmst,
+    estimate_x_learner_rmst,
+)
 
 # Mapping of method names to their implementation functions
 METHOD_MAPPING = {
@@ -51,6 +62,9 @@ METHOD_MAPPING = {
     "t_learner": estimate_t_learner,
     "x_learner": estimate_x_learner,
     "r_learner": estimate_r_learner,
+    "s_learner_rmst": estimate_s_learner_rmst,
+    "t_learner_rmst": estimate_t_learner_rmst,
+    "x_learner_rmst": estimate_x_learner_rmst,
 }
 
 __all__ = [
@@ -76,4 +90,12 @@ __all__ = [
     "estimate_t_learner",
     "estimate_x_learner",
     "estimate_r_learner",
+    "IPWEstimator",
+    "GeneralizedPropensityScoreEstimator",
+    "BackdoorAdjustmentEstimator",
+    "DifferenceInMeansEstimator",
+    "EXECUTABLE_METHOD_IDS",
+    "estimate_s_learner_rmst",
+    "estimate_t_learner_rmst",
+    "estimate_x_learner_rmst",
 ]

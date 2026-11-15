@@ -17,6 +17,13 @@ from cais.methods.frontdoor_adjustment.estimator import FrontdoorAdjustment
 from cais.methods.synthetic_control.estimator import SyntheticControl
 from cais.methods.fuzzy_regression_discontinuity.estimator import FuzzyRDD
 from cais.methods.meta_learners.estimator import SLearner, TLearner, XLearner, RLearner
+from cais.methods.registry_adapters import (
+    IPWEstimator,
+    GeneralizedPropensityScoreEstimator,
+    BackdoorAdjustmentEstimator,
+    DifferenceInMeansEstimator,
+)
+from cais.methods.survival_meta_learners import SurvivalSLearner, SurvivalTLearner, SurvivalXLearner
 logger = logging.getLogger(__name__)
 
 class Estimators:
@@ -56,6 +63,13 @@ class Estimators:
             TLearner.name : TLearner(),
             XLearner.name : XLearner(),
             RLearner.name : RLearner(),
+            IPWEstimator.name : IPWEstimator(),
+            GeneralizedPropensityScoreEstimator.name : GeneralizedPropensityScoreEstimator(),
+            BackdoorAdjustmentEstimator.name : BackdoorAdjustmentEstimator(),
+            DifferenceInMeansEstimator.name : DifferenceInMeansEstimator(),
+            SurvivalSLearner.name : SurvivalSLearner(),
+            SurvivalTLearner.name : SurvivalTLearner(),
+            SurvivalXLearner.name : SurvivalXLearner(),
         }
 
         self.estimators = default_estimators

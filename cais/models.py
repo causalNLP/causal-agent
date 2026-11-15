@@ -176,6 +176,11 @@ class Variables(BaseModel):
     interaction_term_suggested: Optional[bool] = Field(False, description="Whether the query or context suggests an interaction term with the treatment might be relevant.")
     interaction_variable_candidate: Optional[str] = Field(None, description="The covariate identified as a candidate for interaction with the treatment.")
     confounders: Optional[List[str]] = Field(default_factory=list)
+    # Survival-data roles.  These remain optional so existing estimators are
+    # backward compatible; survival routes require both fields explicitly.
+    duration_variable: Optional[str] = Field(None, description="Observed follow-up time for survival outcomes.")
+    event_variable: Optional[str] = Field(None, description="Event indicator (1=event, 0=right censored).")
+    rmst_horizon: Optional[float] = Field(None, description="Pre-specified RMST horizon tau.")
     
 class QueryInterpreterOutput(BaseModel):
     """Structured output for the query interpreter tool."""

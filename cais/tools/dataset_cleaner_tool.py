@@ -42,6 +42,7 @@ def dataset_cleaner_tool(dataset_path: str,
         "generated_code": out.get("generated_code", ""),
         "stdout": out.get("stdout", ""),
         "stderr": out.get("stderr", ""),
+        "survival_roles": out.get("survival_roles", {}),
         **wf
     }
     logger.info(f"Cleaning complete. Saved: {result['cleaned_dataset_path']}")
