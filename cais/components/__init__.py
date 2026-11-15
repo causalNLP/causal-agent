@@ -13,6 +13,11 @@ from cais.components.method_validator import validate_method
 from cais.components.explanation_generator import generate_explanation
 from cais.components.output_formatter import format_output
 from cais.components.state_manager import create_workflow_state_update
+from cais.components.conditional_preference_graph import (
+    ConditionalPreferenceGraph,
+    GraphDecision,
+    PreferenceEdge,
+)
 
 __all__ = [
     "parse_input",
@@ -22,7 +27,10 @@ __all__ = [
     "validate_method",
     "generate_explanation",
     "format_output",
-    "create_workflow_state_update"
+    "create_workflow_state_update",
+    "ConditionalPreferenceGraph",
+    "GraphDecision",
+    "PreferenceEdge",
 ]
 
 # This file makes Python treat the directory as a package.
