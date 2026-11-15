@@ -87,5 +87,16 @@ class DifferenceInMeansEstimator(_FunctionEstimatorAdapter):
         self.estimator_function = estimate_effect
 
 
+class TMLEEstimator(_FunctionEstimatorAdapter):
+    estimator_id = "tmle"
+    name = "Targeted Maximum Likelihood Estimation"
+    description = "Canonical cross-fitted TMLE for binary-treatment, binary-outcome ATE."
+    assumptions = ["Binary treatment and outcome", "Conditional exchangeability", "Consistency", "Positivity"]
+
+    def __init__(self):
+        from cais.methods.tmle import estimate_tmle
+        self.estimator_function = estimate_tmle
+
+
 __all__ = ["IPWEstimator", "GeneralizedPropensityScoreEstimator",
-           "BackdoorAdjustmentEstimator", "DifferenceInMeansEstimator"]
+           "BackdoorAdjustmentEstimator", "DifferenceInMeansEstimator", "TMLEEstimator"]
