@@ -15,8 +15,9 @@ def dataset_cleaner_tool(dataset_path: str,
                          original_query: Optional[str] = None, causal_method: Optional[str] = None,
                          llm: Optional[Any] = None) -> Dict[str, Any]:
     """
-    Clean the dataset conservatively (missing-data handling + normalization only),
-    generate a temporary, cleaned dataframe, and return the new path + a markdown report.
+    Build and validate a typed preprocessing contract, execute the approved
+    deterministic transformations on a temporary copy, and return the cleaned
+    path, contract, and audit report.
     """
     logger.info("Running dataset_cleaner_tool...")
     out = run_cleaning_stage(
@@ -42,6 +43,8 @@ def dataset_cleaner_tool(dataset_path: str,
         "generated_code": out.get("generated_code", ""),
         "stdout": out.get("stdout", ""),
         "stderr": out.get("stderr", ""),
+        "typed_data_contract": out.get("typed_data_contract", {}),
+        "typed_data_contract_path": out.get("typed_data_contract_path"),
         "survival_roles": out.get("survival_roles", {}),
         **wf
     }

@@ -569,49 +569,27 @@ def preprocess_data(df: pd.DataFrame, treatment_var: str, outcome_var: str,
             logger.info("No missing values found in relevant columns.")
         # return df_processed # No preprocessing needed if no missing values
 
-    # Handle missing values in treatment variable
-    if df_processed[treatment_var].isnull().sum() > 0:
-        if verbose:
-            logger.info(f"Filling missing values in treatment variable '{treatment_var}' with mode")
-        # For treatment, use mode (most common value)
-        mode_val = df_processed[treatment_var].mode()[0] if not df_processed[treatment_var].mode().empty else 0
-        df_processed[treatment_var] = df_processed[treatment_var].fillna(mode_val)
-    
-    # Handle missing values in outcome variable
-    if df_processed[outcome_var].isnull().sum() > 0:
-        if verbose:
-            logger.info(f"Filling missing values in outcome variable '{outcome_var}' with mean")
-        # For outcome, use mean
-        mean_val = df_processed[outcome_var].mean()
-        df_processed[outcome_var] = df_processed[outcome_var].fillna(mean_val)
-    
-    # Handle missing values in covariates
-    for col in covariates:
-        if df_processed[col].isnull().sum() > 0:
-            if pd.api.types.is_numeric_dtype(df_processed[col]):
-                # For numeric covariates, use mean
-                if verbose:
-                    logger.info(f"Filling missing values in numeric covariate '{col}' with mean")
-                mean_val = df_processed[col].mean()
-                df_processed[col] = df_processed[col].fillna(mean_val)
-            elif pd.api.types.is_categorical_dtype(df_processed[col]) or df_processed[col].dtype == 'object':
-                # For categorical covariates, use mode
-                mode_val = df_processed[col].mode()[0] if not df_processed[col].mode().empty else "Missing"
-                if verbose:
-                    logger.info(f"Filling missing values in categorical covariate '{col}' with mode ('{mode_val}')")
-                df_processed[col] = df_processed[col].fillna(mode_val)
-            else:
-                # For other types, create a "Missing" category
-                if verbose:
-                    logger.info(f"Filling missing values in covariate '{col}' of type {df_processed[col].dtype} with 'Missing' category")
-                # Ensure the column is of object type before filling with string
-                if df_processed[col].dtype != 'object':
-                    try:
-                        df_processed[col] = df_processed[col].astype(object)
-                    except Exception as e:
-                        logger.warning(f"Could not convert column {col} to object type to fill NAs: {e}. Skipping fill.")
-                        continue
-                df_processed[col] = df_processed[col].fillna("Missing")
+    # Never impute treatment or outcome values in this generic preprocessing
+    # layer.  Such imputation changes the observed treatment/outcome
+    # distribution and therefore changes the target population.  Estimators
+    # receive complete cases for the variables in their declared contract;
+    # fold-wise nuisance-model imputation remains the responsibility of the
+    # estimator that explicitly supports it.
+    required = [column for column in [treatment_var, outcome_var, *covariates] if column]
+    required = list(dict.fromkeys(required))
+    before = len(df_processed)
+    df_processed = df_processed.dropna(subset=required).copy()
+    dropped = before - len(df_processed)
+    column_mappings["_missingness"] = {
+        "policy": "complete_case",
+        "required_columns": required,
+        "rows_before": before,
+        "rows_dropped": dropped,
+        "rows_after": len(df_processed),
+        "imputation": "none",
+    }
+    if verbose and dropped:
+        logger.info("Dropped %s rows with missing required causal variables; no imputation was applied.", dropped)
     
     # --- Categorical Encoding ---
     updated_treatment_var = treatment_var
