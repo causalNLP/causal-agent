@@ -120,6 +120,8 @@ class CausalAgent():
         # Metadata
         self.dataset_path = dataset_path # store dataset; stop saving then rewriting
         self.cleaned_dataset_path: Optional[str] = None
+        self.typed_data_contract: Optional[Dict[str, Any]] = None
+        self.preprocessing_report: Optional[str] = None
         self.dataset_description = dataset_description # will need checks for None
 
         # Pipeline states 
@@ -635,9 +637,12 @@ class CausalAgent():
             variables=self.variables.model_dump(),
             dataset_description=self.dataset_description,
             original_query=query,
-            causal_method=self.selected_method
+            causal_method=self.selected_method,
+            llm=self.llm,
         )
         self.cleaned_dataset_path = cleaning_output.get("cleaned_dataset_path")
+        self.typed_data_contract = cleaning_output.get("typed_data_contract")
+        self.preprocessing_report = cleaning_output.get("cleaning_report_md")
         survival_roles = cleaning_output.get("survival_roles") or {}
         if self.variables is not None:
             for field, value in survival_roles.items():

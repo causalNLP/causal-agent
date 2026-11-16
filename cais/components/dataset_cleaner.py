@@ -1,6 +1,6 @@
 # cais/components/dataset_cleaner.py
 
-import os, io, json, traceback, contextlib, sys
+import os, io, json, traceback, contextlib, sys, ast
 from typing import Dict, Any, Optional, Tuple
 import pandas as pd
 
@@ -172,6 +172,128 @@ def _invoke_text(llm, system_prompt: str, human_payload: Dict[str, Any]) -> str:
     return getattr(resp, "content", str(resp))
 
 
+_ALLOWED_OPS = {
+    "valid_range", "drop_missing_any", "drop_missing_all", "keep_values",
+    "drop_values", "winsorize", "clip", "log1p", "one_hot", "fillna",
+    "astype", "parse_datetime", "sort",
+}
+_ALLOWED_IMPORTS = {"json", "os", "pandas", "numpy"}
+_FORBIDDEN_CALLS = {
+    "eval", "exec", "compile", "__import__", "open", "system", "popen",
+    "run", "Popen", "remove", "unlink", "rmtree",
+}
+
+
+def _build_typed_data_contract(
+    profile: Dict[str, Any], variables: Dict[str, Any], spec: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Build the auditable preprocessing contract consumed downstream."""
+    columns = {item["name"]: item for item in profile.get("columns", [])}
+    role_keys = {
+        "treatment": "treatment_variable", "outcome": "outcome_variable",
+        "unit": "group_variable", "time": "time_variable",
+        "running_variable": "running_variable", "instrument": "instrument_variable",
+        "mediator": "mediator_variable", "duration": "duration_variable",
+        "event": "event_variable",
+    }
+    roles = {}
+    for role, key in role_keys.items():
+        value = variables.get(key)
+        if value:
+            roles[role] = value if isinstance(value, list) else [value]
+    for role, value in (spec.get("roles") or {}).items():
+        if value and role not in roles:
+            roles[role] = value if isinstance(value, list) else [value]
+
+    def column_type(name):
+        info = columns.get(name, {})
+        return {"dtype": info.get("dtype"),
+                "missing_pct": info.get("missing_pct"),
+                "n_unique": info.get("n_unique")}
+
+    typed_variables = {
+        name: {"roles": [role for role, names in roles.items() if name in names],
+               "type": column_type(name)}
+        for name in columns
+    }
+    missing = profile.get("missing_by_col", {})
+    return {
+        "variables": roles,
+        "types": typed_variables,
+        "design": {"method": variables.get("method") or spec.get("method"),
+                    "time_variable": variables.get("time_variable"),
+                    "unit_variable": variables.get("group_variable")},
+        "missingness": missing,
+        "transformations": spec.get("column_ops", []),
+        "structural_prerequisites": spec.get("assumption_prechecks", []),
+        "provenance": {
+            "source": "dataset profile, causal query, variable contract and LLM proposal",
+            "generated_spec": True,
+            "unresolved_role_ambiguities": [],
+        },
+    }
+
+
+def _validate_spec(spec: Dict[str, Any], profile: Dict[str, Any], variables: Dict[str, Any]) -> None:
+    """Fail closed on malformed or unsafe transformation specifications."""
+    if not isinstance(spec, dict):
+        raise ValueError("Preprocessing specification must be a JSON object.")
+    available = {item["name"] for item in profile.get("columns", [])}
+    roles = spec.get("roles") or {}
+    for role, value in roles.items():
+        values = value if isinstance(value, list) else [value]
+        for column in values:
+            if column and column not in available:
+                raise ValueError(f"Unknown column '{column}' in preprocessing role '{role}'.")
+    protected = {
+        variables.get(key) for key in (
+            "instrument_variable", "mediator_variable", "group_variable",
+            "time_variable", "running_variable", "duration_variable", "event_variable",
+        ) if variables.get(key)
+    }
+    treatment_outcome = {variables.get("treatment_variable"), variables.get("outcome_variable")} - {None}
+    for section in ("row_filters", "column_ops", "method_constructs"):
+        if not isinstance(spec.get(section, []), list):
+            raise ValueError(f"Preprocessing field '{section}' must be a list.")
+    for operation in spec.get("column_ops", []):
+        if not isinstance(operation, dict) or operation.get("op") not in _ALLOWED_OPS:
+            raise ValueError(f"Unsupported preprocessing operation: {operation!r}")
+        cols = operation.get("cols", [])
+        if isinstance(cols, str):
+            cols = [cols]
+        if not isinstance(cols, list) or any(column not in available for column in cols):
+            raise ValueError(f"Preprocessing operation references an unknown column: {cols!r}")
+        if set(cols) & protected and operation.get("op") not in {"parse_datetime", "sort"}:
+            raise ValueError("Design columns cannot be transformed during preprocessing.")
+        # Treatment and outcome transformations must be explicitly requested
+        # by the query; the generated spec alone cannot silently redefine them.
+        if set(cols) & treatment_outcome and operation.get("op") in {"fillna", "winsorize", "clip", "one_hot"}:
+            raise ValueError("Treatment/outcome missingness and support cannot be altered implicitly.")
+        if operation.get("op") == "fillna":
+            raise ValueError("Imputation is not enabled as a default preprocessing operation.")
+    for construct in spec.get("method_constructs", []):
+        if not isinstance(construct, dict):
+            raise ValueError("Each method construct must be an object.")
+        for name in construct.get("make", []) or []:
+            if name in available:
+                raise ValueError(f"Method construct would overwrite existing column '{name}'.")
+
+
+def _validate_generated_code(script: str) -> None:
+    """Reject generated code outside the small documented execution surface."""
+    tree = ast.parse(script)
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            names = [alias.name.split(".")[0] for alias in node.names]
+            if any(name not in _ALLOWED_IMPORTS for name in names):
+                raise ValueError("Generated preprocessing code imports a disallowed module.")
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name) and node.func.id in _FORBIDDEN_CALLS:
+                raise ValueError(f"Generated preprocessing code uses a forbidden call: {node.func.id}")
+            if isinstance(node.func, ast.Attribute) and node.func.attr in _FORBIDDEN_CALLS:
+                raise ValueError(f"Generated preprocessing code uses a forbidden call: {node.func.attr}")
+
+
 def _run_script_text(script: str, dataset_path: str, cleaned_path: str) -> Tuple[str, str]:
     """
     Executes user code in a controlled globals dict.
@@ -184,6 +306,7 @@ def _run_script_text(script: str, dataset_path: str, cleaned_path: str) -> Tuple
     lcls = {}
     stdout_io, stderr_io = io.StringIO(), io.StringIO()
     try:
+        _validate_generated_code(script)
         with contextlib.redirect_stdout(stdout_io), contextlib.redirect_stderr(stderr_io):
             # Provide dataset_path as a global the script can read (it should anyway use the passed JSON)
             gbls["__DATASET_PATH__"] = dataset_path
@@ -259,6 +382,8 @@ def run_cleaning_stage(dataset_path: str,
       - generated_code
       - stdout
       - stderr
+      - typed_data_contract
+      - typed_data_contract_path
     """
     if llm is None:
         llm = get_llm_client()
@@ -271,6 +396,9 @@ def run_cleaning_stage(dataset_path: str,
     # 1) PLAN
     method = causal_method or variables.get("method") or ""
     spec = _plan_transformation_spec(llm, dataset_path, method, original_query or "", variables, dataset_description)
+    profile = spec.get("_runtime_previews", {}).get("profile", {})
+    _validate_spec(spec, profile, variables)
+    typed_contract = _build_typed_data_contract(profile, variables, spec)
     #print(spec)
 
     # 2) CODEGEN
@@ -291,6 +419,9 @@ def run_cleaning_stage(dataset_path: str,
         stderr_all += f"\n\n[repair_attempt_{attempts}_stderr]\n" + err
 
     # Determine cleaned path (as required by contract)
+    contract_path = os.path.splitext(cleaned_path)[0] + "_typed_data_contract.json"
+    with open(contract_path, "w", encoding="utf-8") as contract_file:
+        json.dump(typed_contract, contract_file, indent=2, ensure_ascii=False)
     report = []
     report.append(f"Method: {method}")
     report.append(f"Causal Query: {original_query or ''}")
@@ -309,6 +440,8 @@ def run_cleaning_stage(dataset_path: str,
         # columns when row alignment is unchanged, otherwise use the original
         # data rather than returning a dataset that cannot be estimated.
         structural_keys = (
+            "treatment_variable",
+            "outcome_variable",
             "time_variable",
             "group_variable",
             "instrument_variable",
@@ -341,6 +474,13 @@ def run_cleaning_stage(dataset_path: str,
                         "row alignment, falling back to original dataset."
                     )
                     cleaned_path = dataset_path
+            required_roles = [
+                variables.get("treatment_variable"),
+                variables.get("outcome_variable"),
+            ]
+            if any(column and column not in cleaned_df.columns for column in required_roles):
+                report.append("\nCleaning removed a required treatment/outcome column; falling back to original dataset.")
+                cleaned_path = dataset_path
         except Exception as validation_error:
             report.append(
                 f"\nCould not validate cleaned design columns "
@@ -354,6 +494,8 @@ def run_cleaning_stage(dataset_path: str,
         "generated_code": code,
         "stdout": stdout_all,
         "stderr": stderr_all,
+        "typed_data_contract": typed_contract,
+        "typed_data_contract_path": contract_path,
         "survival_roles": {
             "duration_variable": (spec.get("roles") or {}).get("duration"),
             "event_variable": (spec.get("roles") or {}).get("event"),
