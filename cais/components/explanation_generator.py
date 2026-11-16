@@ -148,6 +148,7 @@ def _generate_llm_interpretation(
             "p_value": results_payload.get("p_value"),
             "diagnostics": results_payload.get("diagnostics"),
             "refutation_results": results_payload.get("refutation_results"),
+            "sensitivity_analysis": results_payload.get("sensitivity_analysis"),
         }
     }
 
@@ -240,6 +241,27 @@ def generate_explanation(
     if _has_value(p_value):
         final_text += f"- P-value: {_format_stat_value(p_value)}\n"
     final_text += "\n"
+
+    sensitivity = results_payload.get("sensitivity_analysis")
+    if isinstance(sensitivity, dict):
+        final_text += "**Sensitivity analysis (advisory):**\n"
+        if sensitivity.get("status") == "supported":
+            interval = sensitivity.get("bootstrap_interval_95")
+            successes = sensitivity.get("successful_resamples")
+            requested = sensitivity.get("requested_resamples")
+            if interval:
+                final_text += (
+                    f"- Bootstrap stability interval: {_format_stat_value(interval)} "
+                    f"({successes}/{requested} successful refits).\n"
+                )
+            omissions = sensitivity.get("covariate_omission_sensitivity") or []
+            valid_omissions = [x for x in omissions if isinstance(x, dict) and "absolute_change" in x]
+            if valid_omissions:
+                max_change = max(abs(float(x["absolute_change"])) for x in valid_omissions)
+                final_text += f"- Largest absolute change after omitting one adjustment variable: {max_change:.4f}.\n"
+        else:
+            final_text += "- The selected route did not provide a refittable sensitivity analysis.\n"
+        final_text += "- These diagnostics assess estimator stability only; they do not validate causal assumptions.\n\n"
     
     final_text += f"**Interpretation Guide:**\n{interpretation_guide}\n\n"
     final_text += f"**Assumptions:**\n"
