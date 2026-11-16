@@ -15,6 +15,7 @@ from cais.tools.method_validator_tool import method_validator_tool
 from cais.tools.method_executor_tool import method_executor_tool
 from cais.tools.explanation_generator_tool import explanation_generator_tool
 from cais.tools.output_formatter_tool import output_formatter_tool
+from cais.components.sensitivity_analysis import run_sensitivity_analysis
 
 from cais.methods.linear_regression.estimator import LinearRegression
 from cais.methods.regression_discontinuity.estimator import RDDRegression
@@ -683,6 +684,8 @@ class CausalAgent():
         logger.info(f"Executing '{execution_method}' with options {method_options}")
         n_before_dropna = None
         n_after_dropna = None
+        primary_estimator = None
+        sensitivity_df = None
         try:
             estimator = self.estimators[
                 convert[execution_method]
@@ -697,6 +700,7 @@ class CausalAgent():
                 inplace=True
             ) # safety
             n_after_dropna = len(df)
+            sensitivity_df = df.copy()
             
             self.results = estimator(
                 df=df,
@@ -704,6 +708,7 @@ class CausalAgent():
                 query=query,
                 **method_options
             ) | self.llm_info # append llm info
+            primary_estimator = estimator
         except:
             method_executor_input = MethodExecutorInput(
                         method = execution_method,
@@ -719,6 +724,24 @@ class CausalAgent():
                 method_executor_input,
                 original_query=query
             )
+
+        # Sensitivity analysis is a post-estimation advisory.  It is attached
+        # after the primary or fallback route and can never change the estimate
+        # or block the pipeline.
+        sensitivity = run_sensitivity_analysis(
+            df=sensitivity_df,
+            estimator=primary_estimator,
+            variables=self.variables,
+            query=query,
+            method_options=method_options,
+            base_results=(self.results.get("results", self.results)
+                          if isinstance(self.results, dict) else {}),
+        )
+        if isinstance(self.results, dict):
+            if isinstance(self.results.get("results"), dict):
+                self.results["results"]["sensitivity_analysis"] = sensitivity
+            else:
+                self.results["sensitivity_analysis"] = sensitivity
 
         # Audit trail for the safety listwise dropna: the estimate may rest on
         # fewer rows than the dataset holds, and that loss was previously
